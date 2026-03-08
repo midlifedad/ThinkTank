@@ -1,0 +1,18 @@
+{
+  "mode": "yolo",
+  "granularity": "standard",
+  "parallelization": true,
+  "commit_docs": true,
+  "model_profile": "quality",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "nyquist_validation": true
+  },
+  "reference_docs": {
+    "specification": "ThinkTank_Specification.md",
+    "standards": "STANDARDS.md",
+    "note": "Every phase must validate against the specification for goal alignment and follow STANDARDS.md for testing, observability, documentation, and deployment conventions."
+  }
+}
