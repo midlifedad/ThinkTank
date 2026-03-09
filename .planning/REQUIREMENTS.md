@@ -21,14 +21,14 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Job Queue
 
-- [ ] **QUEUE-01**: DB-backed job queue using `SELECT FOR UPDATE SKIP LOCKED` with priority ordering
-- [ ] **QUEUE-02**: Async worker base loop that claims and dispatches jobs by type with configurable concurrency
-- [ ] **QUEUE-03**: Job retry with exponential backoff and per-type max attempt limits
-- [ ] **QUEUE-04**: Stale job reclamation running every 5 minutes, returning stuck `running` jobs to `queued`
-- [ ] **QUEUE-05**: Rate limit coordination via `rate_limit_usage` table with sliding-window queries across concurrent workers
-- [ ] **QUEUE-06**: Backpressure mechanism demoting discovery priority when transcription queue exceeds threshold
-- [ ] **QUEUE-07**: Global kill switch (`workers_active = false` in system_config) halting all job claiming
-- [ ] **QUEUE-08**: Error categorization with closed set of error categories on failed jobs
+- [x] **QUEUE-01**: DB-backed job queue using `SELECT FOR UPDATE SKIP LOCKED` with priority ordering
+- [x] **QUEUE-02**: Async worker base loop that claims and dispatches jobs by type with configurable concurrency
+- [x] **QUEUE-03**: Job retry with exponential backoff and per-type max attempt limits
+- [x] **QUEUE-04**: Stale job reclamation running every 5 minutes, returning stuck `running` jobs to `queued`
+- [x] **QUEUE-05**: Rate limit coordination via `rate_limit_usage` table with sliding-window queries across concurrent workers
+- [x] **QUEUE-06**: Backpressure mechanism demoting discovery priority when transcription queue exceeds threshold
+- [x] **QUEUE-07**: Global kill switch (`workers_active = false` in system_config) halting all job claiming
+- [x] **QUEUE-08**: Error categorization with closed set of error categories on failed jobs
 
 ### Content Ingestion
 
@@ -93,7 +93,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **QUAL-01**: Test suite following STANDARDS.md pyramid — unit tests (pure logic), integration tests (real Postgres), E2E tests (full system flow)
 - [x] **QUAL-02**: Factory functions for all domain objects with sensible defaults and overridable fields
 - [ ] **QUAL-03**: Contract tests for every API endpoint (request/response shape, status codes, error formats)
-- [ ] **QUAL-04**: Contract tests for every job handler (given input payload, expected side effects)
+- [x] **QUAL-04**: Contract tests for every job handler (given input payload, expected side effects)
 - [ ] **QUAL-05**: Operations runbook covering bootstrap, post-deploy verification, rollback, and common problem resolution
 - [x] **QUAL-06**: Architecture documentation with data flow diagrams and service boundaries
 - [ ] **QUAL-07**: Development guide covering how to add new job types, new API endpoints, and new thinker categories
@@ -153,14 +153,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FNDTN-07 | Phase 1 | Complete |
 | FNDTN-08 | Phase 1 | Complete |
 | FNDTN-09 | Phase 1 | Complete |
-| QUEUE-01 | Phase 2 | Pending |
-| QUEUE-02 | Phase 2 | Pending |
-| QUEUE-03 | Phase 2 | Pending |
-| QUEUE-04 | Phase 2 | Pending |
-| QUEUE-05 | Phase 2 | Pending |
-| QUEUE-06 | Phase 2 | Pending |
-| QUEUE-07 | Phase 2 | Pending |
-| QUEUE-08 | Phase 2 | Pending |
+| QUEUE-01 | Phase 2 | Complete |
+| QUEUE-02 | Phase 2 | Complete |
+| QUEUE-03 | Phase 2 | Complete |
+| QUEUE-04 | Phase 2 | Complete |
+| QUEUE-05 | Phase 2 | Complete |
+| QUEUE-06 | Phase 2 | Complete |
+| QUEUE-07 | Phase 2 | Complete |
+| QUEUE-08 | Phase 2 | Complete |
 | INGEST-01 | Phase 3 | Pending |
 | INGEST-02 | Phase 3 | Pending |
 | INGEST-03 | Phase 3 | Pending |
@@ -204,7 +204,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUAL-01 | Phase 1 | Complete |
 | QUAL-02 | Phase 1 | Complete |
 | QUAL-03 | Phase 7 | Pending |
-| QUAL-04 | Phase 2 | Pending |
+| QUAL-04 | Phase 2 | Complete |
 | QUAL-05 | Phase 7 | Pending |
 | QUAL-06 | Phase 1 | Complete |
 | QUAL-07 | Phase 7 | Pending |
@@ -216,4 +216,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-09 after Phase 1 completion*
+*Last updated: 2026-03-09 after Phase 2 completion*

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 01-03-PLAN.md (Phase 1 Foundation Layer complete)
-last_updated: "2026-03-09T01:23:53.678Z"
-last_activity: 2026-03-09 -- Completed 01-03-PLAN.md (Config, logging, migrations, Docker, integration tests)
+stopped_at: Completed 02-03-PLAN.md (Phase 2 Job Queue Engine complete)
+last_updated: "2026-03-09T02:03:00.000Z"
+last_activity: 2026-03-09 -- Completed 02-03-PLAN.md (Worker loop, handler registry, contract tests)
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 18
+  completed_phases: 2
+  total_plans: 6
+  completed_plans: 6
+  percent: 35
 ---
 
 # Project State
@@ -21,33 +21,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** Phase 1: Foundation Layer
+**Current focus:** Phase 2: Job Queue Engine (COMPLETE) -- Ready for Phase 3
 
 ## Current Position
 
-Phase: 1 of 7 (Foundation Layer -- COMPLETE)
+Phase: 2 of 7 (Job Queue Engine -- COMPLETE)
 Plan: 3 of 3 in current phase (all complete)
-Status: Phase 1 Complete -- Ready for Phase 2
-Last activity: 2026-03-09 -- Completed 01-03-PLAN.md (Config, logging, migrations, Docker, integration tests)
+Status: Phase 2 Complete -- Ready for Phase 3
+Last activity: 2026-03-09 -- Completed 02-03-PLAN.md (Worker loop, handler registry, contract tests)
 
-Progress: [██░░░░░░░░] 18%
+Progress: [████░░░░░░] 35%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 19min
-- Total execution time: 0.95 hours
+- Total plans completed: 6
+- Average duration: ~13min
+- Total execution time: ~1.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Foundation Layer | 3/3 | 57min | 19min |
+| 2. Job Queue Engine | 3/3 | 19min | ~6min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min), 01-02 (7min), 01-03 (45min)
-- Trend: 01-03 was larger scope (config+logging+migration+docker+integration tests)
+- Last 5 plans: 01-02 (7min), 01-03 (45min), 02-01 (5min), 02-02 (~10min), 02-03 (~4min)
+- Trend: Phase 2 plans executed faster due to established infrastructure and patterns
 
 *Updated after each plan completion*
 
@@ -77,6 +78,16 @@ Recent decisions affecting current work:
 - [01-03]: Session-scoped pytest-asyncio event loop for engine fixture sharing
 - [01-03]: TRUNCATE CASCADE cleanup pattern instead of schema recreation per test
 - [01-03]: Timezone-naive datetimes in factories to avoid asyncpg TIMESTAMP mismatch
+- [02-01]: Fixed autouse _cleanup_tables fixture to not require DB for unit tests (moved to integration/conftest.py)
+- [02-01]: Used ORM attribute mutation for claim_job and fail_job, bulk UPDATE statement for complete_job
+- [02-01]: Ordered scheduled_at NULLS FIRST in claim query to treat NULL as immediately eligible
+- [02-02]: Used LOCALTIMESTAMP instead of NOW() or Python UTC for TIMESTAMP WITHOUT TIME ZONE comparisons
+- [02-02]: Used raw SQL text() for rate limiter window query and reclamation bulk UPDATE for timezone safety
+- [02-02]: Used MAKE_INTERVAL(mins => :param) for parameterized interval arithmetic
+- [02-03]: Worker loop accepts optional shutdown_event parameter for testability without signal handlers
+- [02-03]: Used merge() to persist backpressure priority changes on detached job objects
+- [02-03]: Handler-not-found uses max_attempts=1 to immediately fail (no retry for missing handlers)
+- [02-03]: _interruptible_sleep pattern used throughout for responsive shutdown
 
 ### Pending Todos
 
@@ -89,5 +100,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 01-03-PLAN.md (Phase 1 Foundation Layer complete)
+Stopped at: Completed 02-03-PLAN.md (Phase 2 Job Queue Engine complete)
 Resume file: None

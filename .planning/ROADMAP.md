@@ -13,7 +13,7 @@ ThinkTank is a continuous ingestion engine that discovers, fetches, and transcri
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation Layer** - Database schema, models, migrations, configuration, logging, health endpoints, project scaffolding, and test infrastructure
-- [ ] **Phase 2: Job Queue Engine** - DB-backed job queue with priority, retry, stale reclamation, rate limiting, backpressure, and kill switch
+- [x] **Phase 2: Job Queue Engine** - DB-backed job queue with priority, retry, stale reclamation, rate limiting, backpressure, and kill switch
 - [ ] **Phase 3: Content Ingestion Pipeline** - RSS feed polling, 3-layer deduplication, content filtering, source approval, content attribution, and discovery orchestration
 - [ ] **Phase 4: Transcription Pipeline** - Three-pass transcription (captions, existing transcripts, Parakeet GPU), GPU worker service, on-demand scaling, audio processing
 - [ ] **Phase 5: LLM Governance** - Claude Supervisor for thinker/source/candidate approval, audit trail, fallback escalation, scheduled health checks and digests
@@ -52,9 +52,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Queue core: atomic job claiming (SKIP LOCKED), completion, failure with retry/backoff, error categorization enum
-- [ ] 02-02-PLAN.md -- Queue coordination: sliding-window rate limiter, backpressure priority demotion, kill switch, stale job reclamation
-- [ ] 02-03-PLAN.md -- Worker loop with poll/claim/dispatch cycle, handler registry with Protocol interface, contract tests
+- [x] 02-01-PLAN.md -- Queue core: atomic job claiming (SKIP LOCKED), completion, failure with retry/backoff, error categorization enum
+- [x] 02-02-PLAN.md -- Queue coordination: sliding-window rate limiter, backpressure priority demotion, kill switch, stale job reclamation
+- [x] 02-03-PLAN.md -- Worker loop with poll/claim/dispatch cycle, handler registry with Protocol interface, contract tests
 
 ### Phase 3: Content Ingestion Pipeline
 **Goal**: The system can poll approved RSS feeds, extract episodes, deduplicate content across three layers (URL normalization, content fingerprint, trigram similarity), filter by duration and title patterns, and attribute content to thinkers
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation Layer | 3/3 | Complete | 2026-03-09 |
-| 2. Job Queue Engine | 0/3 | Not started | - |
+| 2. Job Queue Engine | 3/3 | Complete | 2026-03-09 |
 | 3. Content Ingestion Pipeline | 0/3 | Not started | - |
 | 4. Transcription Pipeline | 0/2 | Not started | - |
 | 5. LLM Governance | 0/2 | Not started | - |
