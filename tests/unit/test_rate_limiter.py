@@ -6,7 +6,7 @@ validating the module's imports and constants are correct.
 Integration tests cover the actual DB queries.
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -19,7 +19,7 @@ class TestGetRateLimitConfig:
         from src.thinktank.queue.rate_limiter import get_rate_limit_config
 
         mock_session = AsyncMock()
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
 
@@ -31,7 +31,7 @@ class TestGetRateLimitConfig:
         from src.thinktank.queue.rate_limiter import get_rate_limit_config
 
         mock_session = AsyncMock()
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = {"value": 100}
         mock_session.execute.return_value = mock_result
 
@@ -43,7 +43,7 @@ class TestGetRateLimitConfig:
         from src.thinktank.queue.rate_limiter import get_rate_limit_config
 
         mock_session = AsyncMock()
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = 50
         mock_session.execute.return_value = mock_result
 
@@ -55,7 +55,7 @@ class TestGetRateLimitConfig:
         from src.thinktank.queue.rate_limiter import get_rate_limit_config
 
         mock_session = AsyncMock()
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
 
@@ -74,10 +74,10 @@ class TestCheckAndAcquireRateLimit:
 
         mock_session = AsyncMock()
         # First call: COUNT returns 0
-        mock_count_result = AsyncMock()
+        mock_count_result = MagicMock()
         mock_count_result.scalar_one.return_value = 0
         # Second call: config returns None (no limit configured)
-        mock_config_result = AsyncMock()
+        mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = None
 
         mock_session.execute.side_effect = [mock_count_result, mock_config_result]
@@ -93,10 +93,10 @@ class TestCheckAndAcquireRateLimit:
 
         mock_session = AsyncMock()
         # First call: COUNT returns 100 (at limit)
-        mock_count_result = AsyncMock()
+        mock_count_result = MagicMock()
         mock_count_result.scalar_one.return_value = 100
         # Second call: config returns 100
-        mock_config_result = AsyncMock()
+        mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = {"value": 100}
 
         mock_session.execute.side_effect = [mock_count_result, mock_config_result]
@@ -112,10 +112,10 @@ class TestCheckAndAcquireRateLimit:
 
         mock_session = AsyncMock()
         # First call: COUNT returns 5 (under limit)
-        mock_count_result = AsyncMock()
+        mock_count_result = MagicMock()
         mock_count_result.scalar_one.return_value = 5
         # Second call: config returns 100
-        mock_config_result = AsyncMock()
+        mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = {"value": 100}
 
         mock_session.execute.side_effect = [mock_count_result, mock_config_result]

@@ -4,6 +4,8 @@ Tests BACKPRESSURE_JOB_TYPES membership and priority demotion math.
 These are pure logic tests -- no database required.
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
 
@@ -73,8 +75,6 @@ class TestGetEffectivePriority:
 
     async def test_non_backpressure_type_returns_unchanged(self):
         """Non-discovery job types should return original priority."""
-        from unittest.mock import AsyncMock
-
         from src.thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
@@ -88,17 +88,15 @@ class TestGetEffectivePriority:
 
     async def test_discovery_type_demoted_when_above_threshold(self):
         """Discovery job should be demoted by +3 when depth > threshold."""
-        from unittest.mock import AsyncMock
-
         from src.thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
         mock_session = AsyncMock()
         # First call: get_queue_depth returns 501
-        mock_depth_result = AsyncMock()
+        mock_depth_result = MagicMock()
         mock_depth_result.scalar_one.return_value = 501
         # Second call: get threshold config returns 500
-        mock_config_result = AsyncMock()
+        mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = {"value": 500}
 
         mock_session.execute.side_effect = [mock_depth_result, mock_config_result]
@@ -109,17 +107,15 @@ class TestGetEffectivePriority:
 
     async def test_discovery_type_normal_when_below_80_percent(self):
         """Discovery job returns original priority when depth < 80% of threshold."""
-        from unittest.mock import AsyncMock
-
         from src.thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
         mock_session = AsyncMock()
         # First call: get_queue_depth returns 399 (below 80% of 500)
-        mock_depth_result = AsyncMock()
+        mock_depth_result = MagicMock()
         mock_depth_result.scalar_one.return_value = 399
         # Second call: get threshold config returns 500
-        mock_config_result = AsyncMock()
+        mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = {"value": 500}
 
         mock_session.execute.side_effect = [mock_depth_result, mock_config_result]
@@ -130,17 +126,15 @@ class TestGetEffectivePriority:
 
     async def test_discovery_type_unchanged_in_hysteresis_band(self):
         """Discovery job in 80-100% band returns original priority."""
-        from unittest.mock import AsyncMock
-
         from src.thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
         mock_session = AsyncMock()
         # First call: get_queue_depth returns 450 (between 400 and 500)
-        mock_depth_result = AsyncMock()
+        mock_depth_result = MagicMock()
         mock_depth_result.scalar_one.return_value = 450
         # Second call: get threshold config returns 500
-        mock_config_result = AsyncMock()
+        mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = {"value": 500}
 
         mock_session.execute.side_effect = [mock_depth_result, mock_config_result]
@@ -151,17 +145,15 @@ class TestGetEffectivePriority:
 
     async def test_defaults_threshold_to_500_when_no_config(self):
         """When max_pending_transcriptions config is missing, default to 500."""
-        from unittest.mock import AsyncMock
-
         from src.thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
         mock_session = AsyncMock()
         # First call: get_queue_depth returns 501 (above default 500)
-        mock_depth_result = AsyncMock()
+        mock_depth_result = MagicMock()
         mock_depth_result.scalar_one.return_value = 501
         # Second call: no config found
-        mock_config_result = AsyncMock()
+        mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = None
 
         mock_session.execute.side_effect = [mock_depth_result, mock_config_result]

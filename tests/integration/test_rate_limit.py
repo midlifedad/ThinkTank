@@ -3,12 +3,13 @@
 Tests the sliding-window rate limiting via rate_limit_usage table.
 """
 
-from datetime import timedelta
+import uuid
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import _now, create_rate_limit_usage, create_system_config
+from tests.factories import create_system_config
 
 
 class TestCheckAndAcquireRateLimit:
@@ -74,17 +75,23 @@ class TestCheckAndAcquireRateLimit:
             value={"value": 2},
         )
 
-        # Insert 2 old rows (2 hours ago - outside the 60-min window)
-        two_hours_ago = _now() - timedelta(hours=2)
-        for i in range(2):
-            await create_rate_limit_usage(
-                session,
-                api_name="youtube",
-                worker_id=f"worker-{i}",
-                called_at=two_hours_ago,
+        # Insert 2 old rows using PG LOCALTIMESTAMP so the time base matches
+        # the sliding-window query (avoids Python UTC vs PG local timezone mismatch).
+        for _ in range(2):
+            await session.execute(
+                text(
+                    "INSERT INTO rate_limit_usage (id, api_name, worker_id, called_at) "
+                    "VALUES (:id, :api_name, :worker_id, LOCALTIMESTAMP - INTERVAL '2 hours')"
+                ),
+                {
+                    "id": str(uuid.uuid4()),
+                    "api_name": "youtube",
+                    "worker_id": "old-worker",
+                },
             )
+        await session.flush()
 
-        # Should still allow calls because old rows are outside the window
+        # Should still allow calls because old rows are outside the 60-min window
         result = await check_and_acquire_rate_limit(
             session, "youtube", "worker-1"
         )
