@@ -133,8 +133,8 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 07-01-PLAN.md -- REST API endpoints (thinkers, sources, content, jobs, config CRUD), Pydantic schemas, rollup_api_usage cost tracking handler, OpenAPI docs, contract tests
-- [ ] 07-02-PLAN.md -- Admin dashboard (HTMX + Jinja2), LLM decision panel with human override, rate limit gauges, category taxonomy management, integration tests
+- [x] 07-01-PLAN.md -- REST API endpoints (thinkers, sources, content, jobs, config CRUD), Pydantic schemas, rollup_api_usage cost tracking handler, OpenAPI docs, contract tests
+- [x] 07-02-PLAN.md -- Admin dashboard (HTMX + Jinja2), LLM decision panel with human override, rate limit gauges, category taxonomy management, integration tests
 - [ ] 07-03-PLAN.md -- Bootstrap seed scripts (categories, config, thinkers), bootstrap orchestrator, operations runbook, development guide, integration tests
 
 ## Progress
@@ -150,4 +150,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 4. Transcription Pipeline | 2/2 | Complete | 2026-03-09 |
 | 5. LLM Governance | 3/3 | Complete | 2026-03-09 |
 | 6. Discovery and Autonomous Growth | 2/2 | Complete | 2026-03-09 |
-| 7. Operations, API, and Polish | 0/3 | Not started | - |
+| 7. Operations, API, and Polish | 2/3 | In progress | - |

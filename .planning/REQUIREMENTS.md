@@ -72,11 +72,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Operations
 
-- [ ] **OPS-01**: Admin dashboard (HTMX + FastAPI) showing queue depth, error log, source health, GPU status
-- [ ] **OPS-02**: LLM decision panel — view pending approvals, recent decisions, override with audit trail
+- [x] **OPS-01**: Admin dashboard (HTMX + FastAPI) showing queue depth, error log, source health, GPU status
+- [x] **OPS-02**: LLM decision panel — view pending approvals, recent decisions, override with audit trail
 - [ ] **OPS-03**: API cost tracking via `api_usage` table with hourly rollups and estimated USD costs
-- [ ] **OPS-04**: Rate limit gauges showing current usage vs configured limits per external API
-- [ ] **OPS-05**: Category taxonomy management in admin dashboard
+- [x] **OPS-04**: Rate limit gauges showing current usage vs configured limits per external API
+- [x] **OPS-05**: Category taxonomy management in admin dashboard
 - [ ] **OPS-06**: Bootstrap sequence — seed categories, initial thinkers, trigger first LLM review, activate workers
 
 ### API
@@ -189,11 +189,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DISC-04 | Phase 3 | In Progress (pg_trgm extension + GiST index created in 03-02) |
 | DISC-05 | Phase 6 | Complete (06-01: quota tracker, 06-02: quota enforcement in scan_for_candidates) |
 | DISC-06 | Phase 5 | Complete |
-| OPS-01 | Phase 7 | Pending |
-| OPS-02 | Phase 7 | Pending |
+| OPS-01 | Phase 7 | Complete |
+| OPS-02 | Phase 7 | Complete |
 | OPS-03 | Phase 7 | Pending |
-| OPS-04 | Phase 7 | Pending |
-| OPS-05 | Phase 7 | Pending |
+| OPS-04 | Phase 7 | Complete |
+| OPS-05 | Phase 7 | Complete |
 | OPS-06 | Phase 7 | Pending |
 | API-01 | Phase 7 | Pending |
 | API-02 | Phase 7 | Pending |

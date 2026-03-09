@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 06-02-PLAN.md (Discovery handlers)
-last_updated: "2026-03-09T05:24:24.000Z"
-last_activity: 2026-03-09 -- Phase 6 complete (31 new tests, 582 total)
+stopped_at: Completed 07-02-PLAN.md (Admin dashboard)
+last_updated: "2026-03-09T05:59:31.000Z"
+last_activity: 2026-03-09 -- Plan 07-02 complete (35 new tests, 657 total)
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 10
-  completed_plans: 17
-  percent: 85
+  completed_plans: 19
+  percent: 95
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** Phase 6 complete -- all discovery handlers implemented and registered
+**Current focus:** Phase 7 in progress -- Admin dashboard complete, 1 plan remaining
 
 ## Current Position
 
-Phase: 6 of 7 (Discovery and Autonomous Growth)
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase 6 complete -- all discovery handlers wired and tested
-Last activity: 2026-03-09 -- Plan 06-02 complete (31 new tests, 582 total)
+Phase: 7 of 7 (Operations, API, and Polish)
+Plan: 2 of 3 in current phase (07-01 and 07-02 complete)
+Status: Plan 07-02 complete -- admin dashboard with LLM panel and categories
+Last activity: 2026-03-09 -- Plan 07-02 complete (35 new tests, 657 total)
 
-Progress: [████████░░] 85%
+Progress: [█████████░] 95%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
-- Average duration: ~9min
-- Total execution time: ~2h 45min
+- Total plans completed: 19
+- Average duration: ~8min
+- Total execution time: ~2h 57min
 
 **By Phase:**
 
@@ -49,10 +49,11 @@ Progress: [████████░░] 85%
 | 4. Transcription | 2/2 | 18min | 9min |
 | 5. LLM Governance | 3/3 | 23min | ~8min |
 | 6. Discovery | 2/2 | 13min | ~7min |
+| 7. Operations (partial) | 2/3 | 12min | ~6min |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (9min), 05-02 (9min), 05-03 (5min), 06-01 (8min), 06-02 (5min)
-- Trend: Consistent ~7min/plan for TDD plans
+- Last 5 plans: 05-03 (5min), 06-01 (8min), 06-02 (5min), 07-01 (6min), 07-02 (6min)
+- Trend: Consistent ~6min/plan
 
 *Updated after each plan completion*
 
@@ -127,6 +128,10 @@ Recent decisions affecting current work:
 - [06-02]: Used body_text instead of description for Content field in scan_for_candidates (Content model has body_text not description)
 - [06-02]: httpx.HTTPStatusError handling placed before generic Python exceptions in categorize_error to avoid shadowing
 - [06-02]: Contract tests follow existing pattern from test_llm_approval_handler.py with pytestmark = pytest.mark.anyio
+- [07-02]: Used modern TemplateResponse(request, name, context) API to avoid Starlette deprecation warnings
+- [07-02]: Override applies decision to target entity (thinker/source/candidate) in same transaction via context_snapshot ID lookup
+- [07-02]: Category delete returns 400 if children or thinker_categories exist -- prevents orphaned references
+- [07-02]: selectinload with recursion_depth=5 for category tree to handle nested hierarchies
 
 ### Pending Todos
 
@@ -138,6 +143,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T05:24:24.000Z
-Stopped at: Completed 06-02-PLAN.md (Discovery handlers)
+Last session: 2026-03-09T05:59:31.000Z
+Stopped at: Completed 07-02-PLAN.md (Admin dashboard, LLM panel, categories)
 Resume file: None
