@@ -18,7 +18,6 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from src.thinktank.models.candidate import CandidateThinker
 from src.thinktank.models.content import Content
 from src.thinktank.models.job import Job

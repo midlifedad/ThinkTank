@@ -9,7 +9,6 @@ Spec reference: Section 8.3 (LLM Supervisor prompts).
 
 import json
 
-
 SYSTEM_PROMPT = """You are the ThinkTank Supervisor, responsible for governing a content ingestion pipeline.
 
 Your role is to make decisions about which thinkers, sources, and content to include in the corpus.

@@ -15,7 +15,6 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from src.thinktank.llm.schemas import (
     CandidateReviewResponse,
     SourceApprovalResponse,
@@ -148,9 +147,8 @@ async def apply_source_decision(
         source.approval_status = "approved"
         if result.approved_backfill_days is not None:
             source.approved_backfill_days = result.approved_backfill_days
-        if result.modifications:
-            if "approved_backfill_days" in result.modifications:
-                source.approved_backfill_days = result.modifications["approved_backfill_days"]
+        if result.modifications and "approved_backfill_days" in result.modifications:
+            source.approved_backfill_days = result.modifications["approved_backfill_days"]
     elif result.decision == "escalate_to_human":
         source.approval_status = "pending_human"
 
