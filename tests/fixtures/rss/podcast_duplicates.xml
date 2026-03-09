@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.apple.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>ThinkTank Duplicates Podcast</title>
+    <link>https://example.com/duplicates-podcast</link>
+    <description>A test podcast feed with duplicate episodes for dedup testing.</description>
+    <language>en-us</language>
+
+    <item>
+      <title>Understanding Quantum Computing</title>
+      <link>https://example.com/episodes/quantum-a</link>
+      <description>First instance of the quantum computing episode.</description>
+      <pubDate>Tue, 04 Mar 2026 09:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/quantum-computing-v1.mp3" length="54000000" type="audio/mpeg"/>
+      <itunes:duration>01:00:00</itunes:duration>
+      <guid isPermaLink="false">dup-ep-001a</guid>
+    </item>
+
+    <item>
+      <title>Understanding Quantum Computing</title>
+      <link>https://example.com/episodes/quantum-b</link>
+      <description>Second instance with different URL but same title, date, and duration.</description>
+      <pubDate>Tue, 04 Mar 2026 09:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/quantum-computing-v2.mp3" length="54000000" type="audio/mpeg"/>
+      <itunes:duration>01:00:00</itunes:duration>
+      <guid isPermaLink="false">dup-ep-001b</guid>
+    </item>
+
+    <item>
+      <title>Climate Adaptation Strategies</title>
+      <link>https://example.com/episodes/climate</link>
+      <description>Episode with tracking params in URL for URL normalization dedup testing.</description>
+      <pubDate>Mon, 03 Mar 2026 09:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/climate.mp3?utm_source=feed&amp;utm_medium=rss&amp;ref=homepage" length="72000000" type="audio/mpeg"/>
+      <itunes:duration>01:15:00</itunes:duration>
+      <guid isPermaLink="false">dup-ep-002-tracking</guid>
+    </item>
+
+  </channel>
+</rss>

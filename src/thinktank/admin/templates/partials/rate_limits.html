@@ -1,0 +1,15 @@
+{% if gauges %}
+{% for g in gauges %}
+<div style="margin-bottom: 0.75rem;">
+    <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+        <span>{{ g.api_name }}</span>
+        <span>{{ g.current }} / {{ g.limit }}</span>
+    </div>
+    <div class="gauge">
+        <div class="gauge-fill gauge-{{ g.color }}" style="width: {{ g.pct }}%"></div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<p class="empty">No rate limit data.</p>
+{% endif %}

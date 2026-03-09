@@ -1,0 +1,43 @@
+{% if pending %}
+<table>
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Created</th>
+            <th>Waiting</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in pending %}
+        <tr class="{% if p.is_timed_out %}timeout-highlight{% endif %}">
+            <td>{{ p.review_type }}</td>
+            <td>{{ p.created_at }}</td>
+            <td>{{ p.hours_waiting }}h</td>
+            <td>
+                <form hx-post="/admin/llm/override/{{ p.id }}"
+                      hx-target="#pending-container"
+                      hx-swap="innerHTML"
+                      style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
+                    <div>
+                        <select name="override_decision" required>
+                            <option value="approve">Approve</option>
+                            <option value="reject">Reject</option>
+                        </select>
+                    </div>
+                    <div>
+                        <input type="text" name="override_reasoning" placeholder="Reasoning" required style="width: 150px;">
+                    </div>
+                    <div>
+                        <input type="text" name="admin_username" value="admin" style="width: 80px;">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Override</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">No pending reviews.</p>
+{% endif %}

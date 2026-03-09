@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 style="margin-bottom: 1rem;">LLM Decision Panel</h1>
+<p style="margin-bottom: 1rem; color: #666;">Timeout threshold: {{ timeout_hours }} hours</p>
+
+<div class="dashboard-grid">
+    <div class="card" style="grid-column: span 2;">
+        <h3>LLM Status</h3>
+        <div hx-get="/admin/llm/partials/status"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 1rem;">
+    <div class="card">
+        <h3>Pending Approvals</h3>
+        <div id="pending-container"
+             hx-get="/admin/llm/partials/pending"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 1rem;">
+    <div class="card">
+        <h3>Recent Decisions</h3>
+        <div hx-get="/admin/llm/partials/recent"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+</div>
+{% endblock %}

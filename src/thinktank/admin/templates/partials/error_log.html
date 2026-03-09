@@ -1,0 +1,24 @@
+{% if errors %}
+<table>
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>Job Type</th>
+            <th>Category</th>
+            <th>Error</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in errors %}
+        <tr>
+            <td>{{ e.created_at }}</td>
+            <td>{{ e.job_type }}</td>
+            <td>{{ e.error_category }}</td>
+            <td>{{ e.error }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">No recent errors.</p>
+{% endif %}

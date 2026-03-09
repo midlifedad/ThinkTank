@@ -1,0 +1,16 @@
+<div class="stat-row">
+    <span class="stat-label">Total Sources</span>
+    <span class="stat-value">{{ total }}</span>
+</div>
+<div class="stat-row">
+    <span class="stat-label">Approved</span>
+    <span class="stat-value healthy">{{ approved }}</span>
+</div>
+<div class="stat-row">
+    <span class="stat-label">With Errors</span>
+    <span class="stat-value {% if errored > 0 %}error{% endif %}">{{ errored }}</span>
+</div>
+<div class="stat-row">
+    <span class="stat-label">Inactive</span>
+    <span class="stat-value {% if inactive > 0 %}warning{% endif %}">{{ inactive }}</span>
+</div>

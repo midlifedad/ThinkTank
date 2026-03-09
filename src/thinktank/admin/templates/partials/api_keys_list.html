@@ -1,0 +1,50 @@
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
+{% if keys %}
+<table>
+    <thead>
+        <tr>
+            <th>Service</th>
+            <th>Status</th>
+            <th>Value</th>
+            <th>Last Updated</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for key in keys %}
+        <tr>
+            <td>
+                {{ key.label }}
+                {% if key.required %}<span style="color: #c00; font-size: 0.8rem;" title="Required">*</span>{% endif %}
+            </td>
+            <td>
+                {% if key.is_set %}
+                <span class="healthy">Configured</span>
+                {% else %}
+                <span class="error">Not set</span>
+                {% endif %}
+            </td>
+            <td style="font-family: monospace; color: #666;">{{ key.masked or '—' }}</td>
+            <td style="font-size: 0.85rem; color: #666;">
+                {% if key.updated_at %}{{ key.updated_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}
+            </td>
+            <td>
+                {% if key.is_set %}
+                <button class="btn btn-danger btn-sm"
+                        hx-post="/admin/api-keys/delete/{{ key.name }}"
+                        hx-target="#keys-list"
+                        hx-swap="innerHTML"
+                        hx-confirm="Remove {{ key.label }}?">
+                    Remove
+                </button>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">No API keys configured yet.</p>
+{% endif %}

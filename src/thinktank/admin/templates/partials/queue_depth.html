@@ -1,0 +1,26 @@
+{% if pivot %}
+<table>
+    <thead>
+        <tr>
+            <th>Job Type</th>
+            <th>Pending</th>
+            <th>Running</th>
+            <th>Failed</th>
+            <th>Completed</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job_type, statuses in pivot.items() %}
+        <tr>
+            <td>{{ job_type }}</td>
+            <td>{{ statuses.get('pending', 0) }}</td>
+            <td>{{ statuses.get('running', 0) }}</td>
+            <td>{{ statuses.get('failed', 0) }}</td>
+            <td>{{ statuses.get('completed', 0) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">No jobs in queue.</p>
+{% endif %}

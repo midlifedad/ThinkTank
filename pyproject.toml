@@ -1,0 +1,70 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "thinktank"
+version = "0.1.0"
+description = "Global intelligence ingestion platform for expert content"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.135.1",
+    "uvicorn[standard]>=0.41.0",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
+    "sqlalchemy[asyncio]>=2.0.46",
+    "asyncpg",
+    "alembic>=1.17.2",
+    "httpx>=0.28.1",
+    "structlog>=25.5.0",
+    "feedparser>=6.0.12",
+    "yt-dlp==2025.12.08",
+    "webvtt-py>=0.5.1",
+    "anthropic>=0.84.0",
+    "jinja2>=3.1.6",
+    "python-multipart>=0.0.22",
+]
+
+[dependency-groups]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    "pre-commit",
+]
+test = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.25.0",
+]
+lint = [
+    "ruff>=0.15.3",
+    "mypy>=1.19.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_test_loop_scope = "session"
+asyncio_default_fixture_loop_scope = "session"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "A", "SIM", "TCH"]
+ignore = ["B008"]  # Allow Depends() in function defaults (standard FastAPI pattern)
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false

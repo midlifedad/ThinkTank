@@ -1,0 +1,12 @@
+<div class="stat-row">
+    <span class="stat-label">Pending Reviews</span>
+    <span class="stat-value {% if pending_count > 0 %}warning{% endif %}">{{ pending_count }}</span>
+</div>
+<div class="stat-row">
+    <span class="stat-label">Total Tokens (24h)</span>
+    <span class="stat-value">{{ total_tokens }}</span>
+</div>
+<div class="stat-row">
+    <span class="stat-label">Overrides (all time)</span>
+    <span class="stat-value">{{ override_count }}</span>
+</div>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.apple.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>ThinkTank iTunes Podcast</title>
+    <link>https://example.com/itunes-podcast</link>
+    <description>A test podcast feed with iTunes namespace extensions.</description>
+    <language>en-us</language>
+    <itunes:author>Test Host</itunes:author>
+    <itunes:owner>
+      <itunes:name>Test Host</itunes:name>
+      <itunes:email>host@example.com</itunes:email>
+    </itunes:owner>
+
+    <item>
+      <title>Long Form Interview with Researcher</title>
+      <link>https://example.com/episodes/long-interview</link>
+      <description>A 90-minute deep dive into cutting-edge research.</description>
+      <pubDate>Mon, 03 Mar 2026 08:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/long-interview.mp3" length="72000000" type="audio/mpeg"/>
+      <itunes:duration>01:30:00</itunes:duration>
+      <itunes:author>Test Host</itunes:author>
+      <guid isPermaLink="false">itunes-ep-001</guid>
+    </item>
+
+    <item>
+      <title>Quick Policy Breakdown</title>
+      <link>https://example.com/episodes/policy-breakdown</link>
+      <description>A shorter episode covering recent policy changes.</description>
+      <pubDate>Thu, 27 Feb 2026 08:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/policy-breakdown.mp3" length="36000000" type="audio/mpeg"/>
+      <itunes:duration>45:00</itunes:duration>
+      <itunes:author>Test Host</itunes:author>
+      <guid isPermaLink="false">itunes-ep-002</guid>
+    </item>
+
+  </channel>
+</rss>
