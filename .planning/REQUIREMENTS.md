@@ -63,11 +63,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Discovery
 
-- [ ] **DISC-01**: Cascade discovery — scan episode titles/descriptions for names not in thinkers table, surface as candidates after 3+ appearances
-- [ ] **DISC-02**: Guest discovery via Listen Notes and Podcast Index APIs with rate-limited queries
+- [x] **DISC-01**: Cascade discovery — scan episode titles/descriptions for names not in thinkers table, surface as candidates after 3+ appearances
+- [x] **DISC-02**: Guest discovery via Listen Notes and Podcast Index APIs with rate-limited queries
 - [x] **DISC-03**: Content attribution via `content_thinkers` junction with role (host/guest/panelist/mentioned) and confidence scoring (1-10)
 - [x] **DISC-04**: Trigram similarity dedup (`pg_trgm`) for candidate thinker names at 0.7 threshold
-- [ ] **DISC-05**: Daily quota limits on candidate discovery to prevent unbounded growth
+- [x] **DISC-05**: Daily quota limits on candidate discovery to prevent unbounded growth
 - [x] **DISC-06**: Candidate-to-thinker promotion flow triggered by LLM batch review approval
 
 ### Operations
@@ -183,11 +183,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GOV-07 | Phase 5 | Complete |
 | GOV-08 | Phase 5 | Complete |
 | GOV-09 | Phase 5 | Complete |
-| DISC-01 | Phase 6 | In Progress (06-01: name extractor module built, handler in 06-02) |
-| DISC-02 | Phase 6 | In Progress (06-01: API clients built, handlers in 06-02) |
+| DISC-01 | Phase 6 | Complete (06-01: name extractor, 06-02: scan_for_candidates handler) |
+| DISC-02 | Phase 6 | Complete (06-01: API clients, 06-02: discover_guests handlers) |
 | DISC-03 | Phase 3 | Complete |
 | DISC-04 | Phase 3 | In Progress (pg_trgm extension + GiST index created in 03-02) |
-| DISC-05 | Phase 6 | In Progress (06-01: quota tracker module built, handler integration in 06-02) |
+| DISC-05 | Phase 6 | Complete (06-01: quota tracker, 06-02: quota enforcement in scan_for_candidates) |
 | DISC-06 | Phase 5 | Complete |
 | OPS-01 | Phase 7 | Pending |
 | OPS-02 | Phase 7 | Pending |

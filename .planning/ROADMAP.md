@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Content Ingestion Pipeline** - RSS feed polling, 3-layer deduplication, content filtering, source approval, content attribution, and discovery orchestration
 - [ ] **Phase 4: Transcription Pipeline** - Three-pass transcription (captions, existing transcripts, Parakeet GPU), GPU worker service, on-demand scaling, audio processing
 - [ ] **Phase 5: LLM Governance** - Claude Supervisor for thinker/source/candidate approval, audit trail, fallback escalation, scheduled health checks and digests
-- [ ] **Phase 6: Discovery and Autonomous Growth** - Cascade discovery, guest discovery via Listen Notes and Podcast Index, candidate promotion, daily quotas
+- [x] **Phase 6: Discovery and Autonomous Growth** - Cascade discovery, guest discovery via Listen Notes and Podcast Index, candidate promotion, daily quotas
 - [ ] **Phase 7: Operations, API, and Polish** - Admin dashboard, REST API, cost tracking, bootstrap sequence, operations runbook, development guide
 
 ## Phase Details
@@ -118,7 +118,7 @@ Plans:
 
 Plans:
 - [x] 06-01-PLAN.md -- Discovery building blocks: regex name extractor, Listen Notes client, Podcast Index client, daily quota tracker, unit tests with API fixtures
-- [ ] 06-02-PLAN.md -- scan_for_candidates, discover_guests_listennotes, discover_guests_podcastindex handlers, error category extensions, handler registration, integration and contract tests
+- [x] 06-02-PLAN.md -- scan_for_candidates, discover_guests_listennotes, discover_guests_podcastindex handlers, error category extensions, handler registration, integration and contract tests
 
 ### Phase 7: Operations, API, and Polish
 **Goal**: A complete operational layer -- admin dashboard for human oversight, REST API for programmatic access, cost tracking, bootstrap sequence, operations runbook, and development guide -- making the system production-ready and maintainable
@@ -149,5 +149,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 3. Content Ingestion Pipeline | 4/4 | Complete | 2026-03-09 |
 | 4. Transcription Pipeline | 2/2 | Complete | 2026-03-09 |
 | 5. LLM Governance | 3/3 | Complete | 2026-03-09 |
-| 6. Discovery and Autonomous Growth | 1/2 | In progress | - |
+| 6. Discovery and Autonomous Growth | 2/2 | Complete | 2026-03-09 |
 | 7. Operations, API, and Polish | 0/3 | Not started | - |

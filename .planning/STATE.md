@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 06-01-PLAN.md (Discovery module foundation)
-last_updated: "2026-03-09T05:14:26.000Z"
-last_activity: 2026-03-09 -- Phase 6 Plan 01 complete (56 new tests, 551 total)
+stopped_at: Completed 06-02-PLAN.md (Discovery handlers)
+last_updated: "2026-03-09T05:24:24.000Z"
+last_activity: 2026-03-09 -- Phase 6 complete (31 new tests, 582 total)
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 10
-  completed_plans: 16
-  percent: 76
+  completed_plans: 17
+  percent: 85
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** Phase 6 in progress -- Discovery Plan 01 complete, Plan 02 next
+**Current focus:** Phase 6 complete -- all discovery handlers implemented and registered
 
 ## Current Position
 
 Phase: 6 of 7 (Discovery and Autonomous Growth)
-Plan: 1 of 2 in current phase
-Status: Plan 01 complete -- discovery module foundation built
-Last activity: 2026-03-09 -- Plan 06-01 complete (56 new tests, 551 total)
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Phase 6 complete -- all discovery handlers wired and tested
+Last activity: 2026-03-09 -- Plan 06-02 complete (31 new tests, 582 total)
 
-Progress: [████████░░] 76%
+Progress: [████████░░] 85%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
+- Total plans completed: 17
 - Average duration: ~9min
-- Total execution time: ~2h 40min
+- Total execution time: ~2h 45min
 
 **By Phase:**
 
@@ -48,11 +48,11 @@ Progress: [████████░░] 76%
 | 3. Content Ingestion | 4/4 | 17min | ~4min |
 | 4. Transcription | 2/2 | 18min | 9min |
 | 5. LLM Governance | 3/3 | 23min | ~8min |
-| 6. Discovery | 1/2 | 8min | 8min |
+| 6. Discovery | 2/2 | 13min | ~7min |
 
 **Recent Trend:**
-- Last 5 plans: 04-02 (11min), 05-01 (9min), 05-02 (9min), 05-03 (5min), 06-01 (8min)
-- Trend: Consistent ~8min/plan for TDD plans
+- Last 5 plans: 05-01 (9min), 05-02 (9min), 05-03 (5min), 06-01 (8min), 06-02 (5min)
+- Trend: Consistent ~7min/plan for TDD plans
 
 *Updated after each plan completion*
 
@@ -124,6 +124,9 @@ Recent decisions affecting current work:
 - [06-01]: Title-case requirement on name-capture regex instead of global IGNORECASE to reduce false positives in name extraction
 - [06-01]: Pre-strip honorific titles from text before regex matching to handle "Interview: Dr. Bob Jones" pattern
 - [06-01]: src.thinktank.* import paths in discovery source modules to match project convention and avoid dual-import-path SQLAlchemy errors
+- [06-02]: Used body_text instead of description for Content field in scan_for_candidates (Content model has body_text not description)
+- [06-02]: httpx.HTTPStatusError handling placed before generic Python exceptions in categorize_error to avoid shadowing
+- [06-02]: Contract tests follow existing pattern from test_llm_approval_handler.py with pytestmark = pytest.mark.anyio
 
 ### Pending Todos
 
@@ -135,6 +138,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T05:14:26.000Z
-Stopped at: Completed 06-01-PLAN.md (Discovery module foundation)
+Last session: 2026-03-09T05:24:24.000Z
+Stopped at: Completed 06-02-PLAN.md (Discovery handlers)
 Resume file: None
