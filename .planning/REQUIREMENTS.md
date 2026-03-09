@@ -186,7 +186,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DISC-01 | Phase 6 | Pending |
 | DISC-02 | Phase 6 | Pending |
 | DISC-03 | Phase 3 | Pending |
-| DISC-04 | Phase 3 | Pending |
+| DISC-04 | Phase 3 | In Progress (pg_trgm extension + GiST index created in 03-02) |
 | DISC-05 | Phase 6 | Pending |
 | DISC-06 | Phase 5 | Pending |
 | OPS-01 | Phase 7 | Pending |
