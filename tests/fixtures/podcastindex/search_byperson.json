@@ -1,0 +1,26 @@
+{
+  "status": "true",
+  "items": [
+    {
+      "id": 12345,
+      "title": "Exploring Consciousness with John Smith",
+      "description": "John Smith shares his research on the nature of consciousness.",
+      "feedUrl": "https://feed.example.com/mindmatters/rss",
+      "feedTitle": "Mind Matters Podcast",
+      "datePublished": 1709251200,
+      "duration": 3600,
+      "enclosureUrl": "https://audio.example.com/mindmatters/ep42.mp3"
+    },
+    {
+      "id": 67890,
+      "title": "Philosophy Hour feat. John Smith",
+      "description": "A deep conversation about free will and determinism.",
+      "feedUrl": "https://feed.example.com/philhour/rss",
+      "feedTitle": "Philosophy Hour",
+      "datePublished": 1709164800,
+      "duration": 2700,
+      "enclosureUrl": "https://audio.example.com/philhour/ep99.mp3"
+    }
+  ],
+  "count": 2
+}
