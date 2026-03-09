@@ -57,11 +57,13 @@ async def session(session_factory) -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 async def _cleanup_tables(engine):
     """Truncate all tables after each test for isolation.
 
     Uses IF EXISTS to handle cases where migration tests drop tables.
+    Not autouse -- applied via integration/conftest.py to avoid
+    requiring a database connection for pure unit tests.
     """
     yield
     try:
