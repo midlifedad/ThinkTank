@@ -6,6 +6,7 @@ handlers here via get_handler().
 
 from src.thinktank.handlers.base import JobHandler
 from src.thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
+from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
 from src.thinktank.handlers.process_content import handle_process_content
 from src.thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
 from src.thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
@@ -53,3 +54,6 @@ register_handler("tag_content_thinkers", handle_tag_content_thinkers)
 
 # --- Phase 4 handler registrations ---
 register_handler("process_content", handle_process_content)
+
+# --- Phase 5 handler registrations ---
+register_handler("llm_approval_check", handle_llm_approval_check)

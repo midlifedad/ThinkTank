@@ -1,13 +1,14 @@
 """Unit tests for ErrorCategory enum and categorize_error().
 
 Tests the closed set of 17 error categories and the exception-to-category
-mapping function.
+mapping function, including anthropic SDK exception handling.
 """
 
 from enum import StrEnum
 
+import anthropic
+import pydantic
 import pytest
-
 from src.thinktank.queue.errors import ErrorCategory, categorize_error
 
 
@@ -80,3 +81,75 @@ class TestCategorizeError:
     def test_returns_error_category_type(self):
         result = categorize_error(Exception("anything"))
         assert isinstance(result, ErrorCategory)
+
+
+class TestCategorizeErrorAnthropic:
+    """categorize_error handles anthropic SDK exceptions correctly."""
+
+    def test_rate_limit_error_returns_llm_api_error(self):
+        """anthropic.RateLimitError maps to LLM_API_ERROR."""
+        exc = anthropic.RateLimitError(
+            message="Rate limited",
+            response=_mock_httpx_response(429),
+            body=None,
+        )
+        assert categorize_error(exc) == ErrorCategory.LLM_API_ERROR
+
+    def test_api_connection_error_returns_llm_timeout(self):
+        """anthropic.APIConnectionError maps to LLM_TIMEOUT."""
+        exc = anthropic.APIConnectionError(request=_mock_httpx_request())
+        assert categorize_error(exc) == ErrorCategory.LLM_TIMEOUT
+
+    def test_api_timeout_error_returns_llm_timeout(self):
+        """anthropic.APITimeoutError maps to LLM_TIMEOUT."""
+        exc = anthropic.APITimeoutError(request=_mock_httpx_request())
+        assert categorize_error(exc) == ErrorCategory.LLM_TIMEOUT
+
+    def test_api_status_error_returns_llm_api_error(self):
+        """anthropic.APIStatusError maps to LLM_API_ERROR."""
+        exc = anthropic.APIStatusError(
+            message="Server error",
+            response=_mock_httpx_response(500),
+            body=None,
+        )
+        assert categorize_error(exc) == ErrorCategory.LLM_API_ERROR
+
+    def test_pydantic_validation_error_returns_llm_parse_error(self):
+        """pydantic.ValidationError maps to LLM_PARSE_ERROR."""
+        from src.thinktank.llm.schemas import ThinkerApprovalResponse
+
+        try:
+            ThinkerApprovalResponse.model_validate({"bad_field": 123})
+        except pydantic.ValidationError as e:
+            assert categorize_error(e) == ErrorCategory.LLM_PARSE_ERROR
+        else:
+            pytest.fail("Expected pydantic.ValidationError was not raised")
+
+    def test_existing_behavior_unchanged_for_timeout_error(self):
+        """Existing TimeoutError still maps to HTTP_TIMEOUT."""
+        assert categorize_error(TimeoutError("timed out")) == ErrorCategory.HTTP_TIMEOUT
+
+    def test_existing_behavior_unchanged_for_connection_error(self):
+        """Existing ConnectionError still maps to HTTP_ERROR."""
+        assert categorize_error(ConnectionError("refused")) == ErrorCategory.HTTP_ERROR
+
+    def test_existing_behavior_unchanged_for_value_error(self):
+        """Existing ValueError still maps to PAYLOAD_INVALID."""
+        assert categorize_error(ValueError("bad")) == ErrorCategory.PAYLOAD_INVALID
+
+
+def _mock_httpx_response(status_code: int):
+    """Create a minimal mock httpx response for anthropic exceptions."""
+    import httpx
+
+    return httpx.Response(
+        status_code=status_code,
+        request=httpx.Request("POST", "https://api.anthropic.com/v1/messages"),
+    )
+
+
+def _mock_httpx_request():
+    """Create a minimal mock httpx request for anthropic exceptions."""
+    import httpx
+
+    return httpx.Request("POST", "https://api.anthropic.com/v1/messages")

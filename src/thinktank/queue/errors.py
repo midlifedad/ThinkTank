@@ -6,6 +6,9 @@ STANDARDS.md: "Categories are a closed set, defined upfront, extended deliberate
 
 from enum import StrEnum
 
+import anthropic
+import pydantic
+
 
 class ErrorCategory(StrEnum):
     """Closed set of error categories for failed jobs.
@@ -46,6 +49,18 @@ def categorize_error(exc: Exception) -> ErrorCategory:
     Uses isinstance chains to classify common exception types.
     Unrecognized exceptions map to UNKNOWN.
     """
+    # Anthropic SDK exceptions (check before generic Python exceptions
+    # since some anthropic exceptions inherit from generic types)
+    if isinstance(exc, anthropic.RateLimitError):
+        return ErrorCategory.LLM_API_ERROR
+    if isinstance(exc, (anthropic.APIConnectionError, anthropic.APITimeoutError)):
+        return ErrorCategory.LLM_TIMEOUT
+    if isinstance(exc, anthropic.APIStatusError):
+        return ErrorCategory.LLM_API_ERROR
+    if isinstance(exc, pydantic.ValidationError):
+        return ErrorCategory.LLM_PARSE_ERROR
+
+    # Standard Python exceptions
     if isinstance(exc, TimeoutError):
         return ErrorCategory.HTTP_TIMEOUT
     if isinstance(exc, ConnectionError):
