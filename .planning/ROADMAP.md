@@ -71,8 +71,8 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md -- Pure logic modules (URL normalizer, fingerprint, duration parser, content filter, name matcher/normalizer, feed parser), feedparser dependency, unit tests
 - [x] 03-02-PLAN.md -- RSS fixture files, pg_trgm Alembic migration, test conftest update for pg_trgm
-- [ ] 03-03-PLAN.md -- fetch_podcast_feed and refresh_due_sources handlers, config reader, handler registration, integration tests for feed polling, dedup, scheduling
-- [ ] 03-04-PLAN.md -- tag_content_thinkers handler, trigram similarity module, content attribution, candidate dedup, contract tests for all Phase 3 handlers
+- [x] 03-03-PLAN.md -- fetch_podcast_feed and refresh_due_sources handlers, config reader, handler registration, integration tests for feed polling, dedup, scheduling
+- [x] 03-04-PLAN.md -- tag_content_thinkers handler, trigram similarity module, content attribution, candidate dedup, contract tests for all Phase 3 handlers
 
 ### Phase 4: Transcription Pipeline
 **Goal**: Content discovered in Phase 3 is transcribed through a three-pass pipeline (YouTube captions first, existing transcripts second, Parakeet GPU inference last) with on-demand GPU scaling and automatic audio cleanup
@@ -86,7 +86,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- Transcription building blocks (captions, existing transcripts, audio download/conversion, GPU client, Railway scaling client), yt-dlp/webvtt-py dependencies, unit tests
+- [x] 04-01-PLAN.md -- Transcription building blocks (captions, existing transcripts, audio download/conversion, GPU client, Railway scaling client), yt-dlp/webvtt-py dependencies, unit tests
 - [ ] 04-02-PLAN.md -- process_content handler (three-pass orchestrator), GPU worker FastAPI service, GPU scaling scheduler in worker loop, handler registration, integration + contract tests
 
 ### Phase 5: LLM Governance
@@ -145,8 +145,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 |-------|----------------|--------|-----------|
 | 1. Foundation Layer | 3/3 | Complete | 2026-03-09 |
 | 2. Job Queue Engine | 3/3 | Complete | 2026-03-09 |
-| 3. Content Ingestion Pipeline | 2/4 | In progress | - |
-| 4. Transcription Pipeline | 0/2 | Not started | - |
+| 3. Content Ingestion Pipeline | 4/4 | Complete | 2026-03-09 |
+| 4. Transcription Pipeline | 1/2 | In progress | - |
 | 5. LLM Governance | 0/2 | Not started | - |
 | 6. Discovery and Autonomous Growth | 0/2 | Not started | - |
 | 7. Operations, API, and Polish | 0/3 | Not started | - |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 3 Complete -- Ready for Phase 4
-last_updated: "2026-03-09T03:30:00.000Z"
-last_activity: 2026-03-09 -- Phase 3 verified (5/5 must-haves, 311 tests)
+status: in_progress
+stopped_at: Completed 04-01-PLAN.md (Transcription building blocks)
+last_updated: "2026-03-09T03:37:00.000Z"
+last_activity: 2026-03-09 -- Phase 4 Plan 01 complete (31 new tests, 342 total)
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 10
-  completed_plans: 10
-  percent: 47
+  completed_plans: 11
+  percent: 50
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** Phase 3 Complete -- Ready for Phase 4
+**Current focus:** Phase 4 -- Transcription Pipeline (Plan 01 complete)
 
 ## Current Position
 
-Phase: 3 of 7 (Content Ingestion Pipeline -- COMPLETE)
-Plan: 4 of 4 in current phase (all complete)
-Status: Phase 3 Complete -- Ready for Phase 4
-Last activity: 2026-03-09 -- Phase 3 verified (5/5 must-haves, 311 tests)
+Phase: 4 of 7 (Transcription Pipeline)
+Plan: 1 of 2 in current phase (01 complete)
+Status: In Progress -- Plan 01 complete, Plan 02 next
+Last activity: 2026-03-09 -- Phase 4 Plan 01 complete (31 new tests, 342 total)
 
-Progress: [█████░░░░░] 47%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -46,10 +46,11 @@ Progress: [█████░░░░░] 47%
 | 1. Foundation Layer | 3/3 | 57min | 19min |
 | 2. Job Queue Engine | 3/3 | 19min | ~6min |
 | 3. Content Ingestion | 4/4 | 17min | ~4min |
+| 4. Transcription | 1/2 | 7min | 7min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (~4min), 03-01 (3min), 03-02 (3min), 03-03 (5min), 03-04 (6min)
-- Trend: Consistent ~4min/plan for well-structured phases
+- Last 5 plans: 03-01 (3min), 03-02 (3min), 03-03 (5min), 03-04 (6min), 04-01 (7min)
+- Trend: Consistent ~5min/plan, slightly longer for TDD-heavy plans
 
 *Updated after each plan completion*
 
@@ -99,6 +100,10 @@ Recent decisions affecting current work:
 - [03-02]: GiST index explicitly created in conftest.py since SQLAlchemy create_all does not execute Alembic migrations
 - [Phase 03]: CAST syntax for asyncpg pg_trgm: Use CAST(:name AS text) not :name::text to avoid SQLAlchemy bind parameter conflict
 - [Phase 03]: v1 tag_content_thinkers: no NER/name extraction from text -- candidate discovery from arbitrary text is Phase 6 DISC-01
+- [04-01]: Used webvtt.from_buffer instead of deprecated read_buffer for VTT parsing
+- [04-01]: download_audio is sync (yt-dlp is sync), convert_to_wav is async (ffmpeg subprocess)
+- [04-01]: transcribe_via_gpu takes gpu_client_fn callable for dependency injection and testability
+- [04-01]: manage_gpu_scaling returns (bool, datetime|None) tuple for caller to track idle state
 
 ### Pending Todos
 
@@ -110,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T03:00:59.919Z
-Stopped at: Completed 03-04-PLAN.md (Content attribution, trigram dedup, contract tests)
+Last session: 2026-03-09T03:37:00.000Z
+Stopped at: Completed 04-01-PLAN.md (Transcription building blocks)
 Resume file: None
