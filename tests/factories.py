@@ -8,11 +8,10 @@ Every field is overridable. UUIDs and slugs/URLs are auto-generated to be unique
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from src.thinktank.models import (
     ApiUsage,
     CandidateThinker,
@@ -32,7 +31,12 @@ from src.thinktank.models import (
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    """Return current UTC time as timezone-naive datetime.
+
+    Models use TIMESTAMP WITHOUT TIME ZONE columns, so factory timestamps
+    must be timezone-naive to avoid asyncpg type mismatch errors.
+    """
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 def _hex8() -> str:

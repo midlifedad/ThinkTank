@@ -5,38 +5,45 @@ Tests verify:
 2. alembic downgrade base drops all tables cleanly
 3. Advisory lock is acquired during migration (verified via successful execution)
 
-Uses a separate test database to avoid interfering with create_all-based model tests.
+Runs alembic as a subprocess to avoid asyncio.run() conflicts with
+the already-running test event loop.
 """
 
-import asyncio
 import os
+import subprocess
+import sys
 
 import pytest
-from alembic import command
-from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
+from src.thinktank.models import Base
 
-# Test database URL -- uses the same test database but drops/recreates tables
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
     "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
 )
 
-# Sync URL for alembic (convert asyncpg to psycopg2 or use env var approach)
-MIGRATION_DATABASE_URL = TEST_DATABASE_URL
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def get_alembic_config() -> Config:
-    """Get Alembic config pointing to the test database."""
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    alembic_ini = os.path.join(project_root, "alembic.ini")
-    config = Config(alembic_ini)
-    return config
+def run_alembic(command: str) -> subprocess.CompletedProcess:
+    """Run an alembic command as a subprocess."""
+    env = os.environ.copy()
+    env["DATABASE_URL"] = TEST_DATABASE_URL
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", command, "head" if command == "upgrade" else "base"],
+        capture_output=True,
+        text=True,
+        cwd=PROJECT_ROOT,
+        env=env,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Alembic {command} failed: {result.stderr}")
+    return result
 
 
 async def get_table_names(url: str) -> list[str]:
-    """Query pg_catalog for table names in public schema."""
+    """Query information_schema for table names in public schema."""
     engine = create_async_engine(url)
     async with engine.begin() as conn:
         result = await conn.execute(
@@ -56,31 +63,32 @@ async def drop_all_tables(url: str) -> None:
     """Drop all tables in the test database for a clean state."""
     engine = create_async_engine(url)
     async with engine.begin() as conn:
-        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
         await conn.execute(text("CREATE SCHEMA public"))
     await engine.dispose()
 
 
 @pytest.fixture(autouse=True)
-async def clean_migration_db():
-    """Ensure clean state before each migration test."""
-    await drop_all_tables(MIGRATION_DATABASE_URL)
+async def clean_migration_db(engine):
+    """Ensure clean state before each migration test.
+
+    After the test, recreates tables via create_all so that other
+    test modules (test_models) still have tables available.
+    """
+    await drop_all_tables(TEST_DATABASE_URL)
     yield
-    await drop_all_tables(MIGRATION_DATABASE_URL)
+    # Restore tables for subsequent tests that depend on create_all
+    await drop_all_tables(TEST_DATABASE_URL)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 @pytest.mark.asyncio
 async def test_upgrade_head_creates_all_tables():
     """Running 'alembic upgrade head' creates all 14 model tables."""
-    os.environ["DATABASE_URL"] = MIGRATION_DATABASE_URL
-    config = get_alembic_config()
+    run_alembic("upgrade")
 
-    # Run upgrade head
-    command.upgrade(config, "head")
-
-    # Verify all 14 tables exist
-    tables = await get_table_names(MIGRATION_DATABASE_URL)
-
+    tables = await get_table_names(TEST_DATABASE_URL)
     expected_tables = sorted([
         "api_usage",
         "candidate_thinkers",
@@ -103,44 +111,31 @@ async def test_upgrade_head_creates_all_tables():
 @pytest.mark.asyncio
 async def test_downgrade_base_drops_tables():
     """After upgrade, running 'alembic downgrade base' drops all tables."""
-    os.environ["DATABASE_URL"] = MIGRATION_DATABASE_URL
-    config = get_alembic_config()
+    run_alembic("upgrade")
 
-    # Upgrade first
-    command.upgrade(config, "head")
-
-    # Verify tables exist
-    tables = await get_table_names(MIGRATION_DATABASE_URL)
+    tables = await get_table_names(TEST_DATABASE_URL)
     assert len(tables) == 14
 
-    # Downgrade
-    command.downgrade(config, "base")
+    run_alembic("downgrade")
 
-    # Verify tables are gone
-    tables = await get_table_names(MIGRATION_DATABASE_URL)
+    tables = await get_table_names(TEST_DATABASE_URL)
     assert len(tables) == 0, f"Tables still exist after downgrade: {tables}"
 
 
 @pytest.mark.asyncio
 async def test_advisory_lock_in_migration():
-    """Migration acquires advisory lock -- verified via successful concurrent-safe execution.
+    """Migration acquires advisory lock -- verified via successful execution.
 
     The advisory lock prevents corruption when multiple services start simultaneously.
     We verify this indirectly: the migration completes successfully, which means
     the lock was acquired, migrations ran, and the lock was released.
     """
-    os.environ["DATABASE_URL"] = MIGRATION_DATABASE_URL
-    config = get_alembic_config()
+    run_alembic("upgrade")
 
-    # Run upgrade -- if advisory lock code is broken, this would fail
-    command.upgrade(config, "head")
-
-    # Verify tables were created (lock was held during migration)
-    tables = await get_table_names(MIGRATION_DATABASE_URL)
+    tables = await get_table_names(TEST_DATABASE_URL)
     assert len(tables) == 14
 
-    # Run downgrade -- also uses advisory lock
-    command.downgrade(config, "base")
+    run_alembic("downgrade")
 
-    tables = await get_table_names(MIGRATION_DATABASE_URL)
+    tables = await get_table_names(TEST_DATABASE_URL)
     assert len(tables) == 0

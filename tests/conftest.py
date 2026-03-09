@@ -6,8 +6,11 @@ from collections.abc import AsyncGenerator
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from src.thinktank.models import Base
 
 TEST_DATABASE_URL = os.getenv(
@@ -18,39 +21,66 @@ TEST_DATABASE_URL = os.getenv(
 
 @pytest.fixture(scope="session")
 async def engine():
-    """Session-scoped async engine for test database."""
-    eng = create_async_engine(TEST_DATABASE_URL, echo=False)
-    # Verify connectivity
-    async with eng.begin() as conn:
-        await conn.execute(text("SELECT 1"))
+    """Session-scoped async engine for test database.
 
-    # Create all tables from models (for integration tests)
+    Creates all tables at start, cleans up at end.
+    """
+    eng = create_async_engine(TEST_DATABASE_URL, echo=False)
+
+    # Create all tables from models
     async with eng.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
     yield eng
 
-    # Drop all tables after test session
+    # Cleanup and dispose
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-
     await eng.dispose()
 
 
-@pytest.fixture
-async def session(engine) -> AsyncGenerator[AsyncSession, None]:
-    """Per-test session with transaction rollback for isolation.
+@pytest.fixture(scope="session")
+def session_factory(engine):
+    """Session factory bound to the test engine."""
+    return async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    Uses the savepoint/rollback pattern: each test runs in a nested
-    transaction that is rolled back at the end, preserving table state
-    for the next test.
+
+@pytest.fixture
+async def session(session_factory) -> AsyncGenerator[AsyncSession, None]:
+    """Per-test async session.
+
+    Each test gets its own session. Tables are truncated
+    after each test for isolation.
     """
-    async with engine.connect() as conn:
-        trans = await conn.begin()
-        session = AsyncSession(bind=conn, expire_on_commit=False)
+    async with session_factory() as session:
         yield session
-        await session.close()
-        await trans.rollback()
+
+
+@pytest.fixture(autouse=True)
+async def _cleanup_tables(engine):
+    """Truncate all tables after each test for isolation.
+
+    Uses IF EXISTS to handle cases where migration tests drop tables.
+    """
+    yield
+    try:
+        async with engine.begin() as conn:
+            # Use dynamic query to only truncate tables that exist
+            result = await conn.execute(
+                text(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema = 'public' "
+                    "AND table_name != 'alembic_version'"
+                )
+            )
+            existing_tables = [row[0] for row in result.fetchall()]
+            if existing_tables:
+                await conn.execute(
+                    text(f"TRUNCATE {', '.join(existing_tables)} CASCADE")
+                )
+    except Exception:
+        pass  # Tables may not exist (e.g., after migration downgrade tests)
 
 
 @pytest.fixture
