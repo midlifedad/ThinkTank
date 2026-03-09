@@ -56,9 +56,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **GOV-03**: Source approval flow — new sources reviewed by LLM before RSS polling begins
 - [ ] **GOV-04**: Candidate thinker review — batch review of candidates exceeding appearance threshold
 - [x] **GOV-05**: Full audit trail in `llm_reviews` table with context snapshot, prompt, raw response, parsed decision, reasoning
-- [ ] **GOV-06**: Fallback and timeout escalation — pending approvals escalate to human review after `llm_timeout_hours` (default 2h)
-- [ ] **GOV-07**: Graceful degradation when Anthropic API unavailable — existing pipeline continues, new approvals queue for human
-- [ ] **GOV-08**: Scheduled health checks, daily digests, and weekly corpus audits via LLM
+- [x] **GOV-06**: Fallback and timeout escalation — pending approvals escalate to human review after `llm_timeout_hours` (default 2h)
+- [x] **GOV-07**: Graceful degradation when Anthropic API unavailable — existing pipeline continues, new approvals queue for human
+- [x] **GOV-08**: Scheduled health checks, daily digests, and weekly corpus audits via LLM
 - [x] **GOV-09**: Context budgeting — bounded context snapshots (max 50 thinkers, 100 errors, 20 candidates per review)
 
 ### Discovery
@@ -179,9 +179,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GOV-03 | Phase 5 | Pending |
 | GOV-04 | Phase 5 | Pending |
 | GOV-05 | Phase 5 | Complete |
-| GOV-06 | Phase 5 | Pending |
-| GOV-07 | Phase 5 | Pending |
-| GOV-08 | Phase 5 | Pending |
+| GOV-06 | Phase 5 | Complete |
+| GOV-07 | Phase 5 | Complete |
+| GOV-08 | Phase 5 | Complete |
 | GOV-09 | Phase 5 | Complete |
 | DISC-01 | Phase 6 | Pending |
 | DISC-02 | Phase 6 | Pending |

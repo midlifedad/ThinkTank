@@ -102,9 +102,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md -- LLM core module: Anthropic client wrapper, Pydantic response schemas, prompt templates, bounded context snapshots, decision application logic with candidate promotion
-- [ ] 05-02-PLAN.md -- llm_approval_check handler, error categorization extension for Anthropic exceptions, handler registration, integration and contract tests
-- [ ] 05-03-PLAN.md -- Timeout escalation, scheduled health checks/digests/audits, time utilities, worker loop integration with 4 new LLM schedulers
+- [x] 05-01-PLAN.md -- LLM core module: Anthropic client wrapper, Pydantic response schemas, prompt templates, bounded context snapshots, decision application logic with candidate promotion
+- [x] 05-02-PLAN.md -- llm_approval_check handler, error categorization extension for Anthropic exceptions, handler registration, integration and contract tests
+- [x] 05-03-PLAN.md -- Timeout escalation, scheduled health checks/digests/audits, time utilities, worker loop integration with 4 new LLM schedulers
 
 ### Phase 6: Discovery and Autonomous Growth
 **Goal**: The system autonomously grows its corpus by scanning episode metadata for new thinker candidates, discovering guest appearances via Listen Notes and Podcast Index APIs, and promoting candidates through LLM-gated review
@@ -147,7 +147,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 1. Foundation Layer | 3/3 | Complete | 2026-03-09 |
 | 2. Job Queue Engine | 3/3 | Complete | 2026-03-09 |
 | 3. Content Ingestion Pipeline | 4/4 | Complete | 2026-03-09 |
-| 4. Transcription Pipeline | 1/2 | In progress | - |
-| 5. LLM Governance | 0/3 | Not started | - |
+| 4. Transcription Pipeline | 2/2 | Complete | 2026-03-09 |
+| 5. LLM Governance | 3/3 | Complete | 2026-03-09 |
 | 6. Discovery and Autonomous Growth | 0/2 | Not started | - |
 | 7. Operations, API, and Polish | 0/3 | Not started | - |

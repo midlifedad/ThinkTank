@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 05-01-PLAN.md (LLM Supervisor core module)
-last_updated: "2026-03-09T04:29:29.000Z"
-last_activity: 2026-03-09 -- Phase 5 Plan 01 complete (77 new tests, 443 total)
+stopped_at: Completed 05-03-PLAN.md (Timeout escalation and scheduled LLM tasks)
+last_updated: "2026-03-09T04:38:46.000Z"
+last_activity: 2026-03-09 -- Phase 5 Plan 03 complete (25 new tests, 468 total)
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 10
-  completed_plans: 13
-  percent: 62
+  completed_plans: 15
+  percent: 71
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** Phase 5 in progress -- LLM Governance Plan 01 complete
+**Current focus:** Phase 5 complete -- LLM Governance all 3 plans done
 
 ## Current Position
 
 Phase: 5 of 7 (LLM Governance)
-Plan: 1 of 3 in current phase
-Status: Phase 5 in progress -- Plan 01 complete, Plans 02-03 remaining
-Last activity: 2026-03-09 -- Phase 5 Plan 01 complete (77 new tests, 443 total)
+Plan: 3 of 3 in current phase
+Status: Phase 5 complete -- all 3 plans done, ready for Phase 6
+Last activity: 2026-03-09 -- Phase 5 Plan 03 complete (25 new tests, 468 total)
 
-Progress: [██████░░░░] 62%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Average duration: ~10min
-- Total execution time: ~2h 9min
+- Total plans completed: 15
+- Average duration: ~9min
+- Total execution time: ~2h 23min
 
 **By Phase:**
 
@@ -47,11 +47,11 @@ Progress: [██████░░░░] 62%
 | 2. Job Queue Engine | 3/3 | 19min | ~6min |
 | 3. Content Ingestion | 4/4 | 17min | ~4min |
 | 4. Transcription | 2/2 | 18min | 9min |
-| 5. LLM Governance | 1/3 | 9min | 9min |
+| 5. LLM Governance | 3/3 | 14min | ~5min |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (5min), 03-04 (6min), 04-01 (7min), 04-02 (11min), 05-01 (9min)
-- Trend: Consistent ~8min/plan for TDD plans
+- Last 5 plans: 04-01 (7min), 04-02 (11min), 05-01 (9min), 05-02 (est), 05-03 (5min)
+- Trend: Consistent ~7min/plan for TDD plans
 
 *Updated after each plan completion*
 
@@ -112,6 +112,11 @@ Recent decisions affecting current work:
 - [05-01]: Used tool_use pattern instead of messages.parse()/output_format for structured output (universally supported across SDK versions)
 - [05-01]: Removed assert isinstance guards in apply_decision dispatcher to avoid src.thinktank vs thinktank dual-import-path mismatch
 - [05-01]: Snapshot builders use mock session in unit tests; full DB integration tests deferred to Plan 02/03
+- [05-03]: Used _utc_now() helper for testability in time_utils (same pattern as claim.py and snapshots.py)
+- [05-03]: Digest/audit schedulers recompute wait on each iteration to avoid clock drift
+- [05-03]: Escalation uses raw SQL with jsonb_set matching reclaim.py pattern
+- [05-03]: Scheduled tasks catch broad Exception and return None to never crash the scheduler
+- [05-03]: LLM scheduler cancel uses for-loop pattern for DRY shutdown
 
 ### Pending Todos
 
@@ -123,6 +128,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T04:29:29.000Z
-Stopped at: Completed 05-01-PLAN.md (LLM Supervisor core module)
+Last session: 2026-03-09T04:38:46.000Z
+Stopped at: Completed 05-03-PLAN.md (Timeout escalation and scheduled LLM tasks)
 Resume file: None
