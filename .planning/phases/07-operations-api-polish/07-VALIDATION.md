@@ -2,7 +2,7 @@
 phase: 7
 slug: operations-api-polish
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-03-09
 ---
@@ -38,14 +38,12 @@ created: 2026-03-09
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 07-01-01 | 01 | 1 | API-01,API-02 | unit+contract | `uv run pytest tests/unit/test_api_thinkers.py tests/contract/test_api_endpoints.py -x` | ❌ W0 | ⬜ pending |
-| 07-01-02 | 01 | 1 | API-03,API-04,API-05 | unit+contract | `uv run pytest tests/unit/test_api_sources.py tests/unit/test_api_content.py -x` | ❌ W0 | ⬜ pending |
-| 07-01-03 | 01 | 1 | API-06 | unit | `uv run pytest tests/unit/test_api_search.py -x` | ❌ W0 | ⬜ pending |
-| 07-02-01 | 02 | 1 | OPS-01 | unit | `uv run pytest tests/unit/test_admin_dashboard.py -x` | ❌ W0 | ⬜ pending |
-| 07-02-02 | 02 | 1 | OPS-02 | unit | `uv run pytest tests/unit/test_admin_llm_panel.py -x` | ❌ W0 | ⬜ pending |
-| 07-02-03 | 02 | 1 | OPS-03 | unit | `uv run pytest tests/unit/test_cost_tracking.py -x` | ❌ W0 | ⬜ pending |
-| 07-03-01 | 03 | 2 | OPS-04,OPS-05 | integration | `uv run pytest tests/integration/test_bootstrap.py -x` | ❌ W0 | ⬜ pending |
-| 07-03-02 | 03 | 2 | OPS-06,QUAL-03,QUAL-05,QUAL-07 | unit | `uv run pytest tests/unit/test_seed_scripts.py -x` | ❌ W0 | ⬜ pending |
+| 07-01-T1 | 01 | 1 | API-01,API-02,API-03,API-04,API-05,API-06,QUAL-03 | contract | `uv run pytest tests/contract/test_api_thinkers.py tests/contract/test_api_sources.py tests/contract/test_api_content.py tests/contract/test_api_jobs.py tests/contract/test_api_config.py tests/contract/test_api_openapi.py -x -v` | ❌ W0 | ⬜ pending |
+| 07-01-T2 | 01 | 1 | OPS-03 | contract | `uv run pytest tests/contract/test_rollup_handler.py -x -v` | ❌ W0 | ⬜ pending |
+| 07-02-T1 | 02 | 1 | OPS-01,OPS-04 | integration | `uv run pytest tests/integration/test_admin_dashboard.py -x -v` | ❌ W0 | ⬜ pending |
+| 07-02-T2 | 02 | 1 | OPS-02,OPS-05 | integration | `uv run pytest tests/integration/test_admin_llm_panel.py -x -v` | ❌ W0 | ⬜ pending |
+| 07-03-T1 | 03 | 2 | OPS-06 | integration | `uv run pytest tests/integration/test_bootstrap.py -x -v` | ❌ W0 | ⬜ pending |
+| 07-03-T2 | 03 | 2 | QUAL-05,QUAL-07 | manual+grep | `grep -q 'Bootstrap' docs/operations-runbook.md && grep -q 'Rollback' docs/operations-runbook.md && grep -q 'Adding a New Job Type' docs/development-guide.md` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -53,16 +51,16 @@ created: 2026-03-09
 
 ## Wave 0 Requirements
 
-- [ ] `tests/unit/test_api_thinkers.py` — REST API endpoint tests for thinkers CRUD (API-01/02)
-- [ ] `tests/unit/test_api_sources.py` — REST API endpoint tests for sources CRUD (API-03)
-- [ ] `tests/unit/test_api_content.py` — REST API endpoint tests for content CRUD (API-04/05)
-- [ ] `tests/unit/test_api_search.py` — Search/filter endpoint tests (API-06)
-- [ ] `tests/contract/test_api_endpoints.py` — Contract tests for all API endpoints
-- [ ] `tests/unit/test_admin_dashboard.py` — Admin dashboard widget tests (OPS-01)
-- [ ] `tests/unit/test_admin_llm_panel.py` — LLM decision panel tests (OPS-02)
-- [ ] `tests/unit/test_cost_tracking.py` — API cost tracking tests (OPS-03)
-- [ ] `tests/integration/test_bootstrap.py` — Bootstrap sequence tests (OPS-04/05)
-- [ ] `tests/unit/test_seed_scripts.py` — Seed script idempotency tests (OPS-06)
+- [ ] `tests/contract/test_api_thinkers.py` — Contract tests for thinkers CRUD (API-01/02)
+- [ ] `tests/contract/test_api_sources.py` — Contract tests for sources listing (API-03)
+- [ ] `tests/contract/test_api_content.py` — Contract tests for content listing (API-04/05)
+- [ ] `tests/contract/test_api_jobs.py` — Contract tests for job status (API-06)
+- [ ] `tests/contract/test_api_config.py` — Contract tests for config CRUD
+- [ ] `tests/contract/test_api_openapi.py` — OpenAPI docs availability (QUAL-03)
+- [ ] `tests/contract/test_rollup_handler.py` — Cost rollup handler contract (OPS-03)
+- [ ] `tests/integration/test_admin_dashboard.py` — Admin dashboard integration tests (OPS-01/04)
+- [ ] `tests/integration/test_admin_llm_panel.py` — LLM panel + categories integration tests (OPS-02/05)
+- [ ] `tests/integration/test_bootstrap.py` — Bootstrap sequence integration tests (OPS-06)
 
 ---
 
@@ -78,11 +76,11 @@ created: 2026-03-09
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 45s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 45s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved
