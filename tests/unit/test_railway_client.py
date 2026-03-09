@@ -167,7 +167,8 @@ class TestManageGpuScaling:
 
         assert scaled is True
         assert idle_since is None
-        mock_scale.assert_called_once_with(1)
+        mock_scale.assert_called_once()
+        assert mock_scale.call_args[0][0] == 1
 
     @pytest.mark.asyncio
     @patch("src.thinktank.scaling.railway.scale_gpu_service")
@@ -193,7 +194,8 @@ class TestManageGpuScaling:
 
         assert scaled is True
         assert new_idle is None
-        mock_scale.assert_called_once_with(0)
+        mock_scale.assert_called_once()
+        assert mock_scale.call_args[0][0] == 0
 
     @pytest.mark.asyncio
     @patch("src.thinktank.scaling.railway.scale_gpu_service")

@@ -9,8 +9,6 @@ Spec reference: Section 5.4 (guest discovery), DISC-02.
 
 from __future__ import annotations
 
-import os
-
 import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +18,7 @@ from src.thinktank.ingestion.url_normalizer import normalize_url
 from src.thinktank.models.job import Job
 from src.thinktank.models.source import Source
 from src.thinktank.models.thinker import Thinker
+from src.thinktank.secrets import get_secret
 
 logger = structlog.get_logger(__name__)
 
@@ -51,9 +50,9 @@ async def handle_discover_guests_listennotes(
         log.warning("discover_guests_listennotes_thinker_not_found")
         return
 
-    api_key = os.environ.get("LISTENNOTES_API_KEY")
+    api_key = await get_secret(session, "listennotes_api_key")
     if not api_key:
-        raise ValueError("LISTENNOTES_API_KEY environment variable not set")
+        raise ValueError("Listen Notes API key not configured — set via Admin > API Keys")
 
     client = ListenNotesClient(api_key)
     data = await client.search_episodes_by_person(

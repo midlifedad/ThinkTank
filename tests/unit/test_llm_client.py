@@ -43,29 +43,35 @@ def _make_mock_response(tool_input: dict, input_tokens: int = 100, output_tokens
 
 
 class TestLLMClientInit:
-    @patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key-123"})
-    def test_reads_api_key_from_env(self):
-        client = LLMClient()
-        assert client.model == "claude-sonnet-4-20250514"
-
     def test_default_model(self):
         client = LLMClient()
         assert client.model == "claude-sonnet-4-20250514"
 
-    def test_max_retries_set(self):
-        """Client should configure max_retries=2."""
-        with patch("thinktank.llm.client.AsyncAnthropic") as mock_cls:
-            LLMClient()
+    def test_client_starts_none(self):
+        """Client defers Anthropic creation until first call with session."""
+        client = LLMClient()
+        assert client._client is None
+
+    @pytest.mark.asyncio
+    async def test_get_client_sets_max_retries(self):
+        """_get_client should configure max_retries=2."""
+        with patch("thinktank.llm.client.AsyncAnthropic") as mock_cls, \
+             patch("thinktank.llm.client.get_secret", new_callable=AsyncMock, return_value="test-key"):
+            client = LLMClient()
+            mock_session = AsyncMock()
+            await client._get_client(mock_session)
             mock_cls.assert_called_once()
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["max_retries"] == 2
+            assert call_kwargs["api_key"] == "test-key"
 
 
 class TestLLMClientReview:
     @pytest.fixture
     def client(self):
-        with patch("thinktank.llm.client.AsyncAnthropic"):
-            return LLMClient()
+        llm = LLMClient()
+        llm._client = MagicMock()
+        return llm
 
     @pytest.mark.asyncio
     async def test_calls_messages_create_with_correct_params(self, client):

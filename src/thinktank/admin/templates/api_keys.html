@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="margin-bottom: 1rem;">API Keys</h2>
+<p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem;">
+    Manage API keys for external services. Keys are stored in the database and take effect immediately without restart.
+</p>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Set API Key</h3>
+    <form hx-post="/admin/api-keys/set" hx-target="#keys-list" hx-swap="innerHTML" style="display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap;">
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+            <label for="key_name">Key</label>
+            <select name="key_name" id="key_name">
+                <option value="anthropic_api_key">Anthropic API Key</option>
+                <option value="listennotes_api_key">Listen Notes API Key</option>
+                <option value="podcastindex_api_key">Podcast Index API Key</option>
+                <option value="podcastindex_api_secret">Podcast Index API Secret</option>
+                <option value="youtube_api_key">YouTube API Key</option>
+                <option value="railway_api_key">Railway API Key</option>
+                <option value="railway_gpu_service_id">Railway GPU Service ID</option>
+                <option value="railway_environment_id">Railway Environment ID</option>
+            </select>
+        </div>
+        <div class="form-group" style="flex: 2; min-width: 300px;">
+            <label for="key_value">Value</label>
+            <input type="password" name="key_value" id="key_value" placeholder="Paste API key here" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-bottom: 0.75rem;">Save</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Configured Keys</h3>
+    <div id="keys-list" hx-get="/admin/api-keys/partials/list" hx-trigger="load, every 30s" hx-swap="innerHTML">
+        <p class="empty">Loading...</p>
+    </div>
+</div>
+{% endblock %}

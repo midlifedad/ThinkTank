@@ -9,8 +9,6 @@ Spec reference: Section 5.4 (guest discovery), DISC-02.
 
 from __future__ import annotations
 
-import os
-
 import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +18,7 @@ from src.thinktank.ingestion.url_normalizer import normalize_url
 from src.thinktank.models.job import Job
 from src.thinktank.models.source import Source
 from src.thinktank.models.thinker import Thinker
+from src.thinktank.secrets import get_secret
 
 logger = structlog.get_logger(__name__)
 
@@ -51,10 +50,10 @@ async def handle_discover_guests_podcastindex(
         log.warning("discover_guests_podcastindex_thinker_not_found")
         return
 
-    api_key = os.environ.get("PODCASTINDEX_API_KEY")
-    api_secret = os.environ.get("PODCASTINDEX_API_SECRET")
+    api_key = await get_secret(session, "podcastindex_api_key")
+    api_secret = await get_secret(session, "podcastindex_api_secret")
     if not api_key or not api_secret:
-        raise ValueError("PODCASTINDEX_API_KEY and PODCASTINDEX_API_SECRET environment variables required")
+        raise ValueError("Podcast Index API key/secret not configured — set via Admin > API Keys")
 
     client = PodcastIndexClient(api_key, api_secret)
     data = await client.search_by_person(

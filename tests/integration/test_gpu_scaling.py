@@ -32,7 +32,8 @@ async def test_scale_up_when_queue_exceeds_threshold(
     scaled, idle_since = await manage_gpu_scaling(session, gpu_idle_since=None)
 
     assert scaled is True
-    mock_scale.assert_called_once_with(1)
+    mock_scale.assert_called_once()
+    assert mock_scale.call_args[0][0] == 1  # replicas=1
 
 
 @patch("src.thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
@@ -70,7 +71,8 @@ async def test_scale_down_after_idle_timeout(
     scaled, idle_since = await manage_gpu_scaling(session, gpu_idle_since=old_idle)
 
     assert scaled is True
-    mock_scale.assert_called_once_with(0)
+    mock_scale.assert_called_once()
+    assert mock_scale.call_args[0][0] == 0  # replicas=0
 
 
 @patch("src.thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)

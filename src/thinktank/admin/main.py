@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import text
 
+from thinktank.admin.routers.api_keys import router as api_keys_router
 from thinktank.admin.routers.categories import router as categories_router
 from thinktank.admin.routers.dashboard import router as dashboard_router
 from thinktank.admin.routers.llm_panel import router as llm_panel_router
@@ -56,3 +57,4 @@ app.add_middleware(CorrelationIDMiddleware, service_name="thinktank-admin")
 app.include_router(dashboard_router)
 app.include_router(llm_panel_router)
 app.include_router(categories_router)
+app.include_router(api_keys_router)

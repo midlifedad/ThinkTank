@@ -5,7 +5,6 @@ Uses Railway GraphQL API at backboard.railway.com/graphql/v2 to
 scale the GPU worker service up and down based on queue depth.
 """
 
-import os
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -14,26 +13,34 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.thinktank.ingestion.config_reader import get_config_value
 from src.thinktank.queue.backpressure import get_queue_depth
+from src.thinktank.secrets import get_secret
 
 logger = structlog.get_logger(__name__)
 
 RAILWAY_API_URL = "https://backboard.railway.com/graphql/v2"
 
 
-async def scale_gpu_service(replicas: int) -> bool:
+async def scale_gpu_service(replicas: int, session: AsyncSession | None = None) -> bool:
     """Scale the GPU worker service to the specified replica count.
 
     Uses Railway GraphQL API with serviceInstanceUpdate mutation.
 
     Args:
         replicas: Number of replicas (0 to scale down, 1+ to scale up).
+        session: Database session for secret lookup (falls back to env vars).
 
     Returns:
         True if successful, False on error or missing config.
     """
-    api_key = os.environ.get("RAILWAY_API_KEY")
-    service_id = os.environ.get("RAILWAY_GPU_SERVICE_ID")
-    environment_id = os.environ.get("RAILWAY_ENVIRONMENT_ID")
+    if session:
+        api_key = await get_secret(session, "railway_api_key")
+        service_id = await get_secret(session, "railway_gpu_service_id")
+        environment_id = await get_secret(session, "railway_environment_id")
+    else:
+        import os
+        api_key = os.environ.get("RAILWAY_API_KEY")
+        service_id = os.environ.get("RAILWAY_GPU_SERVICE_ID")
+        environment_id = os.environ.get("RAILWAY_ENVIRONMENT_ID")
 
     if not all([api_key, service_id, environment_id]):
         logger.warning(
@@ -94,15 +101,24 @@ async def scale_gpu_service(replicas: int) -> bool:
         return False
 
 
-async def get_gpu_replica_count() -> int | None:
+async def get_gpu_replica_count(session: AsyncSession | None = None) -> int | None:
     """Get current GPU service replica count from Railway API.
+
+    Args:
+        session: Database session for secret lookup (falls back to env vars).
 
     Returns:
         Number of replicas, or None on error.
     """
-    api_key = os.environ.get("RAILWAY_API_KEY")
-    service_id = os.environ.get("RAILWAY_GPU_SERVICE_ID")
-    environment_id = os.environ.get("RAILWAY_ENVIRONMENT_ID")
+    if session:
+        api_key = await get_secret(session, "railway_api_key")
+        service_id = await get_secret(session, "railway_gpu_service_id")
+        environment_id = await get_secret(session, "railway_environment_id")
+    else:
+        import os
+        api_key = os.environ.get("RAILWAY_API_KEY")
+        service_id = os.environ.get("RAILWAY_GPU_SERVICE_ID")
+        environment_id = os.environ.get("RAILWAY_ENVIRONMENT_ID")
 
     if not all([api_key, service_id, environment_id]):
         return None
@@ -169,7 +185,7 @@ async def manage_gpu_scaling(
     idle_minutes = await get_config_value(
         session, "gpu_idle_minutes_before_shutdown", 30
     )
-    current_replicas = await get_gpu_replica_count()
+    current_replicas = await get_gpu_replica_count(session)
 
     logger.info(
         "gpu_scaling_check",
@@ -182,7 +198,7 @@ async def manage_gpu_scaling(
 
     # Scale up: queue has work and GPU is off
     if depth > threshold and (current_replicas is None or current_replicas == 0):
-        await scale_gpu_service(1)
+        await scale_gpu_service(1, session)
         return (True, None)
 
     # Queue has work: reset idle timer
@@ -197,7 +213,7 @@ async def manage_gpu_scaling(
     # Check if idle long enough to scale down
     elapsed = datetime.now(UTC).replace(tzinfo=None) - gpu_idle_since
     if elapsed > timedelta(minutes=idle_minutes):
-        await scale_gpu_service(0)
+        await scale_gpu_service(0, session)
         return (True, None)
 
     # Still within idle timeout
