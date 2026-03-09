@@ -1,7 +1,7 @@
 """Unit tests for ErrorCategory enum and categorize_error().
 
-Tests the closed set of 17 error categories and the exception-to-category
-mapping function, including anthropic SDK exception handling.
+Tests the closed set of 19 error categories and the exception-to-category
+mapping function, including anthropic SDK and httpx exception handling.
 """
 
 from enum import StrEnum
@@ -13,13 +13,13 @@ from src.thinktank.queue.errors import ErrorCategory, categorize_error
 
 
 class TestErrorCategoryEnum:
-    """ErrorCategory must be a StrEnum with exactly 17 members."""
+    """ErrorCategory must be a StrEnum with exactly 19 members."""
 
     def test_is_str_enum(self):
         assert issubclass(ErrorCategory, StrEnum)
 
-    def test_has_exactly_17_members(self):
-        assert len(ErrorCategory) == 17
+    def test_has_exactly_19_members(self):
+        assert len(ErrorCategory) == 19
 
     def test_all_expected_members_exist(self):
         expected = [
@@ -29,6 +29,8 @@ class TestErrorCategoryEnum:
             "rate_limited",
             "youtube_rate_limit",
             "api_error",
+            "listennotes_rate_limit",
+            "podcastindex_error",
             "transcription_failed",
             "audio_download_failed",
             "audio_conversion_failed",
@@ -136,6 +138,63 @@ class TestCategorizeErrorAnthropic:
     def test_existing_behavior_unchanged_for_value_error(self):
         """Existing ValueError still maps to PAYLOAD_INVALID."""
         assert categorize_error(ValueError("bad")) == ErrorCategory.PAYLOAD_INVALID
+
+
+class TestCategorizeErrorHttpx:
+    """categorize_error handles httpx.HTTPStatusError exceptions."""
+
+    def test_httpx_429_returns_rate_limited(self):
+        """httpx.HTTPStatusError with 429 maps to RATE_LIMITED."""
+        import httpx
+
+        response = httpx.Response(
+            status_code=429,
+            request=httpx.Request("GET", "https://api.example.com/search"),
+        )
+        exc = httpx.HTTPStatusError(
+            message="429 Too Many Requests",
+            request=response.request,
+            response=response,
+        )
+        assert categorize_error(exc) == ErrorCategory.RATE_LIMITED
+
+    def test_httpx_500_returns_http_error(self):
+        """httpx.HTTPStatusError with non-429 maps to HTTP_ERROR."""
+        import httpx
+
+        response = httpx.Response(
+            status_code=500,
+            request=httpx.Request("GET", "https://api.example.com/search"),
+        )
+        exc = httpx.HTTPStatusError(
+            message="500 Server Error",
+            request=response.request,
+            response=response,
+        )
+        assert categorize_error(exc) == ErrorCategory.HTTP_ERROR
+
+    def test_httpx_403_returns_http_error(self):
+        """httpx.HTTPStatusError with 403 maps to HTTP_ERROR."""
+        import httpx
+
+        response = httpx.Response(
+            status_code=403,
+            request=httpx.Request("GET", "https://api.example.com/search"),
+        )
+        exc = httpx.HTTPStatusError(
+            message="403 Forbidden",
+            request=response.request,
+            response=response,
+        )
+        assert categorize_error(exc) == ErrorCategory.HTTP_ERROR
+
+    def test_listennotes_rate_limit_member_exists(self):
+        """LISTENNOTES_RATE_LIMIT member exists in ErrorCategory."""
+        assert ErrorCategory.LISTENNOTES_RATE_LIMIT == "listennotes_rate_limit"
+
+    def test_podcastindex_error_member_exists(self):
+        """PODCASTINDEX_ERROR member exists in ErrorCategory."""
+        assert ErrorCategory.PODCASTINDEX_ERROR == "podcastindex_error"
 
 
 def _mock_httpx_response(status_code: int):
