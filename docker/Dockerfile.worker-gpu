@@ -5,12 +5,15 @@ WORKDIR /app
 # Install uv for fast dependency management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install dependencies first (cache layer)
+# Install dependencies first (cache layer — no project install yet)
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy application code
 COPY src/ src/
+
+# Now install the project itself (hatchling needs src/)
+RUN uv sync --frozen --no-dev
 
 # Parakeet model cache directory (Railway persistent volume)
 ENV NEMO_CACHE_DIR=/app/.nemo_cache
