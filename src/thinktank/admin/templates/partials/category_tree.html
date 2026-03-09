@@ -1,0 +1,37 @@
+{% macro render_category(cat, depth=0) %}
+<li style="margin-left: {{ depth * 1.5 }}rem; padding: 0.4rem 0; border-bottom: 1px solid #f0f0f0;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <strong>{{ cat.name }}</strong>
+            <span style="color: #999; font-size: 0.85rem;">({{ cat.slug }})</span>
+            {% if cat.description %}
+            <span style="color: #666; font-size: 0.85rem;"> - {{ cat.description[:60] }}</span>
+            {% endif %}
+            {% if cat.children %}
+            <span style="color: #999; font-size: 0.8rem;">[{{ cat.children | length }} children]</span>
+            {% endif %}
+        </div>
+    </div>
+    {% if cat.children %}
+    <ul style="list-style: none; padding: 0;">
+        {% for child in cat.children %}
+        {{ render_category(child, depth + 1) }}
+        {% endfor %}
+    </ul>
+    {% endif %}
+</li>
+{% endmacro %}
+
+{% if error is defined and error %}
+<p class="error" style="margin-bottom: 0.5rem;">{{ error }}</p>
+{% endif %}
+
+{% if roots %}
+<ul style="list-style: none; padding: 0;">
+    {% for root in roots %}
+    {{ render_category(root) }}
+    {% endfor %}
+</ul>
+{% else %}
+<p class="empty">No categories defined yet.</p>
+{% endif %}

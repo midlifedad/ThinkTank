@@ -1,0 +1,28 @@
+{% if recent %}
+<table>
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Decision</th>
+            <th>Reasoning</th>
+            <th>Tokens</th>
+            <th>Overridden</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in recent %}
+        <tr>
+            <td>{{ r.review_type }}</td>
+            <td>{{ r.decision }}</td>
+            <td>{{ r.reasoning }}</td>
+            <td>{{ r.tokens_used }}</td>
+            <td>{% if r.overridden %}Yes{% else %}No{% endif %}</td>
+            <td>{{ r.created_at }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">No recent decisions.</p>
+{% endif %}

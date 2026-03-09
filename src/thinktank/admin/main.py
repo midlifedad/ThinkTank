@@ -10,7 +10,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import text
 
+from thinktank.admin.routers.categories import router as categories_router
 from thinktank.admin.routers.dashboard import router as dashboard_router
+from thinktank.admin.routers.llm_panel import router as llm_panel_router
 from thinktank.api.middleware import CorrelationIDMiddleware
 from thinktank.config import get_settings
 from thinktank.database import engine
@@ -50,5 +52,7 @@ app = FastAPI(
 # Correlation ID middleware
 app.add_middleware(CorrelationIDMiddleware, service_name="thinktank-admin")
 
-# Include routers -- only dashboard for now; llm_panel and categories added in Task 2
+# Include routers
 app.include_router(dashboard_router)
+app.include_router(llm_panel_router)
+app.include_router(categories_router)
