@@ -6,8 +6,6 @@ escalation tests live in tests/integration/test_llm_escalation.py.
 
 import inspect
 
-import pytest
-
 from src.thinktank.llm.escalation import escalate_timed_out_reviews
 
 
