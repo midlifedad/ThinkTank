@@ -11,6 +11,7 @@ from src.thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
 from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
 from src.thinktank.handlers.process_content import handle_process_content
 from src.thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
+from src.thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
 from src.thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
 from src.thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
 
@@ -65,3 +66,6 @@ register_handler("llm_approval_check", handle_llm_approval_check)
 register_handler("scan_for_candidates", handle_scan_for_candidates)
 register_handler("discover_guests_listennotes", handle_discover_guests_listennotes)
 register_handler("discover_guests_podcastindex", handle_discover_guests_podcastindex)
+
+# --- Phase 7 handler registrations ---
+register_handler("rollup_api_usage", handle_rollup_api_usage)

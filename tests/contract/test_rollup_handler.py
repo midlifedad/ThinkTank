@@ -8,7 +8,7 @@ Verifies:
 """
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select, text
@@ -23,7 +23,7 @@ pytestmark = pytest.mark.anyio
 
 def _hours_ago(n: int) -> datetime:
     """Return a timezone-naive datetime n hours ago."""
-    return datetime.utcnow() - timedelta(hours=n)
+    return datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=n)
 
 
 class TestRollupApiUsageHandler:
@@ -149,7 +149,7 @@ class TestRollupApiUsageHandler:
         )
 
         # Recent row (should be preserved)
-        recent = datetime.utcnow() - timedelta(minutes=5)
+        recent = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=5)
         await create_rate_limit_usage(
             session,
             api_name="podcastindex",
