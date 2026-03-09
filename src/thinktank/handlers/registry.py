@@ -1,12 +1,13 @@
 """Handler registry: maps job_type strings to handler callables.
 
-Registry is populated by Phase 3+ as handlers are implemented.
-The worker loop looks up handlers here via get_handler().
+Registry is populated at import time. The worker loop looks up
+handlers here via get_handler().
 """
 
 from src.thinktank.handlers.base import JobHandler
+from src.thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
+from src.thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
 
-# Registry populated by Phase 3+ as handlers are implemented.
 # Key: job_type string, Value: callable matching JobHandler protocol.
 JOB_HANDLERS: dict[str, JobHandler] = {}
 
@@ -41,3 +42,8 @@ def get_handler(job_type: str) -> JobHandler | None:
         The registered handler, or None if not registered.
     """
     return JOB_HANDLERS.get(job_type)
+
+
+# --- Phase 3 handler registrations ---
+register_handler("fetch_podcast_feed", handle_fetch_podcast_feed)
+register_handler("refresh_due_sources", handle_refresh_due_sources)
