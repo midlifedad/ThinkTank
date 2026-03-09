@@ -69,8 +69,8 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Pure logic modules (URL normalizer, fingerprint, duration parser, content filter, name matcher/normalizer, feed parser), feedparser dependency, unit tests
-- [ ] 03-02-PLAN.md -- RSS fixture files, pg_trgm Alembic migration, test conftest update for pg_trgm
+- [x] 03-01-PLAN.md -- Pure logic modules (URL normalizer, fingerprint, duration parser, content filter, name matcher/normalizer, feed parser), feedparser dependency, unit tests
+- [x] 03-02-PLAN.md -- RSS fixture files, pg_trgm Alembic migration, test conftest update for pg_trgm
 - [ ] 03-03-PLAN.md -- fetch_podcast_feed and refresh_due_sources handlers, config reader, handler registration, integration tests for feed polling, dedup, scheduling
 - [ ] 03-04-PLAN.md -- tag_content_thinkers handler, trigram similarity module, content attribution, candidate dedup, contract tests for all Phase 3 handlers
 
@@ -145,7 +145,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 |-------|----------------|--------|-----------|
 | 1. Foundation Layer | 3/3 | Complete | 2026-03-09 |
 | 2. Job Queue Engine | 3/3 | Complete | 2026-03-09 |
-| 3. Content Ingestion Pipeline | 0/4 | Not started | - |
+| 3. Content Ingestion Pipeline | 1/4 | In progress | - |
 | 4. Transcription Pipeline | 0/2 | Not started | - |
 | 5. LLM Governance | 0/2 | Not started | - |
 | 6. Discovery and Autonomous Growth | 0/2 | Not started | - |

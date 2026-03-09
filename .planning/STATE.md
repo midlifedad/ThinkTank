@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 02-03-PLAN.md (Phase 2 Job Queue Engine complete)
-last_updated: "2026-03-09T02:03:00.000Z"
-last_activity: 2026-03-09 -- Completed 02-03-PLAN.md (Worker loop, handler registry, contract tests)
+status: in-progress
+stopped_at: Completed 03-02-PLAN.md (RSS fixtures, pg_trgm migration, test infrastructure)
+last_updated: "2026-03-09T02:41:00.000Z"
+last_activity: 2026-03-09 -- Completed 03-02-PLAN.md (RSS fixtures, pg_trgm migration, test infrastructure)
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 35
+  total_plans: 10
+  completed_plans: 7
+  percent: 40
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** Phase 2: Job Queue Engine (COMPLETE) -- Ready for Phase 3
+**Current focus:** Phase 3: Content Ingestion Pipeline (IN PROGRESS)
 
 ## Current Position
 
-Phase: 2 of 7 (Job Queue Engine -- COMPLETE)
-Plan: 3 of 3 in current phase (all complete)
-Status: Phase 2 Complete -- Ready for Phase 3
-Last activity: 2026-03-09 -- Completed 02-03-PLAN.md (Worker loop, handler registry, contract tests)
+Phase: 3 of 7 (Content Ingestion Pipeline)
+Plan: 2 of 4 in current phase (03-02 complete)
+Status: Phase 3 in progress -- 03-02 complete, 03-03 next
+Last activity: 2026-03-09 -- Completed 03-02-PLAN.md (RSS fixtures, pg_trgm migration, test infrastructure)
 
-Progress: [████░░░░░░] 35%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: ~13min
-- Total execution time: ~1.3 hours
+- Total plans completed: 7
+- Average duration: ~12min
+- Total execution time: ~1.4 hours
 
 **By Phase:**
 
@@ -45,10 +45,11 @@ Progress: [████░░░░░░] 35%
 |-------|-------|-------|----------|
 | 1. Foundation Layer | 3/3 | 57min | 19min |
 | 2. Job Queue Engine | 3/3 | 19min | ~6min |
+| 3. Content Ingestion | 1/4 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (7min), 01-03 (45min), 02-01 (5min), 02-02 (~10min), 02-03 (~4min)
-- Trend: Phase 2 plans executed faster due to established infrastructure and patterns
+- Last 5 plans: 01-03 (45min), 02-01 (5min), 02-02 (~10min), 02-03 (~4min), 03-02 (3min)
+- Trend: Infrastructure/fixture plans execute very fast; complexity-driven variation
 
 *Updated after each plan completion*
 
@@ -88,6 +89,14 @@ Recent decisions affecting current work:
 - [02-03]: Used merge() to persist backpressure priority changes on detached job objects
 - [02-03]: Handler-not-found uses max_attempts=1 to immediately fail (no retry for missing handlers)
 - [02-03]: _interruptible_sleep pattern used throughout for responsive shutdown
+- [03-01]: Pure function architecture for all ingestion logic -- zero I/O, zero async, zero DB
+- [03-01]: feedparser>=6.0.12 added as explicit dependency for RSS/Atom parsing
+- [03-01]: name_matcher deduplicates per-thinker, title match (confidence 9) takes precedence over description match (confidence 6)
+- [03-01]: feed_parser raises ValueError only on SAXParseException bozo; benign bozo types silently ignored
+- [03-01]: URL normalizer sorts remaining query params alphabetically for deterministic canonical URLs
+- [03-02]: Manual Alembic migration (not autogenerate) for pg_trgm since CREATE EXTENSION is not ORM-discoverable
+- [03-02]: pg_trgm extension created in conftest.py before create_all to match production capabilities in test DB
+- [03-02]: GiST index explicitly created in conftest.py since SQLAlchemy create_all does not execute Alembic migrations
 
 ### Pending Todos
 
@@ -100,5 +109,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 02-03-PLAN.md (Phase 2 Job Queue Engine complete)
+Stopped at: Completed 03-01-PLAN.md (Pure logic ingestion modules)
 Resume file: None
