@@ -32,12 +32,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The FastAPI application starts, connects to PostgreSQL, and returns 200 from its health endpoint
   4. Every log entry is structured JSON containing timestamp, service name, correlation ID, and severity level
   5. `pytest` runs the full unit and integration test suite in under 60 seconds against a real PostgreSQL instance (Docker Compose), with architecture documentation generated alongside the schema
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md -- Project scaffold, FastAPI app, health endpoint, Docker Compose, toolchain
+- [ ] 01-02-PLAN.md -- SQLAlchemy 2.0 models for all 14 tables, factory functions
+- [ ] 01-03-PLAN.md -- Configuration, logging, Alembic migrations, Docker images, integration tests, architecture docs
 
 ### Phase 2: Job Queue Engine
 **Goal**: A fully operational job queue where workers can claim jobs by priority, retry with backoff, reclaim stale jobs, respect external API rate limits, apply backpressure, and be halted via a global kill switch
@@ -141,7 +141,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation Layer | 0/3 | Not started | - |
+| 1. Foundation Layer | 0/3 | Planned | - |
 | 2. Job Queue Engine | 0/2 | Not started | - |
 | 3. Content Ingestion Pipeline | 0/3 | Not started | - |
 | 4. Transcription Pipeline | 0/2 | Not started | - |
