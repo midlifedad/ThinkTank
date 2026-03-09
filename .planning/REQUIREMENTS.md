@@ -144,76 +144,76 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FNDTN-01 | — | Pending |
-| FNDTN-02 | — | Pending |
-| FNDTN-03 | — | Pending |
-| FNDTN-04 | — | Pending |
-| FNDTN-05 | — | Pending |
-| FNDTN-06 | — | Pending |
-| FNDTN-07 | — | Pending |
-| FNDTN-08 | — | Pending |
-| FNDTN-09 | — | Pending |
-| QUEUE-01 | — | Pending |
-| QUEUE-02 | — | Pending |
-| QUEUE-03 | — | Pending |
-| QUEUE-04 | — | Pending |
-| QUEUE-05 | — | Pending |
-| QUEUE-06 | — | Pending |
-| QUEUE-07 | — | Pending |
-| QUEUE-08 | — | Pending |
-| INGEST-01 | — | Pending |
-| INGEST-02 | — | Pending |
-| INGEST-03 | — | Pending |
-| INGEST-04 | — | Pending |
-| INGEST-05 | — | Pending |
-| INGEST-06 | — | Pending |
-| INGEST-07 | — | Pending |
-| TRANS-01 | — | Pending |
-| TRANS-02 | — | Pending |
-| TRANS-03 | — | Pending |
-| TRANS-04 | — | Pending |
-| TRANS-05 | — | Pending |
-| TRANS-06 | — | Pending |
-| GOV-01 | — | Pending |
-| GOV-02 | — | Pending |
-| GOV-03 | — | Pending |
-| GOV-04 | — | Pending |
-| GOV-05 | — | Pending |
-| GOV-06 | — | Pending |
-| GOV-07 | — | Pending |
-| GOV-08 | — | Pending |
-| GOV-09 | — | Pending |
-| DISC-01 | — | Pending |
-| DISC-02 | — | Pending |
-| DISC-03 | — | Pending |
-| DISC-04 | — | Pending |
-| DISC-05 | — | Pending |
-| DISC-06 | — | Pending |
-| OPS-01 | — | Pending |
-| OPS-02 | — | Pending |
-| OPS-03 | — | Pending |
-| OPS-04 | — | Pending |
-| OPS-05 | — | Pending |
-| OPS-06 | — | Pending |
-| API-01 | — | Pending |
-| API-02 | — | Pending |
-| API-03 | — | Pending |
-| API-04 | — | Pending |
-| API-05 | — | Pending |
-| API-06 | — | Pending |
-| QUAL-01 | — | Pending |
-| QUAL-02 | — | Pending |
-| QUAL-03 | — | Pending |
-| QUAL-04 | — | Pending |
-| QUAL-05 | — | Pending |
-| QUAL-06 | — | Pending |
-| QUAL-07 | — | Pending |
+| FNDTN-01 | Phase 1 | Pending |
+| FNDTN-02 | Phase 1 | Pending |
+| FNDTN-03 | Phase 1 | Pending |
+| FNDTN-04 | Phase 1 | Pending |
+| FNDTN-05 | Phase 1 | Pending |
+| FNDTN-06 | Phase 1 | Pending |
+| FNDTN-07 | Phase 1 | Pending |
+| FNDTN-08 | Phase 1 | Pending |
+| FNDTN-09 | Phase 1 | Pending |
+| QUEUE-01 | Phase 2 | Pending |
+| QUEUE-02 | Phase 2 | Pending |
+| QUEUE-03 | Phase 2 | Pending |
+| QUEUE-04 | Phase 2 | Pending |
+| QUEUE-05 | Phase 2 | Pending |
+| QUEUE-06 | Phase 2 | Pending |
+| QUEUE-07 | Phase 2 | Pending |
+| QUEUE-08 | Phase 2 | Pending |
+| INGEST-01 | Phase 3 | Pending |
+| INGEST-02 | Phase 3 | Pending |
+| INGEST-03 | Phase 3 | Pending |
+| INGEST-04 | Phase 3 | Pending |
+| INGEST-05 | Phase 3 | Pending |
+| INGEST-06 | Phase 3 | Pending |
+| INGEST-07 | Phase 3 | Pending |
+| TRANS-01 | Phase 4 | Pending |
+| TRANS-02 | Phase 4 | Pending |
+| TRANS-03 | Phase 4 | Pending |
+| TRANS-04 | Phase 4 | Pending |
+| TRANS-05 | Phase 4 | Pending |
+| TRANS-06 | Phase 4 | Pending |
+| GOV-01 | Phase 5 | Pending |
+| GOV-02 | Phase 5 | Pending |
+| GOV-03 | Phase 5 | Pending |
+| GOV-04 | Phase 5 | Pending |
+| GOV-05 | Phase 5 | Pending |
+| GOV-06 | Phase 5 | Pending |
+| GOV-07 | Phase 5 | Pending |
+| GOV-08 | Phase 5 | Pending |
+| GOV-09 | Phase 5 | Pending |
+| DISC-01 | Phase 6 | Pending |
+| DISC-02 | Phase 6 | Pending |
+| DISC-03 | Phase 3 | Pending |
+| DISC-04 | Phase 3 | Pending |
+| DISC-05 | Phase 6 | Pending |
+| DISC-06 | Phase 5 | Pending |
+| OPS-01 | Phase 7 | Pending |
+| OPS-02 | Phase 7 | Pending |
+| OPS-03 | Phase 7 | Pending |
+| OPS-04 | Phase 7 | Pending |
+| OPS-05 | Phase 7 | Pending |
+| OPS-06 | Phase 7 | Pending |
+| API-01 | Phase 7 | Pending |
+| API-02 | Phase 7 | Pending |
+| API-03 | Phase 7 | Pending |
+| API-04 | Phase 7 | Pending |
+| API-05 | Phase 7 | Pending |
+| API-06 | Phase 7 | Pending |
+| QUAL-01 | Phase 1 | Pending |
+| QUAL-02 | Phase 1 | Pending |
+| QUAL-03 | Phase 7 | Pending |
+| QUAL-04 | Phase 2 | Pending |
+| QUAL-05 | Phase 7 | Pending |
+| QUAL-06 | Phase 1 | Pending |
+| QUAL-07 | Phase 7 | Pending |
 
 **Coverage:**
-- v1 requirements: 56 total
-- Mapped to phases: 0
-- Unmapped: 56 ⚠️
+- v1 requirements: 64 total
+- Mapped to phases: 64
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-08 after initial definition*
+*Last updated: 2026-03-08 after roadmap creation*
