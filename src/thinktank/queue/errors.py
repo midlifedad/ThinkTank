@@ -7,6 +7,7 @@ STANDARDS.md: "Categories are a closed set, defined upfront, extended deliberate
 from enum import StrEnum
 
 import anthropic
+import httpx
 import pydantic
 
 
@@ -23,6 +24,8 @@ class ErrorCategory(StrEnum):
     HTTP_ERROR = "http_error"
     RATE_LIMITED = "rate_limited"
     YOUTUBE_RATE_LIMIT = "youtube_rate_limit"
+    LISTENNOTES_RATE_LIMIT = "listennotes_rate_limit"
+    PODCASTINDEX_ERROR = "podcastindex_error"
     API_ERROR = "api_error"
 
     # Transcription
@@ -59,6 +62,12 @@ def categorize_error(exc: Exception) -> ErrorCategory:
         return ErrorCategory.LLM_API_ERROR
     if isinstance(exc, pydantic.ValidationError):
         return ErrorCategory.LLM_PARSE_ERROR
+
+    # httpx exceptions (check before generic Python exceptions)
+    if isinstance(exc, httpx.HTTPStatusError):
+        if exc.response.status_code == 429:
+            return ErrorCategory.RATE_LIMITED
+        return ErrorCategory.HTTP_ERROR
 
     # Standard Python exceptions
     if isinstance(exc, TimeoutError):
