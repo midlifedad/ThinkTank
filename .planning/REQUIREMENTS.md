@@ -43,11 +43,11 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Transcription
 
 - [x] **TRANS-01**: Three-pass transcription pipeline: YouTube captions first, existing transcripts second, Parakeet GPU inference last
-- [ ] **TRANS-02**: GPU Worker service running Parakeet TDT 1.1B on Railway L4, model persisted in VRAM across jobs
+- [x] **TRANS-02**: GPU Worker service running Parakeet TDT 1.1B on Railway L4, model persisted in VRAM across jobs
 - [x] **TRANS-03**: Audio download via yt-dlp (pinned to 2025.12.08) with ffmpeg conversion to 16kHz WAV
-- [ ] **TRANS-04**: On-demand GPU scaling via Railway API — spin up when queue > threshold, shut down after idle timeout
+- [x] **TRANS-04**: On-demand GPU scaling via Railway API — spin up when queue > threshold, shut down after idle timeout
 - [x] **TRANS-05**: Audio temp file cleanup after transcription (audio never persisted to storage)
-- [ ] **TRANS-06**: Transcription output stored in `content.body_text` with metadata (word count, duration, source pass used)
+- [x] **TRANS-06**: Transcription output stored in `content.body_text` with metadata (word count, duration, source pass used)
 
 ### LLM Governance
 
@@ -169,11 +169,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INGEST-06 | Phase 3 | Pending |
 | INGEST-07 | Phase 3 | Pending |
 | TRANS-01 | Phase 4 | Complete (04-01: captions, existing, audio modules) |
-| TRANS-02 | Phase 4 | Pending |
+| TRANS-02 | Phase 4 | Complete |
 | TRANS-03 | Phase 4 | Complete (04-01: yt-dlp + ffmpeg conversion) |
-| TRANS-04 | Phase 4 | Pending |
+| TRANS-04 | Phase 4 | Complete |
 | TRANS-05 | Phase 4 | Complete (04-01: guaranteed cleanup in finally blocks) |
-| TRANS-06 | Phase 4 | Pending |
+| TRANS-06 | Phase 4 | Complete |
 | GOV-01 | Phase 5 | Pending |
 | GOV-02 | Phase 5 | Pending |
 | GOV-03 | Phase 5 | Pending |

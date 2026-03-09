@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 04-01-PLAN.md (Transcription building blocks)
-last_updated: "2026-03-09T03:37:00.000Z"
-last_activity: 2026-03-09 -- Phase 4 Plan 01 complete (31 new tests, 342 total)
+stopped_at: Completed 04-02-PLAN.md (Process content handler, GPU worker, scaling scheduler)
+last_updated: "2026-03-09T03:52:00.000Z"
+last_activity: 2026-03-09 -- Phase 4 Plan 02 complete (24 new tests, 366 total)
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 11
-  percent: 50
+  completed_plans: 12
+  percent: 57
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** Phase 4 -- Transcription Pipeline (Plan 01 complete)
+**Current focus:** Phase 4 complete -- Transcription Pipeline done, Phase 5 next
 
 ## Current Position
 
-Phase: 4 of 7 (Transcription Pipeline)
-Plan: 1 of 2 in current phase (01 complete)
-Status: In Progress -- Plan 01 complete, Plan 02 next
-Last activity: 2026-03-09 -- Phase 4 Plan 01 complete (31 new tests, 342 total)
+Phase: 4 of 7 (Transcription Pipeline) -- COMPLETE
+Plan: 2 of 2 in current phase (all complete)
+Status: Phase 4 complete -- ready for Phase 5
+Last activity: 2026-03-09 -- Phase 4 Plan 02 complete (24 new tests, 366 total)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 57%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: ~11min
-- Total execution time: ~1.5 hours
+- Total plans completed: 12
+- Average duration: ~10min
+- Total execution time: ~2 hours
 
 **By Phase:**
 
@@ -46,11 +46,11 @@ Progress: [█████░░░░░] 50%
 | 1. Foundation Layer | 3/3 | 57min | 19min |
 | 2. Job Queue Engine | 3/3 | 19min | ~6min |
 | 3. Content Ingestion | 4/4 | 17min | ~4min |
-| 4. Transcription | 1/2 | 7min | 7min |
+| 4. Transcription | 2/2 | 18min | 9min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (3min), 03-02 (3min), 03-03 (5min), 03-04 (6min), 04-01 (7min)
-- Trend: Consistent ~5min/plan, slightly longer for TDD-heavy plans
+- Last 5 plans: 03-02 (3min), 03-03 (5min), 03-04 (6min), 04-01 (7min), 04-02 (11min)
+- Trend: Consistent ~6min/plan, longer for integration-heavy plans with TDD
 
 *Updated after each plan completion*
 
@@ -104,6 +104,10 @@ Recent decisions affecting current work:
 - [04-01]: download_audio is sync (yt-dlp is sync), convert_to_wav is async (ffmpeg subprocess)
 - [04-01]: transcribe_via_gpu takes gpu_client_fn callable for dependency injection and testability
 - [04-01]: manage_gpu_scaling returns (bool, datetime|None) tuple for caller to track idle state
+- [04-02]: process_content handler catches GPU exceptions in Pass 3, falls through to RuntimeError for consistent worker loop categorization
+- [04-02]: GPU scaling scheduler reuses reclaim_interval (300s) for check interval
+- [04-02]: Call-site mocking pattern for integration tests (patch at handler module namespace, not definition site)
+- [04-02]: Fixed timezone-naive consistency in manage_gpu_scaling to match project convention
 
 ### Pending Todos
 
@@ -115,6 +119,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T03:37:00.000Z
-Stopped at: Completed 04-01-PLAN.md (Transcription building blocks)
+Last session: 2026-03-09T03:52:00.000Z
+Stopped at: Completed 04-02-PLAN.md (Process content handler, GPU worker, scaling scheduler)
 Resume file: None
