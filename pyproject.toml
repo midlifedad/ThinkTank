@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "thinktank"
 version = "0.1.0"
@@ -42,6 +46,7 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "A", "SIM", "TCH"]
+ignore = ["B008"]  # Allow Depends() in function defaults (standard FastAPI pattern)
 
 [tool.ruff.format]
 quote-style = "double"
