@@ -49,11 +49,12 @@ Plans:
   3. External API calls are rate-limited via sliding-window counts in `rate_limit_usage`, and a worker that hits the limit backs off without blocking other workers
   4. When `process_content` queue depth exceeds the configured threshold, discovery job priority is automatically demoted; when `workers_active` is set to false, no worker claims any new job
   5. Every job handler has a contract test verifying its expected side effects given a known input payload
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- Queue core: atomic job claiming (SKIP LOCKED), completion, failure with retry/backoff, error categorization enum
+- [ ] 02-02-PLAN.md -- Queue coordination: sliding-window rate limiter, backpressure priority demotion, kill switch, stale job reclamation
+- [ ] 02-03-PLAN.md -- Worker loop with poll/claim/dispatch cycle, handler registry with Protocol interface, contract tests
 
 ### Phase 3: Content Ingestion Pipeline
 **Goal**: The system can poll approved RSS feeds, extract episodes, deduplicate content across three layers (URL normalization, content fingerprint, trigram similarity), filter by duration and title patterns, and attribute content to thinkers
@@ -142,7 +143,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation Layer | 3/3 | Complete | 2026-03-09 |
-| 2. Job Queue Engine | 0/2 | Not started | - |
+| 2. Job Queue Engine | 0/3 | Not started | - |
 | 3. Content Ingestion Pipeline | 0/3 | Not started | - |
 | 4. Transcription Pipeline | 0/2 | Not started | - |
 | 5. LLM Governance | 0/2 | Not started | - |
