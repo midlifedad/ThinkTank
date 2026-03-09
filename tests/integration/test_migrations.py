@@ -80,7 +80,14 @@ async def clean_migration_db(engine):
     # Restore tables for subsequent tests that depend on create_all
     await drop_all_tables(TEST_DATABASE_URL)
     async with engine.begin() as conn:
+        # Re-create pg_trgm extension (dropped by DROP SCHEMA CASCADE)
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await conn.run_sync(Base.metadata.create_all)
+        # Re-create GiST index for trigram similarity tests
+        await conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_candidate_thinkers_trgm "
+            "ON candidate_thinkers USING gist (normalized_name gist_trgm_ops)"
+        ))
 
 
 @pytest.mark.asyncio

@@ -6,6 +6,10 @@ trigram similarity at a configurable threshold (default 0.7).
 These functions use raw SQL via text() because pg_trgm's similarity()
 function is not expressible through SQLAlchemy's ORM layer.
 
+Note: Uses CAST(:name AS text) rather than :name::text because
+SQLAlchemy's text() parser conflicts with PostgreSQL's :: cast syntax
+when the left operand is a bind parameter (: is the bind marker).
+
 Spec reference: Section 5.5 Layer 3 (DISC-04).
 """
 
@@ -31,9 +35,9 @@ async def find_similar_candidates(
     """
     result = await session.execute(
         text("""
-            SELECT id, name, similarity(normalized_name, :name) AS sml
+            SELECT id, name, similarity(normalized_name, CAST(:name AS text)) AS sml
             FROM candidate_thinkers
-            WHERE similarity(normalized_name, :name) > :threshold
+            WHERE similarity(normalized_name, CAST(:name AS text)) > :threshold
             ORDER BY sml DESC
         """),
         {"name": normalized_name, "threshold": threshold},
@@ -62,9 +66,9 @@ async def find_similar_thinkers(
     """
     result = await session.execute(
         text("""
-            SELECT id, name, similarity(lower(name), :name) AS sml
+            SELECT id, name, similarity(lower(name), CAST(:name AS text)) AS sml
             FROM thinkers
-            WHERE similarity(lower(name), :name) > :threshold
+            WHERE similarity(lower(name), CAST(:name AS text)) > :threshold
             ORDER BY sml DESC
         """),
         {"name": normalized_name, "threshold": threshold},
