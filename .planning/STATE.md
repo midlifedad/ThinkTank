@@ -9,29 +9,29 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 
 ## Current Position
 
-Phase: 1 of 7 (Foundation Layer)
-Plan: 2 of 3 in current phase
-Status: Executing
-Last activity: 2026-03-09 -- Completed 01-02-PLAN.md (SQLAlchemy models + factory functions)
+Phase: 1 of 7 (Foundation Layer -- COMPLETE)
+Plan: 3 of 3 in current phase (all complete)
+Status: Phase 1 Complete -- Ready for Phase 2
+Last activity: 2026-03-09 -- Completed 01-03-PLAN.md (Config, logging, migrations, Docker, integration tests)
 
-Progress: [██░░░░░░░░] 12%
+Progress: [██░░░░░░░░] 18%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 6min
-- Total execution time: 0.2 hours
+- Total plans completed: 3
+- Average duration: 19min
+- Total execution time: 0.95 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Foundation Layer | 2/3 | 12min | 6min |
+| 1. Foundation Layer | 3/3 | 57min | 19min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min), 01-02 (7min)
-- Trend: Steady
+- Last 5 plans: 01-01 (5min), 01-02 (7min), 01-03 (45min)
+- Trend: 01-03 was larger scope (config+logging+migration+docker+integration tests)
 
 *Updated after each plan completion*
 
@@ -53,6 +53,14 @@ Recent decisions affecting current work:
 - [01-02]: Used JSONB/ARRAY from postgresql dialect (not generic types) for correct Alembic autogenerate
 - [01-02]: Set lazy="selectin" on key relationships for async-safe eager loading
 - [01-02]: Plain factory functions over factory-boy for async compatibility
+- [01-03]: Used @lru_cache singleton for Settings to load config once per process
+- [01-03]: Custom structlog processor to rename 'level' to 'log_level' for spec compliance
+- [01-03]: Advisory lock ID=1 with pg_advisory_lock for concurrent migration safety
+- [01-03]: Alembic uses connectable.begin() not connect() to ensure DDL auto-commit
+- [01-03]: Migration tests use subprocess to avoid asyncio.run() conflict with test event loop
+- [01-03]: Session-scoped pytest-asyncio event loop for engine fixture sharing
+- [01-03]: TRUNCATE CASCADE cleanup pattern instead of schema recreation per test
+- [01-03]: Timezone-naive datetimes in factories to avoid asyncpg TIMESTAMP mismatch
 
 ### Pending Todos
 
@@ -65,5 +73,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 01-02-PLAN.md
+Stopped at: Completed 01-03-PLAN.md (Phase 1 Foundation Layer complete)
 Resume file: None

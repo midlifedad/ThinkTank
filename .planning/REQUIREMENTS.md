@@ -11,13 +11,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **FNDTN-01**: PostgreSQL schema with all 14 tables (categories, thinkers, sources, content, jobs, llm_reviews, system_config, rate_limit_usage, api_usage, content_thinkers, candidate_thinkers, thinker_profiles, thinker_metrics, thinker_categories) deployed via Alembic migration
 - [x] **FNDTN-02**: SQLAlchemy 2.0 async models for all tables with relationship mappings
-- [ ] **FNDTN-03**: Alembic migration system with advisory lock to prevent concurrent migration corruption
-- [ ] **FNDTN-04**: Environment-based configuration with DB override precedence (env vars > system_config table > code defaults)
-- [ ] **FNDTN-05**: Structured JSON logging with correlation IDs, service name, job ID on every log entry
-- [ ] **FNDTN-06**: Health endpoint per service returning 200 when DB connected and worker loop running
+- [x] **FNDTN-03**: Alembic migration system with advisory lock to prevent concurrent migration corruption
+- [x] **FNDTN-04**: Environment-based configuration with DB override precedence (env vars > system_config table > code defaults)
+- [x] **FNDTN-05**: Structured JSON logging with correlation IDs, service name, job ID on every log entry
+- [x] **FNDTN-06**: Health endpoint per service returning 200 when DB connected and worker loop running
 - [x] **FNDTN-07**: FastAPI application scaffold with async lifespan, connection pool configuration, and CORS
 - [x] **FNDTN-08**: Project toolchain setup (uv, ruff, mypy, pytest, pre-commit) with CI enforcement
-- [ ] **FNDTN-09**: Docker configuration for all 4 Railway services (API, CPU Worker, GPU Worker, Admin)
+- [x] **FNDTN-09**: Docker configuration for all 4 Railway services (API, CPU Worker, GPU Worker, Admin)
 
 ### Job Queue
 
@@ -90,12 +90,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Quality Standards
 
-- [ ] **QUAL-01**: Test suite following STANDARDS.md pyramid — unit tests (pure logic), integration tests (real Postgres), E2E tests (full system flow)
+- [x] **QUAL-01**: Test suite following STANDARDS.md pyramid — unit tests (pure logic), integration tests (real Postgres), E2E tests (full system flow)
 - [x] **QUAL-02**: Factory functions for all domain objects with sensible defaults and overridable fields
 - [ ] **QUAL-03**: Contract tests for every API endpoint (request/response shape, status codes, error formats)
 - [ ] **QUAL-04**: Contract tests for every job handler (given input payload, expected side effects)
 - [ ] **QUAL-05**: Operations runbook covering bootstrap, post-deploy verification, rollback, and common problem resolution
-- [ ] **QUAL-06**: Architecture documentation with data flow diagrams and service boundaries
+- [x] **QUAL-06**: Architecture documentation with data flow diagrams and service boundaries
 - [ ] **QUAL-07**: Development guide covering how to add new job types, new API endpoints, and new thinker categories
 
 ## v2 Requirements
@@ -146,13 +146,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | FNDTN-01 | Phase 1 | Complete |
 | FNDTN-02 | Phase 1 | Complete |
-| FNDTN-03 | Phase 1 | Pending |
-| FNDTN-04 | Phase 1 | Pending |
-| FNDTN-05 | Phase 1 | Pending |
-| FNDTN-06 | Phase 1 | Pending |
+| FNDTN-03 | Phase 1 | Complete |
+| FNDTN-04 | Phase 1 | Complete |
+| FNDTN-05 | Phase 1 | Complete |
+| FNDTN-06 | Phase 1 | Complete |
 | FNDTN-07 | Phase 1 | Complete |
 | FNDTN-08 | Phase 1 | Complete |
-| FNDTN-09 | Phase 1 | Pending |
+| FNDTN-09 | Phase 1 | Complete |
 | QUEUE-01 | Phase 2 | Pending |
 | QUEUE-02 | Phase 2 | Pending |
 | QUEUE-03 | Phase 2 | Pending |
@@ -201,12 +201,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | API-04 | Phase 7 | Pending |
 | API-05 | Phase 7 | Pending |
 | API-06 | Phase 7 | Pending |
-| QUAL-01 | Phase 1 | Pending |
+| QUAL-01 | Phase 1 | Complete |
 | QUAL-02 | Phase 1 | Complete |
 | QUAL-03 | Phase 7 | Pending |
 | QUAL-04 | Phase 2 | Pending |
 | QUAL-05 | Phase 7 | Pending |
-| QUAL-06 | Phase 1 | Pending |
+| QUAL-06 | Phase 1 | Complete |
 | QUAL-07 | Phase 7 | Pending |
 
 **Coverage:**
@@ -216,4 +216,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-08 after roadmap creation*
+*Last updated: 2026-03-09 after Phase 1 completion*

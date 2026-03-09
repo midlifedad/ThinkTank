@@ -12,7 +12,7 @@ ThinkTank is a continuous ingestion engine that discovers, fetches, and transcri
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation Layer** - Database schema, models, migrations, configuration, logging, health endpoints, project scaffolding, and test infrastructure
+- [x] **Phase 1: Foundation Layer** - Database schema, models, migrations, configuration, logging, health endpoints, project scaffolding, and test infrastructure
 - [ ] **Phase 2: Job Queue Engine** - DB-backed job queue with priority, retry, stale reclamation, rate limiting, backpressure, and kill switch
 - [ ] **Phase 3: Content Ingestion Pipeline** - RSS feed polling, 3-layer deduplication, content filtering, source approval, content attribution, and discovery orchestration
 - [ ] **Phase 4: Transcription Pipeline** - Three-pass transcription (captions, existing transcripts, Parakeet GPU), GPU worker service, on-demand scaling, audio processing
@@ -37,7 +37,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md -- Project scaffold, FastAPI app, health endpoint, Docker Compose, toolchain
 - [x] 01-02-PLAN.md -- SQLAlchemy 2.0 models for all 14 tables, factory functions
-- [ ] 01-03-PLAN.md -- Configuration, logging, Alembic migrations, Docker images, integration tests, architecture docs
+- [x] 01-03-PLAN.md -- Configuration, logging, Alembic migrations, Docker images, integration tests, architecture docs
 
 ### Phase 2: Job Queue Engine
 **Goal**: A fully operational job queue where workers can claim jobs by priority, retry with backoff, reclaim stale jobs, respect external API rate limits, apply backpressure, and be halted via a global kill switch
@@ -141,7 +141,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation Layer | 2/3 | In Progress | - |
+| 1. Foundation Layer | 3/3 | Complete | 2026-03-09 |
 | 2. Job Queue Engine | 0/2 | Not started | - |
 | 3. Content Ingestion Pipeline | 0/3 | Not started | - |
 | 4. Transcription Pipeline | 0/2 | Not started | - |
