@@ -18,6 +18,7 @@ import logging
 import os
 import signal
 import socket
+from datetime import datetime
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -30,6 +31,7 @@ from src.thinktank.queue.errors import ErrorCategory, categorize_error
 from src.thinktank.queue.kill_switch import is_workers_active
 from src.thinktank.queue.reclaim import reclaim_stale_jobs
 from src.thinktank.queue.retry import get_max_attempts
+from src.thinktank.scaling.railway import manage_gpu_scaling
 from src.thinktank.worker.config import WorkerSettings, get_worker_settings
 
 logger = structlog.get_logger(__name__)
@@ -97,6 +99,11 @@ async def worker_loop(
     # Start reclamation scheduler
     reclaim_task = asyncio.create_task(
         _reclamation_scheduler(session_factory, settings.reclaim_interval, shutdown_event)
+    )
+
+    # Start GPU scaling scheduler
+    gpu_scaling_task = asyncio.create_task(
+        _gpu_scaling_scheduler(session_factory, settings.reclaim_interval, shutdown_event)
     )
 
     try:
@@ -184,6 +191,13 @@ async def worker_loop(
         reclaim_task.cancel()
         try:
             await reclaim_task
+        except asyncio.CancelledError:
+            pass
+
+        # Cancel GPU scaling scheduler
+        gpu_scaling_task.cancel()
+        try:
+            await gpu_scaling_task
         except asyncio.CancelledError:
             pass
 
@@ -311,6 +325,37 @@ async def _reclamation_scheduler(
             raise
         except Exception:
             logger.exception("reclamation_failed")
+
+
+async def _gpu_scaling_scheduler(
+    session_factory: async_sessionmaker[AsyncSession],
+    interval: float,
+    shutdown_event: asyncio.Event,
+) -> None:
+    """Run GPU scaling management on schedule.
+
+    Checks process_content queue depth and scales the GPU service
+    up or down via Railway API. Tracks idle time across iterations.
+
+    Args:
+        session_factory: Async session factory for database connections.
+        interval: Seconds between scaling checks.
+        shutdown_event: Event to signal shutdown.
+    """
+    gpu_idle_since: datetime | None = None
+    while not shutdown_event.is_set():
+        try:
+            await _interruptible_sleep(interval, shutdown_event)
+            if shutdown_event.is_set():
+                break
+            async with session_factory() as session:
+                scaled, gpu_idle_since = await manage_gpu_scaling(session, gpu_idle_since)
+                if scaled:
+                    logger.info("gpu_scaling_action", idle_since=str(gpu_idle_since))
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("gpu_scaling_failed")
 
 
 async def _interruptible_sleep(duration: float, shutdown_event: asyncio.Event) -> None:

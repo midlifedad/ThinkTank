@@ -186,8 +186,8 @@ class TestManageGpuScaling:
         mock_replicas.return_value = 1  # Currently running
         mock_scale.return_value = True
 
-        # Idle for 35 minutes (> 30 min timeout)
-        idle_since = datetime.now(UTC) - timedelta(minutes=35)
+        # Idle for 35 minutes (> 30 min timeout), tz-naive per project convention
+        idle_since = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=35)
 
         scaled, new_idle = await manage_gpu_scaling(mock_session, gpu_idle_since=idle_since)
 
@@ -211,8 +211,8 @@ class TestManageGpuScaling:
         mock_config.side_effect = lambda s, k, d: 5 if k == "gpu_queue_threshold" else 30
         mock_replicas.return_value = 1
 
-        # Idle for only 10 minutes (< 30 min timeout)
-        idle_since = datetime.now(UTC) - timedelta(minutes=10)
+        # Idle for only 10 minutes (< 30 min timeout), tz-naive per project convention
+        idle_since = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=10)
 
         scaled, new_idle = await manage_gpu_scaling(mock_session, gpu_idle_since=idle_since)
 
