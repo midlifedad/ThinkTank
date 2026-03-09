@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 1 of 7 (Foundation Layer)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-09 -- Completed 01-01-PLAN.md (project scaffold, FastAPI app, health endpoint)
+Last activity: 2026-03-09 -- Completed 01-02-PLAN.md (SQLAlchemy models + factory functions)
 
-Progress: [█░░░░░░░░░] 5%
+Progress: [██░░░░░░░░] 12%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 5min
-- Total execution time: 0.08 hours
+- Total plans completed: 2
+- Average duration: 6min
+- Total execution time: 0.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Foundation Layer | 1/3 | 5min | 5min |
+| 1. Foundation Layer | 2/3 | 12min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min)
-- Trend: Starting
+- Last 5 plans: 01-01 (5min), 01-02 (7min)
+- Trend: Steady
 
 *Updated after each plan completion*
 
@@ -48,6 +48,11 @@ Recent decisions affecting current work:
 - [01-01]: Used hatchling build-system for src layout package installation
 - [01-01]: Added B008 to ruff ignore for standard FastAPI Depends() pattern
 - [01-01]: Used response_model=None on health endpoint for dict/JSONResponse union return
+- [01-02]: Used Annotated uuid_pk type alias for reusable UUID PK pattern across all 12 models
+- [01-02]: Used server_default=text("NOW()") for timestamps to let PostgreSQL handle clock
+- [01-02]: Used JSONB/ARRAY from postgresql dialect (not generic types) for correct Alembic autogenerate
+- [01-02]: Set lazy="selectin" on key relationships for async-safe eager loading
+- [01-02]: Plain factory functions over factory-boy for async compatibility
 
 ### Pending Todos
 
@@ -60,5 +65,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 01-01-PLAN.md
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None

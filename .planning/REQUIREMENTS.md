@@ -9,8 +9,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Foundation
 
-- [ ] **FNDTN-01**: PostgreSQL schema with all 14 tables (categories, thinkers, sources, content, jobs, llm_reviews, system_config, rate_limit_usage, api_usage, content_thinkers, candidate_thinkers, thinker_profiles, thinker_metrics, thinker_categories) deployed via Alembic migration
-- [ ] **FNDTN-02**: SQLAlchemy 2.0 async models for all tables with relationship mappings
+- [x] **FNDTN-01**: PostgreSQL schema with all 14 tables (categories, thinkers, sources, content, jobs, llm_reviews, system_config, rate_limit_usage, api_usage, content_thinkers, candidate_thinkers, thinker_profiles, thinker_metrics, thinker_categories) deployed via Alembic migration
+- [x] **FNDTN-02**: SQLAlchemy 2.0 async models for all tables with relationship mappings
 - [ ] **FNDTN-03**: Alembic migration system with advisory lock to prevent concurrent migration corruption
 - [ ] **FNDTN-04**: Environment-based configuration with DB override precedence (env vars > system_config table > code defaults)
 - [ ] **FNDTN-05**: Structured JSON logging with correlation IDs, service name, job ID on every log entry
@@ -91,7 +91,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Quality Standards
 
 - [ ] **QUAL-01**: Test suite following STANDARDS.md pyramid — unit tests (pure logic), integration tests (real Postgres), E2E tests (full system flow)
-- [ ] **QUAL-02**: Factory functions for all domain objects with sensible defaults and overridable fields
+- [x] **QUAL-02**: Factory functions for all domain objects with sensible defaults and overridable fields
 - [ ] **QUAL-03**: Contract tests for every API endpoint (request/response shape, status codes, error formats)
 - [ ] **QUAL-04**: Contract tests for every job handler (given input payload, expected side effects)
 - [ ] **QUAL-05**: Operations runbook covering bootstrap, post-deploy verification, rollback, and common problem resolution
@@ -144,8 +144,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FNDTN-01 | Phase 1 | Pending |
-| FNDTN-02 | Phase 1 | Pending |
+| FNDTN-01 | Phase 1 | Complete |
+| FNDTN-02 | Phase 1 | Complete |
 | FNDTN-03 | Phase 1 | Pending |
 | FNDTN-04 | Phase 1 | Pending |
 | FNDTN-05 | Phase 1 | Pending |
@@ -202,7 +202,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | API-05 | Phase 7 | Pending |
 | API-06 | Phase 7 | Pending |
 | QUAL-01 | Phase 1 | Pending |
-| QUAL-02 | Phase 1 | Pending |
+| QUAL-02 | Phase 1 | Complete |
 | QUAL-03 | Phase 7 | Pending |
 | QUAL-04 | Phase 2 | Pending |
 | QUAL-05 | Phase 7 | Pending |

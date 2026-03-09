@@ -35,8 +35,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Project scaffold, FastAPI app, health endpoint, Docker Compose, toolchain
-- [ ] 01-02-PLAN.md -- SQLAlchemy 2.0 models for all 14 tables, factory functions
+- [x] 01-01-PLAN.md -- Project scaffold, FastAPI app, health endpoint, Docker Compose, toolchain
+- [x] 01-02-PLAN.md -- SQLAlchemy 2.0 models for all 14 tables, factory functions
 - [ ] 01-03-PLAN.md -- Configuration, logging, Alembic migrations, Docker images, integration tests, architecture docs
 
 ### Phase 2: Job Queue Engine
@@ -141,7 +141,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation Layer | 0/3 | Planned | - |
+| 1. Foundation Layer | 2/3 | In Progress | - |
 | 2. Job Queue Engine | 0/2 | Not started | - |
 | 3. Content Ingestion Pipeline | 0/3 | Not started | - |
 | 4. Transcription Pipeline | 0/2 | Not started | - |
