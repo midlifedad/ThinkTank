@@ -66,12 +66,13 @@ Plans:
   3. Sources with `approval_status != 'approved'` are never polled, and tier-based refresh scheduling (6h/24h/168h) correctly staggers feed checks
   4. Content attribution tags the source owner as `role = 'primary'` with `confidence = 10`, and matches thinker names found in episode titles/descriptions as guests with appropriate confidence scores
   5. Candidate thinker names are deduplicated using `pg_trgm` trigram similarity at 0.7 threshold, preventing near-duplicate candidates from accumulating
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Pure logic modules (URL normalizer, fingerprint, duration parser, content filter, name matcher/normalizer, feed parser), RSS fixtures, pg_trgm migration, unit tests
-- [ ] 03-02-PLAN.md -- fetch_podcast_feed and refresh_due_sources handlers, config reader, handler registration, integration tests for feed polling, dedup, scheduling
-- [ ] 03-03-PLAN.md -- tag_content_thinkers handler, trigram similarity module, content attribution, candidate dedup, contract tests for all Phase 3 handlers
+- [ ] 03-01-PLAN.md -- Pure logic modules (URL normalizer, fingerprint, duration parser, content filter, name matcher/normalizer, feed parser), feedparser dependency, unit tests
+- [ ] 03-02-PLAN.md -- RSS fixture files, pg_trgm Alembic migration, test conftest update for pg_trgm
+- [ ] 03-03-PLAN.md -- fetch_podcast_feed and refresh_due_sources handlers, config reader, handler registration, integration tests for feed polling, dedup, scheduling
+- [ ] 03-04-PLAN.md -- tag_content_thinkers handler, trigram similarity module, content attribution, candidate dedup, contract tests for all Phase 3 handlers
 
 ### Phase 4: Transcription Pipeline
 **Goal**: Content discovered in Phase 3 is transcribed through a three-pass pipeline (YouTube captions first, existing transcripts second, Parakeet GPU inference last) with on-demand GPU scaling and automatic audio cleanup
@@ -144,7 +145,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 |-------|----------------|--------|-----------|
 | 1. Foundation Layer | 3/3 | Complete | 2026-03-09 |
 | 2. Job Queue Engine | 3/3 | Complete | 2026-03-09 |
-| 3. Content Ingestion Pipeline | 0/3 | Not started | - |
+| 3. Content Ingestion Pipeline | 0/4 | Not started | - |
 | 4. Transcription Pipeline | 0/2 | Not started | - |
 | 5. LLM Governance | 0/2 | Not started | - |
 | 6. Discovery and Autonomous Growth | 0/2 | Not started | - |
