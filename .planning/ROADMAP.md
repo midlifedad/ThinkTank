@@ -83,11 +83,11 @@ Plans:
   2. The GPU worker service loads Parakeet TDT 1.1B into VRAM once and holds it across jobs, processing audio at near real-time speed on an L4 GPU
   3. Audio is downloaded via yt-dlp, converted to 16kHz mono WAV via ffmpeg, and deleted immediately after transcription -- audio is never persisted to storage
   4. The CPU worker scales the GPU service up via Railway API when `process_content` queue exceeds threshold, and scales it down after the configured idle timeout with no pending transcription jobs
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md -- Transcription building blocks (captions, existing transcripts, audio download/conversion, GPU client, Railway scaling client), yt-dlp/webvtt-py dependencies, unit tests
+- [ ] 04-02-PLAN.md -- process_content handler (three-pass orchestrator), GPU worker FastAPI service, GPU scaling scheduler in worker loop, handler registration, integration + contract tests
 
 ### Phase 5: LLM Governance
 **Goal**: An LLM Supervisor (Claude) governs all corpus expansion decisions -- approving/rejecting thinkers, sources, and candidates with a full audit trail, graceful degradation when the Anthropic API is unavailable, and scheduled health checks and digests
