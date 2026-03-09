@@ -14,7 +14,6 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-import logging
 import os
 import signal
 import socket
@@ -22,8 +21,10 @@ from datetime import datetime
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
 from src.thinktank.handlers.registry import get_handler
+from src.thinktank.llm.escalation import escalate_timed_out_reviews
+from src.thinktank.llm.scheduled import run_daily_digest, run_health_check, run_weekly_audit
+from src.thinktank.llm.time_utils import seconds_until_next_monday_utc, seconds_until_next_utc_hour
 from src.thinktank.models.job import Job
 from src.thinktank.queue.backpressure import get_effective_priority
 from src.thinktank.queue.claim import claim_job, complete_job, fail_job
@@ -104,6 +105,20 @@ async def worker_loop(
     # Start GPU scaling scheduler
     gpu_scaling_task = asyncio.create_task(
         _gpu_scaling_scheduler(session_factory, settings.reclaim_interval, shutdown_event)
+    )
+
+    # Start LLM governance schedulers
+    escalation_task = asyncio.create_task(
+        _llm_timeout_escalation_scheduler(session_factory, 900, shutdown_event)
+    )
+    health_check_task = asyncio.create_task(
+        _llm_health_check_scheduler(session_factory, 21600, shutdown_event)
+    )
+    digest_task = asyncio.create_task(
+        _llm_digest_scheduler(session_factory, shutdown_event)
+    )
+    audit_task = asyncio.create_task(
+        _llm_audit_scheduler(session_factory, shutdown_event)
     )
 
     try:
@@ -200,6 +215,14 @@ async def worker_loop(
             await gpu_scaling_task
         except asyncio.CancelledError:
             pass
+
+        # Cancel LLM governance schedulers
+        for llm_task in (escalation_task, health_check_task, digest_task, audit_task):
+            llm_task.cancel()
+            try:
+                await llm_task
+            except asyncio.CancelledError:
+                pass
 
         # Wait for in-flight tasks
         if active_tasks:
@@ -358,6 +381,122 @@ async def _gpu_scaling_scheduler(
             logger.exception("gpu_scaling_failed")
 
 
+async def _llm_timeout_escalation_scheduler(
+    session_factory: async_sessionmaker[AsyncSession],
+    interval: float,
+    shutdown_event: asyncio.Event,
+) -> None:
+    """Run LLM timeout escalation on schedule (every 15 minutes).
+
+    Escalates awaiting_llm jobs past llm_timeout_hours to human review.
+
+    Args:
+        session_factory: Async session factory for database connections.
+        interval: Seconds between escalation runs (default 900 = 15min).
+        shutdown_event: Event to signal shutdown.
+    """
+    while not shutdown_event.is_set():
+        try:
+            await _interruptible_sleep(interval, shutdown_event)
+            if shutdown_event.is_set():
+                break
+            async with session_factory() as session:
+                count = await escalate_timed_out_reviews(session)
+                await session.commit()
+                if count:
+                    logger.info("llm_escalation_complete", escalated=count)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("llm_escalation_failed")
+
+
+async def _llm_health_check_scheduler(
+    session_factory: async_sessionmaker[AsyncSession],
+    interval: float,
+    shutdown_event: asyncio.Event,
+) -> None:
+    """Run LLM health check on schedule (every 6 hours).
+
+    Args:
+        session_factory: Async session factory for database connections.
+        interval: Seconds between health checks (default 21600 = 6h).
+        shutdown_event: Event to signal shutdown.
+    """
+    while not shutdown_event.is_set():
+        try:
+            await _interruptible_sleep(interval, shutdown_event)
+            if shutdown_event.is_set():
+                break
+            async with session_factory() as session:
+                review = await run_health_check(session)
+                await session.commit()
+                if review:
+                    logger.info("llm_health_check_complete", decision=review.decision)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("llm_health_check_scheduler_failed")
+
+
+async def _llm_digest_scheduler(
+    session_factory: async_sessionmaker[AsyncSession],
+    shutdown_event: asyncio.Event,
+) -> None:
+    """Run LLM daily digest at 07:00 UTC.
+
+    Recomputes wait time on each iteration to avoid clock drift.
+
+    Args:
+        session_factory: Async session factory for database connections.
+        shutdown_event: Event to signal shutdown.
+    """
+    while not shutdown_event.is_set():
+        try:
+            wait = seconds_until_next_utc_hour(7)
+            await _interruptible_sleep(wait, shutdown_event)
+            if shutdown_event.is_set():
+                break
+            async with session_factory() as session:
+                review = await run_daily_digest(session)
+                await session.commit()
+                if review:
+                    logger.info("llm_daily_digest_complete")
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("llm_digest_scheduler_failed")
+
+
+async def _llm_audit_scheduler(
+    session_factory: async_sessionmaker[AsyncSession],
+    shutdown_event: asyncio.Event,
+) -> None:
+    """Run LLM weekly audit on Mondays at 07:00 UTC.
+
+    Recomputes wait time on each iteration to avoid clock drift.
+
+    Args:
+        session_factory: Async session factory for database connections.
+        shutdown_event: Event to signal shutdown.
+    """
+    while not shutdown_event.is_set():
+        try:
+            wait = seconds_until_next_monday_utc(7)
+            await _interruptible_sleep(wait, shutdown_event)
+            if shutdown_event.is_set():
+                break
+            async with session_factory() as session:
+                review = await run_weekly_audit(session)
+                await session.commit()
+                if review:
+                    logger.info("llm_weekly_audit_complete")
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("llm_audit_scheduler_failed")
+
+
 async def _interruptible_sleep(duration: float, shutdown_event: asyncio.Event) -> None:
     """Sleep that can be interrupted by shutdown_event.
 
@@ -367,5 +506,5 @@ async def _interruptible_sleep(duration: float, shutdown_event: asyncio.Event) -
     """
     try:
         await asyncio.wait_for(shutdown_event.wait(), timeout=duration)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         pass  # Normal: shutdown_event wasn't set during sleep
