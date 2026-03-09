@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from thinktank.discovery.quota import (
+from src.thinktank.discovery.quota import (
     check_daily_quota,
     get_pending_candidate_count,
     should_trigger_llm_review,
@@ -57,7 +57,7 @@ class TestCheckDailyQuota:
         mock_session.execute.return_value = mock_result
 
         with patch(
-            "thinktank.discovery.quota.get_config_value",
+            "src.thinktank.discovery.quota.get_config_value",
             new_callable=AsyncMock,
             return_value=20,
         ):
@@ -75,7 +75,7 @@ class TestCheckDailyQuota:
         mock_session.execute.return_value = mock_result
 
         with patch(
-            "thinktank.discovery.quota.get_config_value",
+            "src.thinktank.discovery.quota.get_config_value",
             new_callable=AsyncMock,
             return_value=20,
         ):
@@ -93,7 +93,7 @@ class TestCheckDailyQuota:
         mock_session.execute.return_value = mock_result
 
         with patch(
-            "thinktank.discovery.quota.get_config_value",
+            "src.thinktank.discovery.quota.get_config_value",
             new_callable=AsyncMock,
             return_value=20,
         ):
@@ -111,7 +111,7 @@ class TestCheckDailyQuota:
         mock_session.execute.return_value = mock_result
 
         with patch(
-            "thinktank.discovery.quota.get_config_value",
+            "src.thinktank.discovery.quota.get_config_value",
             new_callable=AsyncMock,
             return_value=50,
         ) as mock_get_config:
@@ -132,7 +132,7 @@ class TestCheckDailyQuota:
         mock_session.execute.return_value = mock_result
 
         with patch(
-            "thinktank.discovery.quota.get_config_value",
+            "src.thinktank.discovery.quota.get_config_value",
             new_callable=AsyncMock,
             return_value=20,
         ):

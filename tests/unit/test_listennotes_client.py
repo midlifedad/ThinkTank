@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from thinktank.discovery.listennotes_client import ListenNotesClient
+from src.thinktank.discovery.listennotes_client import ListenNotesClient
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "listennotes" / "search_episodes.json"
 
@@ -45,11 +45,11 @@ class TestSearchEpisodesByPerson:
 
         with (
             patch(
-                "thinktank.discovery.listennotes_client.check_and_acquire_rate_limit",
+                "src.thinktank.discovery.listennotes_client.check_and_acquire_rate_limit",
                 new_callable=AsyncMock,
                 return_value=True,
             ),
-            patch("thinktank.discovery.listennotes_client.httpx.AsyncClient") as mock_client_cls,
+            patch("src.thinktank.discovery.listennotes_client.httpx.AsyncClient") as mock_client_cls,
         ):
             mock_client_instance = AsyncMock()
             mock_client_instance.get.return_value = mock_response
@@ -68,7 +68,7 @@ class TestSearchEpisodesByPerson:
     async def test_rate_limited_returns_none(self, client, mock_session):
         """Returns None when rate limiter denies the request."""
         with patch(
-            "thinktank.discovery.listennotes_client.check_and_acquire_rate_limit",
+            "src.thinktank.discovery.listennotes_client.check_and_acquire_rate_limit",
             new_callable=AsyncMock,
             return_value=False,
         ):
@@ -86,11 +86,11 @@ class TestSearchEpisodesByPerson:
 
         with (
             patch(
-                "thinktank.discovery.listennotes_client.check_and_acquire_rate_limit",
+                "src.thinktank.discovery.listennotes_client.check_and_acquire_rate_limit",
                 new_callable=AsyncMock,
                 return_value=True,
             ),
-            patch("thinktank.discovery.listennotes_client.httpx.AsyncClient") as mock_client_cls,
+            patch("src.thinktank.discovery.listennotes_client.httpx.AsyncClient") as mock_client_cls,
         ):
             mock_client_instance = AsyncMock()
             mock_client_instance.get.return_value = mock_response
@@ -120,11 +120,11 @@ class TestSearchEpisodesByPerson:
 
         with (
             patch(
-                "thinktank.discovery.listennotes_client.check_and_acquire_rate_limit",
+                "src.thinktank.discovery.listennotes_client.check_and_acquire_rate_limit",
                 new_callable=AsyncMock,
                 return_value=True,
             ),
-            patch("thinktank.discovery.listennotes_client.httpx.AsyncClient") as mock_client_cls,
+            patch("src.thinktank.discovery.listennotes_client.httpx.AsyncClient") as mock_client_cls,
         ):
             mock_client_instance = AsyncMock()
             mock_client_instance.get.return_value = mock_response
