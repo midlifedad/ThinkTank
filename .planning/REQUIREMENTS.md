@@ -15,8 +15,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **FNDTN-04**: Environment-based configuration with DB override precedence (env vars > system_config table > code defaults)
 - [ ] **FNDTN-05**: Structured JSON logging with correlation IDs, service name, job ID on every log entry
 - [ ] **FNDTN-06**: Health endpoint per service returning 200 when DB connected and worker loop running
-- [ ] **FNDTN-07**: FastAPI application scaffold with async lifespan, connection pool configuration, and CORS
-- [ ] **FNDTN-08**: Project toolchain setup (uv, ruff, mypy, pytest, pre-commit) with CI enforcement
+- [x] **FNDTN-07**: FastAPI application scaffold with async lifespan, connection pool configuration, and CORS
+- [x] **FNDTN-08**: Project toolchain setup (uv, ruff, mypy, pytest, pre-commit) with CI enforcement
 - [ ] **FNDTN-09**: Docker configuration for all 4 Railway services (API, CPU Worker, GPU Worker, Admin)
 
 ### Job Queue
@@ -150,8 +150,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FNDTN-04 | Phase 1 | Pending |
 | FNDTN-05 | Phase 1 | Pending |
 | FNDTN-06 | Phase 1 | Pending |
-| FNDTN-07 | Phase 1 | Pending |
-| FNDTN-08 | Phase 1 | Pending |
+| FNDTN-07 | Phase 1 | Complete |
+| FNDTN-08 | Phase 1 | Complete |
 | FNDTN-09 | Phase 1 | Pending |
 | QUEUE-01 | Phase 2 | Pending |
 | QUEUE-02 | Phase 2 | Pending |
