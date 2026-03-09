@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 04-02-PLAN.md (Process content handler, GPU worker, scaling scheduler)
-last_updated: "2026-03-09T03:52:00.000Z"
-last_activity: 2026-03-09 -- Phase 4 Plan 02 complete (24 new tests, 366 total)
+stopped_at: Completed 05-01-PLAN.md (LLM Supervisor core module)
+last_updated: "2026-03-09T04:29:29.000Z"
+last_activity: 2026-03-09 -- Phase 5 Plan 01 complete (77 new tests, 443 total)
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 10
-  completed_plans: 12
-  percent: 57
+  completed_plans: 13
+  percent: 62
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** Phase 4 complete -- Transcription Pipeline done, Phase 5 next
+**Current focus:** Phase 5 in progress -- LLM Governance Plan 01 complete
 
 ## Current Position
 
-Phase: 4 of 7 (Transcription Pipeline) -- COMPLETE
-Plan: 2 of 2 in current phase (all complete)
-Status: Phase 4 complete -- ready for Phase 5
-Last activity: 2026-03-09 -- Phase 4 Plan 02 complete (24 new tests, 366 total)
+Phase: 5 of 7 (LLM Governance)
+Plan: 1 of 3 in current phase
+Status: Phase 5 in progress -- Plan 01 complete, Plans 02-03 remaining
+Last activity: 2026-03-09 -- Phase 5 Plan 01 complete (77 new tests, 443 total)
 
-Progress: [██████░░░░] 57%
+Progress: [██████░░░░] 62%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: ~10min
-- Total execution time: ~2 hours
+- Total execution time: ~2h 9min
 
 **By Phase:**
 
@@ -47,10 +47,11 @@ Progress: [██████░░░░] 57%
 | 2. Job Queue Engine | 3/3 | 19min | ~6min |
 | 3. Content Ingestion | 4/4 | 17min | ~4min |
 | 4. Transcription | 2/2 | 18min | 9min |
+| 5. LLM Governance | 1/3 | 9min | 9min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (3min), 03-03 (5min), 03-04 (6min), 04-01 (7min), 04-02 (11min)
-- Trend: Consistent ~6min/plan, longer for integration-heavy plans with TDD
+- Last 5 plans: 03-03 (5min), 03-04 (6min), 04-01 (7min), 04-02 (11min), 05-01 (9min)
+- Trend: Consistent ~8min/plan for TDD plans
 
 *Updated after each plan completion*
 
@@ -108,6 +109,9 @@ Recent decisions affecting current work:
 - [04-02]: GPU scaling scheduler reuses reclaim_interval (300s) for check interval
 - [04-02]: Call-site mocking pattern for integration tests (patch at handler module namespace, not definition site)
 - [04-02]: Fixed timezone-naive consistency in manage_gpu_scaling to match project convention
+- [05-01]: Used tool_use pattern instead of messages.parse()/output_format for structured output (universally supported across SDK versions)
+- [05-01]: Removed assert isinstance guards in apply_decision dispatcher to avoid src.thinktank vs thinktank dual-import-path mismatch
+- [05-01]: Snapshot builders use mock session in unit tests; full DB integration tests deferred to Plan 02/03
 
 ### Pending Todos
 
@@ -119,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T03:52:00.000Z
-Stopped at: Completed 04-02-PLAN.md (Process content handler, GPU worker, scaling scheduler)
+Last session: 2026-03-09T04:29:29.000Z
+Stopped at: Completed 05-01-PLAN.md (LLM Supervisor core module)
 Resume file: None

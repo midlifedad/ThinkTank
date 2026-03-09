@@ -51,15 +51,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### LLM Governance
 
-- [ ] **GOV-01**: LLM Supervisor using Claude claude-sonnet-4-20250514 with structured JSON prompts for all corpus expansion decisions
+- [x] **GOV-01**: LLM Supervisor using Claude claude-sonnet-4-20250514 with structured JSON prompts for all corpus expansion decisions
 - [ ] **GOV-02**: Thinker approval flow — new thinkers reviewed by LLM with context snapshot before activation
 - [ ] **GOV-03**: Source approval flow — new sources reviewed by LLM before RSS polling begins
 - [ ] **GOV-04**: Candidate thinker review — batch review of candidates exceeding appearance threshold
-- [ ] **GOV-05**: Full audit trail in `llm_reviews` table with context snapshot, prompt, raw response, parsed decision, reasoning
+- [x] **GOV-05**: Full audit trail in `llm_reviews` table with context snapshot, prompt, raw response, parsed decision, reasoning
 - [ ] **GOV-06**: Fallback and timeout escalation — pending approvals escalate to human review after `llm_timeout_hours` (default 2h)
 - [ ] **GOV-07**: Graceful degradation when Anthropic API unavailable — existing pipeline continues, new approvals queue for human
 - [ ] **GOV-08**: Scheduled health checks, daily digests, and weekly corpus audits via LLM
-- [ ] **GOV-09**: Context budgeting — bounded context snapshots (max 50 thinkers, 100 errors, 20 candidates per review)
+- [x] **GOV-09**: Context budgeting — bounded context snapshots (max 50 thinkers, 100 errors, 20 candidates per review)
 
 ### Discovery
 
@@ -68,7 +68,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DISC-03**: Content attribution via `content_thinkers` junction with role (host/guest/panelist/mentioned) and confidence scoring (1-10)
 - [x] **DISC-04**: Trigram similarity dedup (`pg_trgm`) for candidate thinker names at 0.7 threshold
 - [ ] **DISC-05**: Daily quota limits on candidate discovery to prevent unbounded growth
-- [ ] **DISC-06**: Candidate-to-thinker promotion flow triggered by LLM batch review approval
+- [x] **DISC-06**: Candidate-to-thinker promotion flow triggered by LLM batch review approval
 
 ### Operations
 
@@ -174,21 +174,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRANS-04 | Phase 4 | Complete |
 | TRANS-05 | Phase 4 | Complete (04-01: guaranteed cleanup in finally blocks) |
 | TRANS-06 | Phase 4 | Complete |
-| GOV-01 | Phase 5 | Pending |
+| GOV-01 | Phase 5 | Complete |
 | GOV-02 | Phase 5 | Pending |
 | GOV-03 | Phase 5 | Pending |
 | GOV-04 | Phase 5 | Pending |
-| GOV-05 | Phase 5 | Pending |
+| GOV-05 | Phase 5 | Complete |
 | GOV-06 | Phase 5 | Pending |
 | GOV-07 | Phase 5 | Pending |
 | GOV-08 | Phase 5 | Pending |
-| GOV-09 | Phase 5 | Pending |
+| GOV-09 | Phase 5 | Complete |
 | DISC-01 | Phase 6 | Pending |
 | DISC-02 | Phase 6 | Pending |
 | DISC-03 | Phase 3 | Complete |
 | DISC-04 | Phase 3 | In Progress (pg_trgm extension + GiST index created in 03-02) |
 | DISC-05 | Phase 6 | Pending |
-| DISC-06 | Phase 5 | Pending |
+| DISC-06 | Phase 5 | Complete |
 | OPS-01 | Phase 7 | Pending |
 | OPS-02 | Phase 7 | Pending |
 | OPS-03 | Phase 7 | Pending |
