@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 style="margin-bottom: 1rem;">Pipeline Dashboard</h1>
+<div class="dashboard-grid">
+    <div class="card">
+        <h3>Queue Depth</h3>
+        <div hx-get="/admin/partials/queue-depth"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+    <div class="card">
+        <h3>Error Log</h3>
+        <div hx-get="/admin/partials/error-log"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+    <div class="card">
+        <h3>Source Health</h3>
+        <div hx-get="/admin/partials/source-health"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+    <div class="card">
+        <h3>GPU Status</h3>
+        <div hx-get="/admin/partials/gpu-status"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+    <div class="card">
+        <h3>Rate Limits</h3>
+        <div hx-get="/admin/partials/rate-limits"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+    <div class="card">
+        <h3>API Cost Tracker (24h)</h3>
+        <div hx-get="/admin/partials/cost-tracker"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+</div>
+{% endblock %}

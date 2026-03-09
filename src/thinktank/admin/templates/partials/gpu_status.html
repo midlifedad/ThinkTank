@@ -1,0 +1,8 @@
+<div class="stat-row">
+    <span class="stat-label">Status</span>
+    <span class="stat-value status-{{ status }}">{{ status | upper }}</span>
+</div>
+<div class="stat-row">
+    <span class="stat-label">Last Scale Event</span>
+    <span class="stat-value">{{ last_scale or "None" }}</span>
+</div>
