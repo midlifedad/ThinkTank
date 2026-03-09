@@ -77,7 +77,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **OPS-03**: API cost tracking via `api_usage` table with hourly rollups and estimated USD costs
 - [x] **OPS-04**: Rate limit gauges showing current usage vs configured limits per external API
 - [x] **OPS-05**: Category taxonomy management in admin dashboard
-- [ ] **OPS-06**: Bootstrap sequence — seed categories, initial thinkers, trigger first LLM review, activate workers
+- [x] **OPS-06**: Bootstrap sequence — seed categories, initial thinkers, trigger first LLM review, activate workers
 
 ### API
 
@@ -94,9 +94,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **QUAL-02**: Factory functions for all domain objects with sensible defaults and overridable fields
 - [ ] **QUAL-03**: Contract tests for every API endpoint (request/response shape, status codes, error formats)
 - [x] **QUAL-04**: Contract tests for every job handler (given input payload, expected side effects)
-- [ ] **QUAL-05**: Operations runbook covering bootstrap, post-deploy verification, rollback, and common problem resolution
+- [x] **QUAL-05**: Operations runbook covering bootstrap, post-deploy verification, rollback, and common problem resolution
 - [x] **QUAL-06**: Architecture documentation with data flow diagrams and service boundaries
-- [ ] **QUAL-07**: Development guide covering how to add new job types, new API endpoints, and new thinker categories
+- [x] **QUAL-07**: Development guide covering how to add new job types, new API endpoints, and new thinker categories
 
 ## v2 Requirements
 
@@ -194,7 +194,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OPS-03 | Phase 7 | Pending |
 | OPS-04 | Phase 7 | Complete |
 | OPS-05 | Phase 7 | Complete |
-| OPS-06 | Phase 7 | Pending |
+| OPS-06 | Phase 7 | Complete |
 | API-01 | Phase 7 | Pending |
 | API-02 | Phase 7 | Pending |
 | API-03 | Phase 7 | Pending |
@@ -205,9 +205,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUAL-02 | Phase 1 | Complete |
 | QUAL-03 | Phase 7 | Pending |
 | QUAL-04 | Phase 2 | Complete |
-| QUAL-05 | Phase 7 | Pending |
+| QUAL-05 | Phase 7 | Complete |
 | QUAL-06 | Phase 1 | Complete |
-| QUAL-07 | Phase 7 | Pending |
+| QUAL-07 | Phase 7 | Complete |
 
 **Coverage:**
 - v1 requirements: 64 total
