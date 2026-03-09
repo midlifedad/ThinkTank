@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 05-02-PLAN.md (LLM approval handler and integration tests)
-last_updated: "2026-03-09T04:42:41.000Z"
-last_activity: 2026-03-09 -- Phase 5 Plan 02 complete (52 new tests, 495 total)
+stopped_at: Completed 06-01-PLAN.md (Discovery module foundation)
+last_updated: "2026-03-09T05:14:26.000Z"
+last_activity: 2026-03-09 -- Phase 6 Plan 01 complete (56 new tests, 551 total)
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 10
-  completed_plans: 15
-  percent: 71
+  completed_plans: 16
+  percent: 76
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** Phase 5 complete -- LLM Governance all 3 plans done (495 tests total)
+**Current focus:** Phase 6 in progress -- Discovery Plan 01 complete, Plan 02 next
 
 ## Current Position
 
-Phase: 5 of 7 (LLM Governance)
-Plan: 3 of 3 in current phase
-Status: Phase 5 complete -- all 3 plans done, ready for Phase 6
-Last activity: 2026-03-09 -- Phase 5 Plan 02 complete (52 new tests, 495 total)
+Phase: 6 of 7 (Discovery and Autonomous Growth)
+Plan: 1 of 2 in current phase
+Status: Plan 01 complete -- discovery module foundation built
+Last activity: 2026-03-09 -- Plan 06-01 complete (56 new tests, 551 total)
 
-Progress: [███████░░░] 71%
+Progress: [████████░░] 76%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: ~9min
-- Total execution time: ~2h 32min
+- Total execution time: ~2h 40min
 
 **By Phase:**
 
@@ -48,9 +48,10 @@ Progress: [███████░░░] 71%
 | 3. Content Ingestion | 4/4 | 17min | ~4min |
 | 4. Transcription | 2/2 | 18min | 9min |
 | 5. LLM Governance | 3/3 | 23min | ~8min |
+| 6. Discovery | 1/2 | 8min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (7min), 04-02 (11min), 05-01 (9min), 05-02 (9min), 05-03 (5min)
+- Last 5 plans: 04-02 (11min), 05-01 (9min), 05-02 (9min), 05-03 (5min), 06-01 (8min)
 - Trend: Consistent ~8min/plan for TDD plans
 
 *Updated after each plan completion*
@@ -120,6 +121,9 @@ Recent decisions affecting current work:
 - [05-03]: Escalation uses raw SQL with jsonb_set matching reclaim.py pattern
 - [05-03]: Scheduled tasks catch broad Exception and return None to never crash the scheduler
 - [05-03]: LLM scheduler cancel uses for-loop pattern for DRY shutdown
+- [06-01]: Title-case requirement on name-capture regex instead of global IGNORECASE to reduce false positives in name extraction
+- [06-01]: Pre-strip honorific titles from text before regex matching to handle "Interview: Dr. Bob Jones" pattern
+- [06-01]: src.thinktank.* import paths in discovery source modules to match project convention and avoid dual-import-path SQLAlchemy errors
 
 ### Pending Todos
 
@@ -131,6 +135,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T04:42:41.000Z
-Stopped at: Completed 05-02-PLAN.md (LLM approval handler and integration tests)
+Last session: 2026-03-09T05:14:26.000Z
+Stopped at: Completed 06-01-PLAN.md (Discovery module foundation)
 Resume file: None

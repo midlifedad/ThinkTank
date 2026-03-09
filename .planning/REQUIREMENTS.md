@@ -52,9 +52,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### LLM Governance
 
 - [x] **GOV-01**: LLM Supervisor using Claude claude-sonnet-4-20250514 with structured JSON prompts for all corpus expansion decisions
-- [ ] **GOV-02**: Thinker approval flow — new thinkers reviewed by LLM with context snapshot before activation
-- [ ] **GOV-03**: Source approval flow — new sources reviewed by LLM before RSS polling begins
-- [ ] **GOV-04**: Candidate thinker review — batch review of candidates exceeding appearance threshold
+- [x] **GOV-02**: Thinker approval flow — new thinkers reviewed by LLM with context snapshot before activation
+- [x] **GOV-03**: Source approval flow — new sources reviewed by LLM before RSS polling begins
+- [x] **GOV-04**: Candidate thinker review — batch review of candidates exceeding appearance threshold
 - [x] **GOV-05**: Full audit trail in `llm_reviews` table with context snapshot, prompt, raw response, parsed decision, reasoning
 - [x] **GOV-06**: Fallback and timeout escalation — pending approvals escalate to human review after `llm_timeout_hours` (default 2h)
 - [x] **GOV-07**: Graceful degradation when Anthropic API unavailable — existing pipeline continues, new approvals queue for human
@@ -175,19 +175,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRANS-05 | Phase 4 | Complete (04-01: guaranteed cleanup in finally blocks) |
 | TRANS-06 | Phase 4 | Complete |
 | GOV-01 | Phase 5 | Complete |
-| GOV-02 | Phase 5 | Pending |
-| GOV-03 | Phase 5 | Pending |
-| GOV-04 | Phase 5 | Pending |
+| GOV-02 | Phase 5 | Complete |
+| GOV-03 | Phase 5 | Complete |
+| GOV-04 | Phase 5 | Complete |
 | GOV-05 | Phase 5 | Complete |
 | GOV-06 | Phase 5 | Complete |
 | GOV-07 | Phase 5 | Complete |
 | GOV-08 | Phase 5 | Complete |
 | GOV-09 | Phase 5 | Complete |
-| DISC-01 | Phase 6 | Pending |
-| DISC-02 | Phase 6 | Pending |
+| DISC-01 | Phase 6 | In Progress (06-01: name extractor module built, handler in 06-02) |
+| DISC-02 | Phase 6 | In Progress (06-01: API clients built, handlers in 06-02) |
 | DISC-03 | Phase 3 | Complete |
 | DISC-04 | Phase 3 | In Progress (pg_trgm extension + GiST index created in 03-02) |
-| DISC-05 | Phase 6 | Pending |
+| DISC-05 | Phase 6 | In Progress (06-01: quota tracker module built, handler integration in 06-02) |
 | DISC-06 | Phase 5 | Complete |
 | OPS-01 | Phase 7 | Pending |
 | OPS-02 | Phase 7 | Pending |
@@ -216,4 +216,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-09 after Phase 4 Plan 01 completion*
+*Last updated: 2026-03-09 after Phase 6 Plan 01 completion*
