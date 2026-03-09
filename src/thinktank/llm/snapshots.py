@@ -18,6 +18,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from src.thinktank.models.candidate import CandidateThinker
 from src.thinktank.models.content import Content
 from src.thinktank.models.job import Job
@@ -43,7 +44,14 @@ async def build_thinker_approval_context(
     Returns:
         Dict with proposed_thinker info and corpus_stats.
     """
-    thinker = await session.get(Thinker, thinker_id)
+    # Use selectinload to eagerly load relationships in async context
+    # (session.get from identity map may not trigger selectin loading)
+    result = await session.execute(
+        select(Thinker)
+        .where(Thinker.id == thinker_id)
+        .options(selectinload(Thinker.sources), selectinload(Thinker.categories))
+    )
+    thinker = result.scalar_one()
 
     # Corpus stats
     total_approved = await session.scalar(
@@ -101,7 +109,13 @@ async def build_source_approval_context(
     Returns:
         Dict with source info, thinker details, and sample episodes.
     """
-    source = await session.get(Source, source_id)
+    # Use selectinload for thinker relationship to avoid lazy load in async
+    result = await session.execute(
+        select(Source)
+        .where(Source.id == source_id)
+        .options(selectinload(Source.thinker))
+    )
+    source = result.scalar_one()
 
     # Sample episodes (bounded to 10)
     stmt = (

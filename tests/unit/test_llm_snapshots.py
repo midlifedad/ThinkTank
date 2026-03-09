@@ -32,6 +32,13 @@ def mock_session():
     return session
 
 
+def _mock_execute_returning(entity_mock):
+    """Create a mock execute result that returns entity_mock via scalar_one()."""
+    mock_result = MagicMock()
+    mock_result.scalar_one.return_value = entity_mock
+    return mock_result
+
+
 class TestThinkerApprovalContext:
     @pytest.mark.asyncio
     async def test_returns_dict_with_expected_keys(self, mock_session):
@@ -48,7 +55,10 @@ class TestThinkerApprovalContext:
         thinker_mock.sources = []
         thinker_mock.categories = []
 
-        mock_session.get.return_value = thinker_mock
+        # Mock execute for select query (now uses execute instead of get)
+        mock_session.execute = AsyncMock(
+            return_value=_mock_execute_returning(thinker_mock)
+        )
 
         # Mock scalar calls for corpus stats
         mock_session.scalar = AsyncMock(return_value=10)
@@ -75,7 +85,9 @@ class TestThinkerApprovalContext:
         thinker_mock.sources = []
         thinker_mock.categories = []
 
-        mock_session.get.return_value = thinker_mock
+        mock_session.execute = AsyncMock(
+            return_value=_mock_execute_returning(thinker_mock)
+        )
         mock_session.scalar = AsyncMock(return_value=5)
 
         result = await build_thinker_approval_context(mock_session, thinker_id)
@@ -104,16 +116,19 @@ class TestSourceApprovalContext:
         source_mock.source_type = "podcast_rss"
         source_mock.url = "https://example.com/rss"
         source_mock.approval_status = "pending_llm"
+        source_mock.item_count = 10
+        source_mock.error_count = 0
         source_mock.thinker = MagicMock()
         source_mock.thinker.name = "Test Thinker"
         source_mock.thinker.slug = "test-thinker"
 
-        mock_session.get.return_value = source_mock
-
-        # Mock execute for episode samples
-        mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = []
-        mock_session.execute = AsyncMock(return_value=mock_result)
+        # First execute call returns the source, second returns episodes
+        source_result = _mock_execute_returning(source_mock)
+        episode_result = MagicMock()
+        episode_result.scalars.return_value.all.return_value = []
+        mock_session.execute = AsyncMock(
+            side_effect=[source_result, episode_result]
+        )
 
         result = await build_source_approval_context(mock_session, source_id)
 
