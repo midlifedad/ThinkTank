@@ -87,7 +87,7 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md -- Transcription building blocks (captions, existing transcripts, audio download/conversion, GPU client, Railway scaling client), yt-dlp/webvtt-py dependencies, unit tests
-- [ ] 04-02-PLAN.md -- process_content handler (three-pass orchestrator), GPU worker FastAPI service, GPU scaling scheduler in worker loop, handler registration, integration + contract tests
+- [x] 04-02-PLAN.md -- process_content handler (three-pass orchestrator), GPU worker FastAPI service, GPU scaling scheduler in worker loop, handler registration, integration + contract tests
 
 ### Phase 5: LLM Governance
 **Goal**: An LLM Supervisor (Claude) governs all corpus expansion decisions -- approving/rejecting thinkers, sources, and candidates with a full audit trail, graceful degradation when the Anthropic API is unavailable, and scheduled health checks and digests
@@ -114,11 +114,11 @@ Plans:
   1. Episode titles and descriptions are scanned for names not in the thinkers table, and names appearing in 3+ episodes are surfaced as candidate thinkers with `status = 'pending_llm'`
   2. Guest appearances are discovered via Listen Notes and Podcast Index APIs within configured rate limits, and discovered feeds are registered as sources pending LLM approval
   3. Daily quota limits on candidate discovery (`max_candidates_per_day`) prevent unbounded growth, and when the quota is approached, cascade discovery pauses until the LLM reviews the existing queue
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- Discovery building blocks: regex name extractor, Listen Notes client, Podcast Index client, daily quota tracker, unit tests with API fixtures
+- [ ] 06-02-PLAN.md -- scan_for_candidates, discover_guests_listennotes, discover_guests_podcastindex handlers, error category extensions, handler registration, integration and contract tests
 
 ### Phase 7: Operations, API, and Polish
 **Goal**: A complete operational layer -- admin dashboard for human oversight, REST API for programmatic access, cost tracking, bootstrap sequence, operations runbook, and development guide -- making the system production-ready and maintainable
