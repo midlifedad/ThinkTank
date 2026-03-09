@@ -39,9 +39,9 @@ created: 2026-03-09
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 02-01-01 | 01 | 1 | QUEUE-01 | integration | `uv run pytest tests/integration/test_claim.py -x` | ❌ W0 | ⬜ pending |
-| 02-01-02 | 01 | 1 | QUEUE-02 | integration | `uv run pytest tests/integration/test_worker_loop.py -x` | ❌ W0 | ⬜ pending |
+| 02-03-01 | 03 | 2 | QUEUE-02 | integration | `uv run pytest tests/integration/test_worker_loop.py -x` | ❌ W0 | ⬜ pending |
 | 02-01-03 | 01 | 1 | QUEUE-03 | unit+integration | `uv run pytest tests/unit/test_retry.py tests/integration/test_claim.py -x` | ❌ W0 | ⬜ pending |
-| 02-01-04 | 01 | 1 | QUEUE-04 | integration | `uv run pytest tests/integration/test_reclaim.py -x` | ❌ W0 | ⬜ pending |
+| 02-02-01 | 02 | 1 | QUEUE-04 | integration | `uv run pytest tests/integration/test_reclaim.py -x` | ❌ W0 | ⬜ pending |
 | 02-01-05 | 01 | 1 | QUEUE-08 | unit | `uv run pytest tests/unit/test_errors.py -x` | ❌ W0 | ⬜ pending |
 | 02-02-01 | 02 | 2 | QUEUE-05 | unit+integration | `uv run pytest tests/unit/test_rate_limiter.py tests/integration/test_rate_limit.py -x` | ❌ W0 | ⬜ pending |
 | 02-02-02 | 02 | 2 | QUEUE-06 | unit+integration | `uv run pytest tests/unit/test_backpressure.py tests/integration/test_backpressure.py -x` | ❌ W0 | ⬜ pending |
