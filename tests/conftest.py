@@ -27,10 +27,17 @@ async def engine():
     """
     eng = create_async_engine(TEST_DATABASE_URL, echo=False)
 
-    # Create all tables from models
+    # Create all tables from models (with pg_trgm extension for trigram similarity)
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await conn.run_sync(Base.metadata.create_all)
+        # Create GiST index for trigram similarity on candidate_thinkers.normalized_name
+        # (SQLAlchemy create_all does not run Alembic migrations, so we add it explicitly)
+        await conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_candidate_thinkers_trgm "
+            "ON candidate_thinkers USING gist (normalized_name gist_trgm_ops)"
+        ))
 
     yield eng
 

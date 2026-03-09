@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>ThinkTank Test Podcast</title>
+    <link>https://example.com/podcast</link>
+    <description>A test podcast feed for integration testing.</description>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 01 Mar 2026 12:00:00 GMT</lastBuildDate>
+
+    <item>
+      <title>Deep Dive into AI Safety</title>
+      <link>https://example.com/episodes/ai-safety</link>
+      <description>An in-depth conversation about alignment research and the future of safe AI systems.</description>
+      <pubDate>Sat, 01 Mar 2026 10:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/ai-safety.mp3" length="57600000" type="audio/mpeg"/>
+      <guid isPermaLink="false">ep-001-ai-safety</guid>
+    </item>
+
+    <item>
+      <title>The Future of Energy</title>
+      <link>https://example.com/episodes/future-energy</link>
+      <description>Exploring nuclear fusion, solar advances, and the geopolitics of energy transition.</description>
+      <pubDate>Sat, 22 Feb 2026 10:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/future-energy.mp3" length="38400000" type="audio/mpeg"/>
+      <guid isPermaLink="false">ep-002-future-energy</guid>
+    </item>
+
+    <item>
+      <title>Crypto Markets Q4 Review</title>
+      <link>https://example.com/episodes/crypto-q4</link>
+      <description>Breaking down the latest moves in crypto markets and what to expect next quarter.</description>
+      <pubDate>Sat, 15 Feb 2026 10:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/crypto-q4.mp3" length="86400000" type="audio/mpeg"/>
+      <guid isPermaLink="false">ep-003-crypto-q4</guid>
+    </item>
+
+  </channel>
+</rss>

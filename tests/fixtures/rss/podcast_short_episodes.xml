@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.apple.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>ThinkTank Short Episodes Podcast</title>
+    <link>https://example.com/short-podcast</link>
+    <description>A test podcast feed with episodes of varying durations for duration filtering tests.</description>
+    <language>en-us</language>
+
+    <item>
+      <title>Quick Update</title>
+      <link>https://example.com/episodes/quick-update</link>
+      <description>A very short 2-minute update.</description>
+      <pubDate>Fri, 07 Mar 2026 06:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/quick-update.mp3" length="1920000" type="audio/mpeg"/>
+      <itunes:duration>02:00</itunes:duration>
+      <guid isPermaLink="false">short-ep-001</guid>
+    </item>
+
+    <item>
+      <title>Short Bonus</title>
+      <link>https://example.com/episodes/short-bonus</link>
+      <description>A 5-minute bonus episode.</description>
+      <pubDate>Thu, 06 Mar 2026 06:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/short-bonus.mp3" length="4800000" type="audio/mpeg"/>
+      <itunes:duration>05:00</itunes:duration>
+      <guid isPermaLink="false">short-ep-002</guid>
+    </item>
+
+    <item>
+      <title>Full Episode</title>
+      <link>https://example.com/episodes/full-episode</link>
+      <description>A full-length 60-minute episode.</description>
+      <pubDate>Wed, 05 Mar 2026 06:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/full-episode.mp3" length="57600000" type="audio/mpeg"/>
+      <itunes:duration>01:00:00</itunes:duration>
+      <guid isPermaLink="false">short-ep-003</guid>
+    </item>
+
+  </channel>
+</rss>

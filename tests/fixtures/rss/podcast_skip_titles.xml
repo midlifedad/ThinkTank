@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.apple.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>ThinkTank Skip Titles Podcast</title>
+    <link>https://example.com/skip-titles-podcast</link>
+    <description>A test podcast feed with episodes that should be filtered by title patterns.</description>
+    <language>en-us</language>
+
+    <item>
+      <title>Season 3 Trailer</title>
+      <link>https://example.com/episodes/s3-trailer</link>
+      <description>A short trailer for the upcoming season. Should be skipped by title filter.</description>
+      <pubDate>Sat, 08 Mar 2026 12:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/s3-trailer.mp3" length="7200000" type="audio/mpeg"/>
+      <itunes:duration>10:00</itunes:duration>
+      <guid isPermaLink="false">skip-ep-001</guid>
+    </item>
+
+    <item>
+      <title>Best of 2025</title>
+      <link>https://example.com/episodes/best-of-2025</link>
+      <description>A compilation of the best moments from 2025. Should be skipped by title filter.</description>
+      <pubDate>Fri, 07 Mar 2026 12:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/best-of-2025.mp3" length="54000000" type="audio/mpeg"/>
+      <itunes:duration>01:00:00</itunes:duration>
+      <guid isPermaLink="false">skip-ep-002</guid>
+    </item>
+
+    <item>
+      <title>Full Interview with Expert</title>
+      <link>https://example.com/episodes/full-interview</link>
+      <description>A genuine full-length interview. Should NOT be skipped.</description>
+      <pubDate>Thu, 06 Mar 2026 12:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/full-interview.mp3" length="72000000" type="audio/mpeg"/>
+      <itunes:duration>01:30:00</itunes:duration>
+      <guid isPermaLink="false">skip-ep-003</guid>
+    </item>
+
+    <item>
+      <title>Announcement: New Season</title>
+      <link>https://example.com/episodes/new-season-announcement</link>
+      <description>An announcement about the new season. Should be skipped by title filter.</description>
+      <pubDate>Wed, 05 Mar 2026 12:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.example.com/episodes/new-season-announcement.mp3" length="3600000" type="audio/mpeg"/>
+      <itunes:duration>05:00</itunes:duration>
+      <guid isPermaLink="false">skip-ep-004</guid>
+    </item>
+
+  </channel>
+</rss>
