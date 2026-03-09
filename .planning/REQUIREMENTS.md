@@ -65,8 +65,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **DISC-01**: Cascade discovery — scan episode titles/descriptions for names not in thinkers table, surface as candidates after 3+ appearances
 - [ ] **DISC-02**: Guest discovery via Listen Notes and Podcast Index APIs with rate-limited queries
-- [ ] **DISC-03**: Content attribution via `content_thinkers` junction with role (host/guest/panelist/mentioned) and confidence scoring (1-10)
-- [ ] **DISC-04**: Trigram similarity dedup (`pg_trgm`) for candidate thinker names at 0.7 threshold
+- [x] **DISC-03**: Content attribution via `content_thinkers` junction with role (host/guest/panelist/mentioned) and confidence scoring (1-10)
+- [x] **DISC-04**: Trigram similarity dedup (`pg_trgm`) for candidate thinker names at 0.7 threshold
 - [ ] **DISC-05**: Daily quota limits on candidate discovery to prevent unbounded growth
 - [ ] **DISC-06**: Candidate-to-thinker promotion flow triggered by LLM batch review approval
 
@@ -185,7 +185,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GOV-09 | Phase 5 | Pending |
 | DISC-01 | Phase 6 | Pending |
 | DISC-02 | Phase 6 | Pending |
-| DISC-03 | Phase 3 | Pending |
+| DISC-03 | Phase 3 | Complete |
 | DISC-04 | Phase 3 | In Progress (pg_trgm extension + GiST index created in 03-02) |
 | DISC-05 | Phase 6 | Pending |
 | DISC-06 | Phase 5 | Pending |
