@@ -216,7 +216,11 @@ Plans:
   2. Operator can manually trigger pipeline jobs (refresh_due_sources, scan_for_candidates, discover_guests for a thinker) from the pipeline page, and the created job appears in the queue immediately
   3. Operator can configure recurring task schedules with frequency (in hours), an enable/disable toggle, and a Run Now button -- without cron syntax, just simple frequency controls
   4. Operator can retry a failed job or cancel a pending job from the queue view, and can view job detail showing payload, attempts, error messages, and timing for any job
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 11-01-PLAN.md -- Pipeline page with job queue browser (filters, pagination), manual triggers, retry/cancel, job detail view, integration tests
+- [ ] 11-02-PLAN.md -- Recurring task scheduler editor with frequency/toggle/Run Now, system_config persistence, integration tests
 
 ### Phase 12: Agent Chat
 **Goal**: A persistent LLM-powered chat drawer is available on every admin page, enabling operators to ask questions about system state and propose mutations through natural language -- with streaming responses and a propose-then-execute safety model
@@ -249,5 +253,5 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
 | 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
 | 10. Source Management | v1.1 | 0/2 | Not started | - |
-| 11. Pipeline Control | v1.1 | 0/? | Not started | - |
+| 11. Pipeline Control | v1.1 | 0/2 | Planned | - |
 | 12. Agent Chat | v1.1 | 0/? | Not started | - |
