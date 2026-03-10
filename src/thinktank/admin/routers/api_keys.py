@@ -47,7 +47,7 @@ async def api_keys_list_partial(
     session: AsyncSession = Depends(get_session),
 ):
     """HTML fragment: list of API keys with masked values and status."""
-    from src.thinktank.models.config_table import SystemConfig
+    from thinktank.models.config_table import SystemConfig
 
     keys_status = []
     for key_def in MANAGED_KEYS:
@@ -96,12 +96,13 @@ async def set_api_key(
     now = datetime.now(UTC).replace(tzinfo=None)
 
     # Upsert into system_config
+    # Note: use CAST() instead of :: to avoid SQLAlchemy parameter binding conflict
     await session.execute(
         text("""
             INSERT INTO system_config (key, value, set_by, updated_at)
-            VALUES (:key, to_jsonb(:value::text), 'admin', :now)
+            VALUES (:key, to_jsonb(CAST(:value AS text)), 'admin', :now)
             ON CONFLICT (key) DO UPDATE SET
-                value = to_jsonb(:value::text),
+                value = to_jsonb(CAST(:value AS text)),
                 set_by = 'admin',
                 updated_at = :now
         """),
