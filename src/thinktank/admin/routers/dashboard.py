@@ -1,13 +1,17 @@
 """Dashboard router with HTMX partial endpoints.
 
 Provides the main admin dashboard page and auto-refreshing widget partials
-for queue depth, error log, source health, GPU status, rate limits, and cost tracking.
+for queue depth, error log, source health, GPU status, rate limits, cost tracking,
+health summary, kill switch, activity feed, and pending approvals.
 """
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.thinktank.models.config_table import SystemConfig
 from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin", tags=["dashboard"])
@@ -203,4 +207,180 @@ async def cost_tracker_partial(
     ]
     return templates.TemplateResponse(
         request, "partials/cost_tracker.html", {"costs": costs},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Morning briefing endpoints (Phase 8, Plan 01)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/partials/health-summary")
+async def health_summary_partial(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTML fragment: system health indicators (workers, DB, error rate)."""
+    # Worker status from system_config
+    result = await session.execute(
+        select(SystemConfig.value).where(SystemConfig.key == "workers_active")
+    )
+    row = result.scalar_one_or_none()
+    workers_active = True  # default to active if not set
+    if row is not None:
+        workers_active = bool(row) if not isinstance(row, dict) else bool(row.get("value", True))
+
+    # DB connection check
+    db_ok = True
+    try:
+        await session.execute(text("SELECT 1"))
+    except Exception:
+        db_ok = False
+
+    # Error rate: failed jobs in the last hour
+    error_result = await session.execute(
+        text(
+            "SELECT COUNT(*) FROM jobs "
+            "WHERE status = 'failed' AND created_at > NOW() - INTERVAL '1 hour'"
+        )
+    )
+    error_count = error_result.scalar() or 0
+
+    return templates.TemplateResponse(
+        request,
+        "partials/health_summary.html",
+        {
+            "workers_active": workers_active,
+            "db_ok": db_ok,
+            "error_count": error_count,
+        },
+    )
+
+
+@router.get("/partials/kill-switch")
+async def kill_switch_partial(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTML fragment: kill switch toggle showing current worker state."""
+    result = await session.execute(
+        select(SystemConfig.value).where(SystemConfig.key == "workers_active")
+    )
+    row = result.scalar_one_or_none()
+    workers_active = True  # default to active if not set
+    if row is not None:
+        workers_active = bool(row) if not isinstance(row, dict) else bool(row.get("value", True))
+
+    return templates.TemplateResponse(
+        request,
+        "partials/kill_switch.html",
+        {"workers_active": workers_active},
+    )
+
+
+@router.post("/kill-switch/toggle")
+async def kill_switch_toggle(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """Toggle the global kill switch (workers_active config) and re-render partial."""
+    result = await session.execute(
+        select(SystemConfig).where(SystemConfig.key == "workers_active")
+    )
+    config = result.scalar_one_or_none()
+
+    if config is not None:
+        # Flip the boolean value
+        current = config.value
+        if isinstance(current, dict):
+            new_val = not bool(current.get("value", True))
+        else:
+            new_val = not bool(current.value)
+        config.value = new_val
+        config.set_by = "admin"
+        config.updated_at = datetime.now(UTC)
+    else:
+        # Create with value False (turning off)
+        config = SystemConfig(
+            key="workers_active",
+            value=False,
+            set_by="admin",
+            updated_at=datetime.now(UTC),
+        )
+        session.add(config)
+
+    await session.commit()
+
+    # Re-read to get the committed state
+    result = await session.execute(
+        select(SystemConfig.value).where(SystemConfig.key == "workers_active")
+    )
+    row = result.scalar_one_or_none()
+    workers_active = bool(row) if row is not None else False
+
+    return templates.TemplateResponse(
+        request,
+        "partials/kill_switch.html",
+        {"workers_active": workers_active},
+    )
+
+
+@router.get("/partials/activity-feed")
+async def activity_feed_partial(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTML fragment: last 50 system actions from jobs and LLM reviews."""
+    result = await session.execute(
+        text(
+            "(SELECT 'job_completed' AS action_type, job_type AS detail, "
+            "  completed_at AS action_time "
+            "  FROM jobs WHERE status = 'complete' AND completed_at IS NOT NULL "
+            "  ORDER BY completed_at DESC LIMIT 20) "
+            "UNION ALL "
+            "(SELECT 'job_failed' AS action_type, job_type AS detail, "
+            "  last_error_at AS action_time "
+            "  FROM jobs WHERE status = 'failed' AND last_error_at IS NOT NULL "
+            "  ORDER BY last_error_at DESC LIMIT 15) "
+            "UNION ALL "
+            "(SELECT 'llm_decision' AS action_type, "
+            "  review_type || ': ' || COALESCE(decision, 'pending') AS detail, "
+            "  created_at AS action_time "
+            "  FROM llm_reviews WHERE decision IS NOT NULL "
+            "  ORDER BY created_at DESC LIMIT 15) "
+            "ORDER BY action_time DESC LIMIT 50"
+        )
+    )
+    rows = result.fetchall()
+    activities = [
+        {
+            "action_type": r[0],
+            "detail": r[1],
+            "action_time": r[2],
+        }
+        for r in rows
+    ]
+
+    return templates.TemplateResponse(
+        request,
+        "partials/activity_feed.html",
+        {"activities": activities},
+    )
+
+
+@router.get("/partials/pending-approvals")
+async def pending_approvals_partial(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTML fragment: count of pending LLM reviews awaiting decision."""
+    result = await session.execute(
+        text("SELECT COUNT(*) FROM llm_reviews WHERE decision IS NULL")
+    )
+    pending_count = result.scalar() or 0
+
+    return templates.TemplateResponse(
+        request,
+        "partials/pending_approvals.html",
+        {"pending_count": pending_count},
     )

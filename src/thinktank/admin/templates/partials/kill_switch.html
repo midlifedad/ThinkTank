@@ -1,0 +1,23 @@
+{% if workers_active %}
+<div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; padding: 1rem; text-align: center;">
+    <div style="font-size: 1.1rem; font-weight: 600; color: #155724; margin-bottom: 0.5rem;">
+        Workers ACTIVE
+    </div>
+    <form hx-post="/admin/kill-switch/toggle"
+          hx-target="#kill-switch-container"
+          hx-swap="innerHTML">
+        <button type="submit" class="btn btn-danger">Stop Workers</button>
+    </form>
+</div>
+{% else %}
+<div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; padding: 1rem; text-align: center;">
+    <div style="font-size: 1.1rem; font-weight: 600; color: #721c24; margin-bottom: 0.5rem;">
+        Workers STOPPED
+    </div>
+    <form hx-post="/admin/kill-switch/toggle"
+          hx-target="#kill-switch-container"
+          hx-swap="innerHTML">
+        <button type="submit" class="btn" style="background: #28a745; color: #fff;">Start Workers</button>
+    </form>
+</div>
+{% endif %}
