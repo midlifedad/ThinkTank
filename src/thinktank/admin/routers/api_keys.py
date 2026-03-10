@@ -4,10 +4,13 @@ Allows viewing which API keys are configured (masked) and setting
 new values. Keys are stored in system_config with 'secret_' prefix.
 """
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, Form, Request
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.thinktank.models.config_table import SystemConfig
 from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin/api-keys", tags=["api-keys"])
@@ -47,8 +50,6 @@ async def api_keys_list_partial(
     session: AsyncSession = Depends(get_session),
 ):
     """HTML fragment: list of API keys with masked values and status."""
-    from thinktank.models.config_table import SystemConfig
-
     keys_status = []
     for key_def in MANAGED_KEYS:
         db_key = f"secret_{key_def['name']}"
@@ -81,8 +82,6 @@ async def set_api_key(
     key_value: str = Form(...),
 ):
     """Set or update an API key in system_config."""
-    from datetime import UTC, datetime
-
     # Validate key name is in managed list
     valid_names = {k["name"] for k in MANAGED_KEYS}
     if key_name not in valid_names:
@@ -95,19 +94,21 @@ async def set_api_key(
     db_key = f"secret_{key_name}"
     now = datetime.now(UTC).replace(tzinfo=None)
 
-    # Upsert into system_config
-    # Note: use CAST() instead of :: to avoid SQLAlchemy parameter binding conflict
-    await session.execute(
-        text("""
-            INSERT INTO system_config (key, value, set_by, updated_at)
-            VALUES (:key, to_jsonb(CAST(:value AS text)), 'admin', :now)
-            ON CONFLICT (key) DO UPDATE SET
-                value = to_jsonb(CAST(:value AS text)),
-                set_by = 'admin',
-                updated_at = :now
-        """),
-        {"key": db_key, "value": key_value, "now": now},
+    # Check if key already exists
+    result = await session.execute(
+        select(SystemConfig).where(SystemConfig.key == db_key)
     )
+    existing = result.scalar_one_or_none()
+
+    if existing:
+        existing.value = key_value
+        existing.set_by = "admin"
+        existing.updated_at = now
+    else:
+        session.add(SystemConfig(
+            key=db_key, value=key_value, set_by="admin", updated_at=now,
+        ))
+
     await session.commit()
 
     # Re-render the list
@@ -130,10 +131,12 @@ async def delete_api_key(
         )
 
     db_key = f"secret_{key_name}"
-    await session.execute(
-        text("DELETE FROM system_config WHERE key = :key"),
-        {"key": db_key},
+    result = await session.execute(
+        select(SystemConfig).where(SystemConfig.key == db_key)
     )
-    await session.commit()
+    existing = result.scalar_one_or_none()
+    if existing:
+        await session.delete(existing)
+        await session.commit()
 
     return await api_keys_list_partial(request, session)
