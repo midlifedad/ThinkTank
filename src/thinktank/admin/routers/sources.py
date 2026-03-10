@@ -1,7 +1,8 @@
 """Source management router for admin dashboard.
 
 Provides filterable source list, manual source addition, approve/reject
-with LLMReview audit trail, and force-refresh capability.
+with LLMReview audit trail, force-refresh capability, and source detail
+page with health summary, episodes list, and error history.
 """
 
 import uuid
@@ -9,9 +10,10 @@ from datetime import datetime, UTC
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.thinktank.models.content import Content
 from src.thinktank.models.job import Job
 from src.thinktank.models.review import LLMReview
 from src.thinktank.models.source import Source
@@ -254,4 +256,74 @@ async def force_refresh_source(
         request,
         "partials/source_list.html",
         {"sources": sources, "success": f"Feed refresh queued for '{source.name}'."},
+    )
+
+
+@router.get("/{source_id}/partials/episodes")
+async def source_episodes_partial(
+    request: Request,
+    source_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTML fragment: episodes (content) table for a source, lazy-loaded via HTMX."""
+    stmt = (
+        select(Content)
+        .where(Content.source_id == source_id)
+        .order_by(Content.published_at.desc().nulls_last())
+        .limit(50)
+    )
+    result = await session.execute(stmt)
+    episodes = result.scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "partials/source_episodes.html",
+        {"episodes": episodes},
+    )
+
+
+@router.get("/{source_id}/partials/errors")
+async def source_errors_partial(
+    request: Request,
+    source_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTML fragment: error history from failed fetch_podcast_feed jobs for this source."""
+    stmt = text(
+        "SELECT id, error, error_category, created_at, completed_at "
+        "FROM jobs "
+        "WHERE job_type = 'fetch_podcast_feed' "
+        "AND status = 'failed' "
+        "AND payload->>'source_id' = :sid "
+        "ORDER BY created_at DESC LIMIT 20"
+    )
+    result = await session.execute(stmt, {"sid": str(source_id)})
+    errors = result.mappings().all()
+    return templates.TemplateResponse(
+        request,
+        "partials/source_errors.html",
+        {"errors": errors},
+    )
+
+
+@router.get("/{source_id}")
+async def source_detail(
+    request: Request,
+    source_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """Source detail page with health summary and HTMX-loaded sections."""
+    result = await session.execute(
+        select(Source, Thinker.name.label("thinker_name"))
+        .join(Thinker, Source.thinker_id == Thinker.id)
+        .where(Source.id == source_id)
+    )
+    row = result.one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Source not found")
+
+    source, thinker_name = row
+    return templates.TemplateResponse(
+        request,
+        "source_detail.html",
+        {"source": source, "thinker_name": thinker_name},
     )

@@ -1,0 +1,24 @@
+{% if errors %}
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Error Category</th>
+            <th>Error Message</th>
+            <th>Completed At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for err in errors %}
+        <tr>
+            <td>{{ err.created_at.strftime('%Y-%m-%d %H:%M') if err.created_at else '—' }}</td>
+            <td>{{ err.error_category or '—' }}</td>
+            <td>{{ err.error[:200] if err.error else '—' }}</td>
+            <td>{{ err.completed_at.strftime('%Y-%m-%d %H:%M') if err.completed_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">No errors found for this source.</p>
+{% endif %}

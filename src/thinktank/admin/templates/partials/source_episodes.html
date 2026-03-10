@@ -1,0 +1,36 @@
+{% if episodes %}
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Published</th>
+            <th>Duration</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ep in episodes %}
+        <tr>
+            <td>{{ ep.title }}</td>
+            <td>
+                {% if ep.status == 'completed' %}
+                <span class="healthy">{{ ep.status }}</span>
+                {% elif ep.status == 'pending' %}
+                <span class="warning">{{ ep.status }}</span>
+                {% elif ep.status == 'failed' %}
+                <span class="error">{{ ep.status }}</span>
+                {% elif ep.status == 'skipped' %}
+                <span style="color: #999;">{{ ep.status }}</span>
+                {% else %}
+                {{ ep.status }}
+                {% endif %}
+            </td>
+            <td>{{ ep.published_at.strftime('%Y-%m-%d') if ep.published_at else '—' }}</td>
+            <td>{% if ep.duration_seconds %}{{ '%d:%02d' | format(ep.duration_seconds // 60, ep.duration_seconds % 60) }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">No episodes found for this source.</p>
+{% endif %}
