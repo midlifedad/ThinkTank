@@ -1,0 +1,19 @@
+{% if success %}
+<p class="healthy" style="margin-bottom: 0.75rem; font-size: 0.85rem;">{{ success }}</p>
+{% endif %}
+<form hx-post="/admin/config/system/save"
+      hx-target="#system-config-editor"
+      hx-swap="innerHTML">
+    {% for setting in settings %}
+    <div class="form-group">
+        <label for="{{ setting.key }}">{{ setting.label }}</label>
+        <input type="number"
+               name="{{ setting.key }}"
+               id="{{ setting.key }}"
+               value="{{ setting.value }}"
+               min="1"
+               required>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Save Settings</button>
+</form>

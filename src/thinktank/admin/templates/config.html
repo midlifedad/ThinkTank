@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="margin-bottom: 1rem;">System Configuration</h2>
+<p style="color: #666; margin-bottom: 1.5rem; font-size: 0.9rem;">
+    Manage operational parameters. Changes take effect immediately without restart.
+</p>
+
+<div class="dashboard-grid">
+    <div class="card">
+        <h3>Rate Limits</h3>
+        <p style="color: #666; font-size: 0.85rem; margin-bottom: 0.75rem;">
+            Configure hourly request limits per external API.
+        </p>
+        <div id="rate-limits-editor"
+             hx-get="/admin/config/partials/rate-limits"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <p class="empty">Loading...</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>System Settings</h3>
+        <p style="color: #666; font-size: 0.85rem; margin-bottom: 0.75rem;">
+            Configure worker behavior, thresholds, and timeouts.
+        </p>
+        <div id="system-config-editor"
+             hx-get="/admin/config/partials/system-settings"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <p class="empty">Loading...</p>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+    <h3>Other Configuration</h3>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a href="/admin/api-keys" class="btn btn-primary">API Keys</a>
+        <a href="/admin/categories" class="btn btn-primary">Categories</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% if success %}
+<p class="healthy" style="margin-bottom: 0.75rem; font-size: 0.85rem;">{{ success }}</p>
+{% endif %}
+<form hx-post="/admin/config/rate-limits/save"
+      hx-target="#rate-limits-editor"
+      hx-swap="innerHTML">
+    {% for api_name, limit in limits.items() %}
+    <div class="form-group">
+        <label for="limit_{{ api_name }}">{{ api_name }}</label>
+        <input type="number"
+               name="limit_{{ api_name }}"
+               id="limit_{{ api_name }}"
+               value="{{ limit }}"
+               min="1"
+               required>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Save Rate Limits</button>
+</form>
