@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+    <h2 style="margin: 0;">Source Management</h2>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <div id="source-filters" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
+            <label for="filter-thinker">Thinker</label>
+            <select id="filter-thinker" name="thinker_id"
+                hx-get="/admin/sources/partials/list"
+                hx-trigger="change"
+                hx-target="#source-list"
+                hx-include="#source-filters"
+            >
+                <option value="all">All Thinkers</option>
+                {% for t in thinkers %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filter-status">Approval Status</label>
+            <select id="filter-status" name="status"
+                hx-get="/admin/sources/partials/list"
+                hx-trigger="change"
+                hx-target="#source-list"
+                hx-include="#source-filters"
+            >
+                <option value="all">All</option>
+                <option value="pending_llm">Pending LLM</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filter-source-type">Source Type</label>
+            <select id="filter-source-type" name="source_type"
+                hx-get="/admin/sources/partials/list"
+                hx-trigger="change"
+                hx-target="#source-list"
+                hx-include="#source-filters"
+            >
+                <option value="all">All</option>
+                <option value="podcast_rss">Podcast RSS</option>
+                <option value="youtube_channel">YouTube Channel</option>
+            </select>
+        </div>
+        <div style="margin-bottom: 0;">
+            <button class="btn btn-primary"
+                hx-get="/admin/sources/partials/add-form"
+                hx-target="#add-form-container"
+                hx-swap="innerHTML"
+            >Add Source</button>
+        </div>
+    </div>
+</div>
+
+<div id="add-form-container"></div>
+
+<div id="source-list" hx-get="/admin/sources/partials/list" hx-trigger="load">
+    <p class="empty">Loading...</p>
+</div>
+{% endblock %}
