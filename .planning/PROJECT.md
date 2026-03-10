@@ -8,24 +8,36 @@ A knowledge infrastructure engine that continuously discovers, fetches, and tran
 
 Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
 
+## Current Milestone: v1.1 Admin Control Panel
+
+**Goal:** Transform the read-only admin dashboard into a full operational control panel with thinker management, pipeline controls, scheduling, and an LLM-powered chat agent for natural language system interaction.
+
+**Target features:**
+- Full thinker lifecycle management (add, edit, approve, deactivate) with candidate promotion
+- Source management with approval workflows and manual source addition
+- Pipeline control: job queue visibility, kill switch, manual job triggers, scheduler configuration
+- System configuration: rate limits, API keys, worker settings, category taxonomy
+- LLM chat agent as persistent bottom drawer for natural language commands ("add Nassim Taleb and find his podcast appearances")
+- Morning briefing dashboard: health status, recent activity, pending approvals, queue depth
+
 ## Requirements
 
-### Validated
+### Validated (v1.0)
 
-(None yet — ship to validate)
+- [x] Continuous podcast discovery and RSS ingestion for tracked thinkers
+- [x] Multi-source transcription pipeline (YouTube captions, existing transcripts, Parakeet GPU inference)
+- [x] LLM Supervisor governing all corpus expansion decisions (new thinkers, sources, candidates)
+- [x] DB-backed job queue with priority, rate limiting, and stale job reclamation
+- [x] 3-layer content deduplication (URL normalization, content fingerprint, trigram similarity)
+- [x] Admin dashboard for human oversight and system monitoring (read-only)
+- [x] Category-organized thinker hierarchy with cascade discovery
+- [x] GPU worker on-demand scaling via Railway API
+- [x] Content attribution linking content to thinkers with confidence scoring
+- [x] API for programmatic access to ingested content and system state
 
-### Active
+### Active (v1.1)
 
-- [ ] Continuous podcast discovery and RSS ingestion for tracked thinkers
-- [ ] Multi-source transcription pipeline (YouTube captions, existing transcripts, Parakeet GPU inference)
-- [ ] LLM Supervisor governing all corpus expansion decisions (new thinkers, sources, candidates)
-- [ ] DB-backed job queue with priority, rate limiting, and stale job reclamation
-- [ ] 3-layer content deduplication (URL normalization, content fingerprint, trigram similarity)
-- [ ] Admin dashboard for human oversight and system monitoring
-- [ ] Category-organized thinker hierarchy with cascade discovery
-- [ ] GPU worker on-demand scaling via Railway API
-- [ ] Content attribution linking content to thinkers with confidence scoring
-- [ ] API for programmatic access to ingested content and system state
+(See REQUIREMENTS.md for detailed REQ-IDs)
 
 ### Out of Scope
 
@@ -63,6 +75,11 @@ The system specification is fully defined in `ThinkTank_Specification.md`. Engin
 | Railway for deployment | Managed infrastructure, GPU support, auto-deploy from git | — Pending |
 | Long-form audio first | Less polished content reveals more authentic expertise than written sources | — Pending |
 | 3-layer dedup | URL normalization + fingerprint + trigram covers all duplication vectors | — Pending |
+| Persistent chat drawer (not separate page) | Agent always accessible, co-located with data being discussed | v1.1 |
+| Propose-then-execute for mutations | Chat agent proposes changes, user confirms before execution — safe by default | v1.1 |
+| Simple scheduler (frequency + toggle, not cron) | Cron is overkill for single-owner; frequency in hours is simpler and sufficient | v1.1 |
+| Controls co-located with data | Add thinker lives on Thinkers page, not a separate admin section — intuitive | v1.1 |
+| SSE for chat streaming | sse-starlette for real-time agent responses, reuses existing LLMClient | v1.1 |
 
 ---
-*Last updated: 2026-03-08 after initialization*
+*Last updated: 2026-03-09 after v1.1 milestone start*
