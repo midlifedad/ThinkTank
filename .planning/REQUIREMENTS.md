@@ -36,7 +36,7 @@ Requirements for Admin Control Panel milestone. Phases 8-12.
 
 - [x] **PIPE-01**: Operator can view the job queue with filters by status (pending, running, failed, complete), job type, and date range
 - [x] **PIPE-02**: Operator can manually trigger pipeline jobs: refresh_due_sources, scan_for_candidates, discover_guests for a thinker
-- [ ] **PIPE-03**: Operator can configure recurring task schedules with frequency (hours), enable/disable toggle, and a Run Now button
+- [x] **PIPE-03**: Operator can configure recurring task schedules with frequency (hours), enable/disable toggle, and a Run Now button
 - [x] **PIPE-04**: Operator can retry a failed job or cancel a pending job from the queue view
 - [x] **PIPE-05**: Operator can view job detail showing payload, attempts, error messages, and timing
 
@@ -287,7 +287,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRC-05 | Phase 10 | Complete |
 | PIPE-01 | Phase 11 | Complete |
 | PIPE-02 | Phase 11 | Complete |
-| PIPE-03 | Phase 11 | Pending |
+| PIPE-03 | Phase 11 | Complete |
 | PIPE-04 | Phase 11 | Complete |
 | PIPE-05 | Phase 11 | Complete |
 | CHAT-01 | Phase 12 | Pending |

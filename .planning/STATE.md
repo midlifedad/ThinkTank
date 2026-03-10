@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Admin Control Panel
 status: executing
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-03-10T06:39:59Z"
-last_activity: 2026-03-10 -- Phase 10 complete (source detail page with health summary, episodes, errors)
+stopped_at: Completed 11-02-PLAN.md
+last_updated: "2026-03-10T06:41:04Z"
+last_activity: 2026-03-10 -- Phase 11 complete (recurring task scheduler editor with frequency/toggle/run-now)
 progress:
   total_phases: 12
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 28
-  completed_plans: 27
-  percent: 93
+  completed_plans: 28
+  percent: 96
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** v1.1 Admin Control Panel -- Phases 8-10 complete, Phase 11 plan 1 complete
+**Current focus:** v1.1 Admin Control Panel -- Phases 8-11 complete, Phase 12 remaining
 
 ## Current Position
 
-Phase: 11 of 12 (Pipeline Control) -- plan 1 of 2 complete
-Plan: 1 of 2 complete
+Phase: 12 of 12 (Agent Chat) -- not started
+Plan: 0 of ? complete
 Status: Executing
-Last activity: 2026-03-10 -- Phase 10 complete (source detail page with health summary, episodes, errors)
+Last activity: 2026-03-10 -- Phase 11 complete (recurring task scheduler editor with frequency/toggle/run-now)
 
-Progress: [#############################░] 93% (v1.0 complete, Phases 8-10 + 11 plan 1 of v1.1 done)
+Progress: [##############################] 96% (v1.0 complete, Phases 8-11 of v1.1 done, Phase 12 remaining)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 27
+- Total plans completed: 28
 - Average duration: ~8min
-- Total execution time: ~3h 30min
+- Total execution time: ~3h 33min
 
 **By Phase:**
 
@@ -53,11 +53,11 @@ Progress: [#############################░] 93% (v1.0 complete, Phases 8-10 + 1
 | 8. Dashboard & Config | 2/2 | ~6min | ~3min |
 | 9. Thinker Management | 2/2 | 10min | 5min |
 | 10. Source Management | 2/2 | 7min | ~4min |
-| 11. Pipeline Control | 1/2 | 4min | 4min |
+| 11. Pipeline Control | 2/2 | 7min | ~4min |
 
 **Recent Trend:**
-- Last 5 plans: 09-02 (4min), 11-01 (4min), 10-01 (4min), 10-02 (3min)
-- Trend: Consistent ~4min/plan
+- Last 5 plans: 11-01 (4min), 10-01 (4min), 10-02 (3min), 11-02 (3min)
+- Trend: Consistent ~3-4min/plan
 
 *Updated after each plan completion*
 
@@ -88,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 11]: Trigger validation 422 for invalid types; retry/cancel inline error messages for status mismatches
 - [Phase 10]: Raw SQL text() for JSONB payload->>'source_id' query on jobs table for error history
 - [Phase 10]: Route ordering: episode/error partials before /{source_id} to prevent FastAPI UUID parsing conflict
+- [Phase 11]: Each scheduled task stored as individual system_config row (scheduler_{key}) for independent per-task upsert
+- [Phase 11]: LLM tasks tracked for visibility but Run Now shows info message instead of creating job -- worker loop manages their schedule
 
 ### Pending Todos
 
@@ -99,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T06:39:59Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-03-10T06:41:04Z
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None

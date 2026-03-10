@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Dashboard and System Configuration** - Morning briefing dashboard with health/activity/approvals, kill switch control, auto-refresh, and system config management (API keys, rate limits, worker settings, categories) (completed 2026-03-10)
 - [x] **Phase 9: Thinker Management** - Searchable thinker list, add/edit/deactivate thinkers with LLM approval, thinker detail pages, candidate queue with promote/reject, triggered discovery
 - [x] **Phase 10: Source Management** - Filterable source list, manual source addition, approve/reject sources, force-refresh feeds, source detail pages with health and error history
-- [ ] **Phase 11: Pipeline Control** - Job queue browser with status/type/date filters, manual job triggers, recurring task scheduler with frequency/toggle, job retry/cancel, job detail view
+- [x] **Phase 11: Pipeline Control** - Job queue browser with status/type/date filters, manual job triggers, recurring task scheduler with frequency/toggle, job retry/cancel, job detail view
 - [ ] **Phase 12: Agent Chat** - Persistent chat drawer on all admin pages, LLM agent with database query capability, propose-then-execute mutations, SSE streaming responses, session chat history
 
 ## Phase Details
@@ -220,7 +220,7 @@ Plans:
 
 Plans:
 - [x] 11-01-PLAN.md -- Pipeline page with job queue browser (filters, pagination), manual triggers, retry/cancel, job detail view, integration tests
-- [ ] 11-02-PLAN.md -- Recurring task scheduler editor with frequency/toggle/Run Now, system_config persistence, integration tests
+- [x] 11-02-PLAN.md -- Recurring task scheduler editor with frequency/toggle/Run Now, system_config persistence, integration tests
 
 ### Phase 12: Agent Chat
 **Goal**: A persistent LLM-powered chat drawer is available on every admin page, enabling operators to ask questions about system state and propose mutations through natural language -- with streaming responses and a propose-then-execute safety model
@@ -253,5 +253,5 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
 | 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
 | 10. Source Management | v1.1 | 2/2 | Complete | 2026-03-10 |
-| 11. Pipeline Control | v1.1 | 1/2 | In Progress | - |
+| 11. Pipeline Control | v1.1 | 2/2 | Complete | 2026-03-10 |
 | 12. Agent Chat | v1.1 | 0/? | Not started | - |
