@@ -235,7 +235,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 12-01-PLAN.md -- Agent backend: system prompt, tool definitions (query_database, propose_action), session store, Anthropic streaming, chat API endpoints, integration tests
+- [x] 12-01-PLAN.md -- Agent backend: system prompt, tool definitions (query_database, propose_action), session store, Anthropic streaming, chat API endpoints, integration tests
 - [ ] 12-02-PLAN.md -- Chat drawer UI: persistent bottom drawer in base.html, SSE streaming consumption, propose/confirm UI, localStorage persistence, human verification
 
 ## Progress
@@ -258,4 +258,4 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
 | 10. Source Management | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
 | 11. Pipeline Control | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
-| 12. Agent Chat | v1.1 | 0/2 | Not started | - |
+| 12. Agent Chat | v1.1 | 1/2 | In progress | - |

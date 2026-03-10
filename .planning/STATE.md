@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Admin Control Panel
 status: executing
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-03-10T06:43:39.766Z"
-last_activity: 2026-03-10 -- Phase 11 complete (recurring task scheduler editor with frequency/toggle/run-now)
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-03-10T07:03:28Z"
+last_activity: 2026-03-10 -- Agent chat backend (system prompt, tools, session store, SSE streaming, 3 API endpoints)
 progress:
   total_phases: 12
   completed_phases: 11
-  total_plans: 28
-  completed_plans: 28
-  percent: 96
+  total_plans: 30
+  completed_plans: 29
+  percent: 97
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** v1.1 Admin Control Panel -- Phases 8-11 complete, Phase 12 remaining
+**Current focus:** v1.1 Admin Control Panel -- Phases 8-11 complete, Phase 12 in progress (1/2 plans done)
 
 ## Current Position
 
-Phase: 12 of 12 (Agent Chat) -- not started
-Plan: 0 of ? complete
+Phase: 12 of 12 (Agent Chat) -- in progress
+Plan: 1 of 2 complete
 Status: Executing
-Last activity: 2026-03-10 -- Phase 11 complete (recurring task scheduler editor with frequency/toggle/run-now)
+Last activity: 2026-03-10 -- Agent chat backend (system prompt, tools, session store, SSE streaming, 3 API endpoints)
 
-Progress: [##############################] 96% (v1.0 complete, Phases 8-11 of v1.1 done, Phase 12 remaining)
+Progress: [##############################] 97% (v1.0 complete, Phases 8-11 of v1.1 done, Phase 12: 1/2 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28
+- Total plans completed: 29
 - Average duration: ~8min
-- Total execution time: ~3h 33min
+- Total execution time: ~3h 42min
 
 **By Phase:**
 
@@ -54,10 +54,11 @@ Progress: [##############################] 96% (v1.0 complete, Phases 8-11 of v1
 | 9. Thinker Management | 2/2 | 10min | 5min |
 | 10. Source Management | 2/2 | 7min | ~4min |
 | 11. Pipeline Control | 2/2 | 7min | ~4min |
+| 12. Agent Chat | 1/2 | 9min | 9min |
 
 **Recent Trend:**
-- Last 5 plans: 11-01 (4min), 10-01 (4min), 10-02 (3min), 11-02 (3min)
-- Trend: Consistent ~3-4min/plan
+- Last 5 plans: 10-01 (4min), 10-02 (3min), 11-01 (4min), 11-02 (3min), 12-01 (9min)
+- Trend: 12-01 longer due to complex streaming/tool infrastructure
 
 *Updated after each plan completion*
 
@@ -90,6 +91,9 @@ Recent decisions affecting current work:
 - [Phase 10]: Route ordering: episode/error partials before /{source_id} to prevent FastAPI UUID parsing conflict
 - [Phase 11]: Each scheduled task stored as individual system_config row (scheduler_{key}) for independent per-task upsert
 - [Phase 11]: LLM tasks tracked for visibility but Run Now shows info message instead of creating job -- worker loop manages their schedule
+- [Phase 12]: stream.py yields dicts (not SSE strings) -- EventSourceResponse handles SSE framing via JSON serialization in router
+- [Phase 12]: async_session_factory() used directly in SSE endpoint (not Depends) since SSE outlives request lifecycle
+- [Phase 12]: In-memory session store singleton -- appropriate for single-admin, no DB overhead for chat history
 
 ### Pending Todos
 
@@ -101,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T06:41:04Z
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-03-10T07:03:28Z
+Stopped at: Completed 12-01-PLAN.md
 Resume file: None
