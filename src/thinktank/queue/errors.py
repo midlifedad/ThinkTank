@@ -24,7 +24,6 @@ class ErrorCategory(StrEnum):
     HTTP_ERROR = "http_error"
     RATE_LIMITED = "rate_limited"
     YOUTUBE_RATE_LIMIT = "youtube_rate_limit"
-    LISTENNOTES_RATE_LIMIT = "listennotes_rate_limit"
     PODCASTINDEX_ERROR = "podcastindex_error"
     API_ERROR = "api_error"
 

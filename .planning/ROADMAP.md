@@ -1,5 +1,10 @@
 # Roadmap: ThinkTank
 
+## Milestones
+
+- **v1.0 Ingestion Engine** - Phases 1-7 (shipped 2026-03-09)
+- **v1.1 Admin Control Panel** - Phases 8-12 (shipped 2026-03-10)
+
 ## Overview
 
 ThinkTank is a continuous ingestion engine that discovers, fetches, and transcribes expert audio content into a structured PostgreSQL corpus. The build follows a strict dependency chain: database schema and project scaffolding first, then the job queue that drives all work, then content ingestion (the first real jobs), then GPU transcription, then LLM governance over corpus expansion, then autonomous discovery features, and finally the admin dashboard, REST API, and operational tooling. Each phase delivers a verifiable capability that the next phase depends on.
@@ -12,15 +17,31 @@ ThinkTank is a continuous ingestion engine that discovers, fetches, and transcri
 
 Decimal phases appear between their surrounding integers in numeric order.
 
+<details>
+<summary>v1.0 Ingestion Engine (Phases 1-7) -- SHIPPED 2026-03-09</summary>
+
 - [x] **Phase 1: Foundation Layer** - Database schema, models, migrations, configuration, logging, health endpoints, project scaffolding, and test infrastructure
 - [x] **Phase 2: Job Queue Engine** - DB-backed job queue with priority, retry, stale reclamation, rate limiting, backpressure, and kill switch
-- [ ] **Phase 3: Content Ingestion Pipeline** - RSS feed polling, 3-layer deduplication, content filtering, source approval, content attribution, and discovery orchestration
-- [ ] **Phase 4: Transcription Pipeline** - Three-pass transcription (captions, existing transcripts, Parakeet GPU), GPU worker service, on-demand scaling, audio processing
-- [ ] **Phase 5: LLM Governance** - Claude Supervisor for thinker/source/candidate approval, audit trail, fallback escalation, scheduled health checks and digests
+- [x] **Phase 3: Content Ingestion Pipeline** - RSS feed polling, 3-layer deduplication, content filtering, source approval, content attribution, and discovery orchestration
+- [x] **Phase 4: Transcription Pipeline** - Three-pass transcription (captions, existing transcripts, Parakeet GPU), GPU worker service, on-demand scaling, audio processing
+- [x] **Phase 5: LLM Governance** - Claude Supervisor for thinker/source/candidate approval, audit trail, fallback escalation, scheduled health checks and digests
 - [x] **Phase 6: Discovery and Autonomous Growth** - Cascade discovery, guest discovery via Listen Notes and Podcast Index, candidate promotion, daily quotas
 - [x] **Phase 7: Operations, API, and Polish** - Admin dashboard, REST API, cost tracking, bootstrap sequence, operations runbook, development guide
 
+</details>
+
+### v1.1 Admin Control Panel (Phases 8-12)
+
+- [x] **Phase 8: Dashboard and System Configuration** - Morning briefing dashboard with health/activity/approvals, kill switch control, auto-refresh, and system config management (API keys, rate limits, worker settings, categories) (completed 2026-03-10)
+- [x] **Phase 9: Thinker Management** - Searchable thinker list, add/edit/deactivate thinkers with LLM approval, thinker detail pages, candidate queue with promote/reject, triggered discovery
+- [x] **Phase 10: Source Management** - Filterable source list, manual source addition, approve/reject sources, force-refresh feeds, source detail pages with health and error history
+- [x] **Phase 11: Pipeline Control** - Job queue browser with status/type/date filters, manual job triggers, recurring task scheduler with frequency/toggle, job retry/cancel, job detail view
+- [x] **Phase 12: Agent Chat** - Persistent chat drawer on all admin pages, LLM agent with database query capability, propose-then-execute mutations, SSE streaming responses, session chat history (completed 2026-03-10)
+
 ## Phase Details
+
+<details>
+<summary>v1.0 Ingestion Engine (Phases 1-7) -- SHIPPED 2026-03-09</summary>
 
 ### Phase 1: Foundation Layer
 **Goal**: A deployable FastAPI application with the complete database schema, async models, migrations, configuration system, structured logging, and test infrastructure -- everything needed for other phases to build on top of
@@ -137,17 +158,104 @@ Plans:
 - [x] 07-02-PLAN.md -- Admin dashboard (HTMX + Jinja2), LLM decision panel with human override, rate limit gauges, category taxonomy management, integration tests
 - [x] 07-03-PLAN.md -- Bootstrap seed scripts (categories, config, thinkers), bootstrap orchestrator, operations runbook, development guide, integration tests
 
+</details>
+
+### Phase 8: Dashboard and System Configuration
+**Goal**: The existing admin dashboard is transformed into an operational morning briefing with system health, activity feeds, queue status, and a global kill switch control -- plus full management of API keys, rate limits, worker settings, and category taxonomy
+**Depends on**: Phase 7
+**Requirements**: DASH-01, DASH-02, DASH-03, DASH-04, CONF-01, CONF-02, CONF-03, CONF-04
+**Success Criteria** (what must be TRUE):
+  1. Operator opens the dashboard and sees a morning briefing page with system health indicators (worker status, DB connection, error rates), queue depth broken down by job type, and a count of pending approvals -- all loading within 2 seconds
+  2. Operator can toggle the global kill switch on/off from a prominent dashboard control, and the system immediately stops/starts claiming new jobs in response
+  3. Operator can view a recent activity feed showing the last 50 system actions (jobs completed, approvals made, errors, thinkers added), and the entire dashboard auto-refreshes every 10 seconds via HTMX without a full page reload
+  4. Operator can manage API keys (add, update, remove) for external services, view and edit rate limit settings per API, and view and edit system config values (worker settings, thresholds, timeouts) from dedicated configuration pages
+  5. Operator can manage the category taxonomy (add, edit, reorder categories and subcategories) from the configuration section, with changes immediately reflected in thinker forms
+**Plans:** 2/2 plans complete
+
+Plans:
+- [x] 08-01-PLAN.md -- Morning briefing dashboard: health summary, kill switch toggle, activity feed, pending approvals, reorganized layout, integration tests
+- [x] 08-02-PLAN.md -- System configuration page: rate limits editor, system config editor, config landing page with links to API keys and categories, integration tests
+
+### Phase 9: Thinker Management
+**Goal**: Operators can manage the full thinker lifecycle from the admin panel -- browsing, searching, adding new thinkers (with LLM approval), editing existing thinkers, viewing detailed thinker profiles, managing the candidate queue, and triggering discovery
+**Depends on**: Phase 8
+**Requirements**: THNK-01, THNK-02, THNK-03, THNK-04, THNK-05, THNK-06, THNK-07
+**Success Criteria** (what must be TRUE):
+  1. Operator can view a searchable, filterable list of all thinkers showing name, tier, category, active status, and source count -- with text search returning results as they type via HTMX
+  2. Operator can add a new thinker via an inline form (name, tier, categories), which creates the thinker record and triggers LLM approval -- and the new thinker appears in the list with "awaiting_llm" status
+  3. Operator can edit an existing thinker's name, tier, categories, and active status via an inline edit form, and can deactivate/reactivate a thinker without deleting their data
+  4. Operator can view a thinker detail page showing their sources, recent content, discovery status, and LLM review history -- with links to drill into individual sources and content
+  5. Operator can view the candidate queue, promote or reject candidates with a reason, and trigger podcast discovery (PodcastIndex) for a specific thinker from the thinker detail page
+**Plans:** 2 plans
+
+Plans:
+- [x] 09-01-PLAN.md -- Thinker list page: searchable/filterable list, add form with LLM approval trigger, edit form, active toggle, integration tests
+- [x] 09-02-PLAN.md -- Thinker detail page: sources/content/reviews tabs, candidate queue with promote/reject, PodcastIndex discovery trigger, integration tests
+
+### Phase 10: Source Management
+**Goal**: Operators can view, add, approve, reject, and inspect sources for any thinker -- with manual source addition, force-refresh capability, and detailed source health monitoring
+**Depends on**: Phase 9
+**Requirements**: SRC-01, SRC-02, SRC-03, SRC-04, SRC-05
+**Success Criteria** (what must be TRUE):
+  1. Operator can view all sources with filters for thinker, approval status, and source type -- and the list displays feed health indicators (last fetched, error count) at a glance
+  2. Operator can approve or reject a pending source with a reason, bypassing LLM review -- and the decision is logged in the audit trail alongside LLM decisions
+  3. Operator can add a source manually (RSS URL, name, thinker) which registers it as pending approval, and can force-refresh a specific approved source immediately (creating a fetch_podcast_feed job)
+  4. Operator can view a source detail page showing feed health, last fetched time, episode count, and error history -- providing enough context to diagnose feed problems without checking logs
+**Plans:** 2/2 plans complete
+
+Plans:
+- [x] 10-01-PLAN.md -- Source list page: filterable list, add form, approve/reject with audit trail, force-refresh, integration tests
+- [x] 10-02-PLAN.md -- Source detail page: health summary, episodes list, error history, integration tests
+
+### Phase 11: Pipeline Control
+**Goal**: Operators have full visibility and control over the job pipeline -- browsing the queue, triggering jobs manually, configuring recurring task schedules, and managing individual job lifecycle (retry, cancel, inspect)
+**Depends on**: Phase 8
+**Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04, PIPE-05
+**Success Criteria** (what must be TRUE):
+  1. Operator can view the job queue with filters by status (pending, running, failed, complete), job type, and date range -- with pagination handling queues of thousands of jobs
+  2. Operator can manually trigger pipeline jobs (refresh_due_sources, scan_for_candidates, discover_guests for a thinker) from the pipeline page, and the created job appears in the queue immediately
+  3. Operator can configure recurring task schedules with frequency (in hours), an enable/disable toggle, and a Run Now button -- without cron syntax, just simple frequency controls
+  4. Operator can retry a failed job or cancel a pending job from the queue view, and can view job detail showing payload, attempts, error messages, and timing for any job
+**Plans:** 2/2 plans complete
+
+Plans:
+- [x] 11-01-PLAN.md -- Pipeline page with job queue browser (filters, pagination), manual triggers, retry/cancel, job detail view, integration tests
+- [x] 11-02-PLAN.md -- Recurring task scheduler editor with frequency/toggle/Run Now, system_config persistence, integration tests
+
+### Phase 12: Agent Chat
+**Goal**: A persistent LLM-powered chat drawer is available on every admin page, enabling operators to ask questions about system state and propose mutations through natural language -- with streaming responses and a propose-then-execute safety model
+**Depends on**: Phases 8, 9, 10, 11
+**Requirements**: CHAT-01, CHAT-02, CHAT-03, CHAT-04, CHAT-05
+**Success Criteria** (what must be TRUE):
+  1. Operator can open a persistent chat drawer (bottom of any admin page) and it remains open across page navigations within the admin panel
+  2. Operator can ask the agent questions about system state ("how many thinkers are active?", "what failed in the last hour?", "what's in the queue?") and receive accurate answers drawn from live database queries
+  3. When the operator requests a state-changing action ("add Nassim Taleb", "approve that source", "trigger discovery for Sam Harris"), the agent proposes the action with details and waits for explicit confirmation before executing
+  4. Agent responses stream in real-time via SSE so the operator sees partial output as it generates, with no perceptible delay before the first token appears
+  5. Operator can scroll through a history of recent chat interactions within the current session, providing context for follow-up questions
+**Plans:** 2/2 plans complete
+
+Plans:
+- [x] 12-01-PLAN.md -- Agent backend: system prompt, tool definitions (query_database, propose_action), session store, Anthropic streaming, chat API endpoints, integration tests
+- [x] 12-02-PLAN.md -- Chat drawer UI: persistent bottom drawer in base.html, SSE streaming consumption, propose/confirm UI, localStorage persistence, human verification
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Foundation Layer | 3/3 | Complete | 2026-03-09 |
-| 2. Job Queue Engine | 3/3 | Complete | 2026-03-09 |
-| 3. Content Ingestion Pipeline | 4/4 | Complete | 2026-03-09 |
-| 4. Transcription Pipeline | 2/2 | Complete | 2026-03-09 |
-| 5. LLM Governance | 3/3 | Complete | 2026-03-09 |
-| 6. Discovery and Autonomous Growth | 2/2 | Complete | 2026-03-09 |
-| 7. Operations, API, and Polish | 3/3 | Complete | 2026-03-09 |
+Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 could theoretically run in parallel after Phase 8.
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Foundation Layer | v1.0 | 3/3 | Complete | 2026-03-09 |
+| 2. Job Queue Engine | v1.0 | 3/3 | Complete | 2026-03-09 |
+| 3. Content Ingestion Pipeline | v1.0 | 4/4 | Complete | 2026-03-09 |
+| 4. Transcription Pipeline | v1.0 | 2/2 | Complete | 2026-03-09 |
+| 5. LLM Governance | v1.0 | 3/3 | Complete | 2026-03-09 |
+| 6. Discovery and Autonomous Growth | v1.0 | 2/2 | Complete | 2026-03-09 |
+| 7. Operations, API, and Polish | v1.0 | 3/3 | Complete | 2026-03-09 |
+| 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
+| 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
+| 10. Source Management | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
+| 11. Pipeline Control | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
+| 12. Agent Chat | 2/2 | Complete    | 2026-03-10 | 2026-03-10 |

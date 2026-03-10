@@ -1,0 +1,65 @@
+{% if success %}
+<p class="healthy" style="margin-bottom: 0.75rem; font-size: 0.85rem;">{{ success }}</p>
+{% endif %}
+{% if info %}
+<p style="margin-bottom: 0.75rem; font-size: 0.85rem; color: #6c757d;">{{ info }}</p>
+{% endif %}
+<table>
+    <thead>
+        <tr>
+            <th>Task</th>
+            <th>Frequency (hours)</th>
+            <th>Enabled</th>
+            <th>Last Run</th>
+            <th>Next Run</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for task in tasks %}
+        <tr>
+            <td>{{ task.label }}</td>
+            <td>
+                <form style="display:inline; margin:0;"
+                      hx-post="/admin/pipeline/scheduler/{{ task.key }}/save"
+                      hx-target="#scheduler-editor">
+                    <input type="number" name="frequency_hours"
+                           value="{{ task.frequency_hours }}" min="1"
+                           style="width:60px; display:inline-block;">
+                    <button type="submit" class="btn btn-sm" style="margin-left:0.25rem;">Save</button>
+                </form>
+            </td>
+            <td>
+                <button class="btn btn-sm {% if task.enabled %}btn-primary{% else %}btn-danger{% endif %}"
+                        hx-post="/admin/pipeline/scheduler/{{ task.key }}/toggle"
+                        hx-target="#scheduler-editor">
+                    {% if task.enabled %}Enabled{% else %}Disabled{% endif %}
+                </button>
+            </td>
+            <td>
+                {% if task.last_run_at %}
+                {{ task.last_run_at.strftime('%Y-%m-%d %H:%M') }}
+                {% else %}
+                Never
+                {% endif %}
+            </td>
+            <td>
+                {% if not task.enabled %}
+                Not scheduled
+                {% elif task.next_run_at %}
+                {{ task.next_run_at.strftime('%Y-%m-%d %H:%M') }}
+                {% else %}
+                Not scheduled
+                {% endif %}
+            </td>
+            <td>
+                <button class="btn btn-sm btn-primary"
+                        hx-post="/admin/pipeline/scheduler/{{ task.key }}/run-now"
+                        hx-target="#scheduler-editor">
+                    Run Now
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

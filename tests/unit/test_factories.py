@@ -330,8 +330,8 @@ class TestMakeRateLimitUsage:
         assert rl.worker_id == "worker-1"
 
     def test_override_api_name(self):
-        rl = make_rate_limit_usage(api_name="listennotes")
-        assert rl.api_name == "listennotes"
+        rl = make_rate_limit_usage(api_name="podcastindex")
+        assert rl.api_name == "podcastindex"
 
 
 # ---------- ApiUsage ----------

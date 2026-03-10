@@ -10,10 +10,10 @@ import pytest
 
 
 class TestBackpressureJobTypes:
-    """Test that BACKPRESSURE_JOB_TYPES contains the correct 10 discovery/fetch types."""
+    """Test that BACKPRESSURE_JOB_TYPES contains the correct 9 discovery/fetch types."""
 
-    def test_contains_all_10_discovery_types(self):
-        """All 10 discovery/fetch job types from spec Section 6 must be present."""
+    def test_contains_all_9_discovery_types(self):
+        """All 9 discovery/fetch job types from spec Section 6 must be present."""
         from src.thinktank.queue.backpressure import BACKPRESSURE_JOB_TYPES
 
         expected = {
@@ -23,7 +23,6 @@ class TestBackpressureJobTypes:
             "scrape_substack",
             "fetch_youtube_channel",
             "fetch_guest_feed",
-            "discover_guests_listennotes",
             "discover_guests_podcastindex",
             "search_youtube_appearances",
             "scan_for_candidates",

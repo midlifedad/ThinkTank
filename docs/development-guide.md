@@ -51,7 +51,6 @@ src/thinktank/
 │   ├── process_content.py
 │   ├── llm_approval_check.py
 │   ├── scan_for_candidates.py
-│   ├── discover_guests_listennotes.py
 │   ├── discover_guests_podcastindex.py
 │   └── rollup_api_usage.py
 ├── queue/                  # Job queue engine
@@ -82,7 +81,6 @@ src/thinktank/
 │   └── time_utils.py       # Time helpers for scheduling
 ├── discovery/              # Discovery modules
 │   ├── name_extractor.py   # Regex name extraction
-│   ├── listennotes.py      # Listen Notes API client
 │   ├── podcastindex.py     # Podcast Index API client
 │   └── quota.py            # Daily quota tracker
 ├── scaling/                # GPU scaling

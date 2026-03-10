@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a href="/admin/sources" style="color: #555; text-decoration: none;">&larr; Back to Sources</a>
+</div>
+
+<div style="margin-bottom: 1rem;">
+    <h2 style="margin: 0 0 0.25rem 0;">{{ source.name }}</h2>
+    <p style="color: #666; margin: 0;">
+        Owned by <a href="/admin/thinkers/{{ source.thinker_id }}" style="color: #1a1a2e;">{{ thinker_name }}</a>
+    </p>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Health Summary</h3>
+    <div class="stat-row">
+        <span class="stat-label">Approval Status</span>
+        <span class="stat-value">
+            {% if source.approval_status == 'approved' %}
+            <span style="background: #d4edda; color: #155724; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.85rem;">{{ source.approval_status }}</span>
+            {% elif source.approval_status == 'pending_llm' %}
+            <span style="background: #fff3cd; color: #856404; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.85rem;">{{ source.approval_status }}</span>
+            {% elif source.approval_status == 'rejected' %}
+            <span style="background: #f8d7da; color: #721c24; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.85rem;">{{ source.approval_status }}</span>
+            {% else %}
+            <span style="background: #e2e3e5; color: #383d41; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.85rem;">{{ source.approval_status }}</span>
+            {% endif %}
+        </span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Active</span>
+        <span class="stat-value">{% if source.active %}<span class="healthy">Yes</span>{% else %}<span class="error">No</span>{% endif %}</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Source Type</span>
+        <span class="stat-value">{{ source.source_type }}</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">URL</span>
+        <span class="stat-value"><a href="{{ source.url }}" target="_blank" style="color: #1a1a2e;">{{ source.url }}</a></span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Last Fetched</span>
+        <span class="stat-value">{{ source.last_fetched.strftime('%Y-%m-%d %H:%M') if source.last_fetched else 'Never' }}</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Item Count</span>
+        <span class="stat-value">{{ source.item_count }}</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Error Count</span>
+        <span class="stat-value">{% if source.error_count > 0 %}<span class="error">{{ source.error_count }}</span>{% else %}{{ source.error_count }}{% endif %}</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Created At</span>
+        <span class="stat-value">{{ source.created_at.strftime('%Y-%m-%d %H:%M') if source.created_at else '—' }}</span>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Episodes</h3>
+    <div id="source-episodes"
+        hx-get="/admin/sources/{{ source.id }}/partials/episodes"
+        hx-trigger="load">
+        <p class="empty">Loading episodes...</p>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Error History</h3>
+    <div id="source-errors"
+        hx-get="/admin/sources/{{ source.id }}/partials/errors"
+        hx-trigger="load">
+        <p class="empty">Loading error history...</p>
+    </div>
+</div>
+{% endblock %}

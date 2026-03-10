@@ -1,0 +1,40 @@
+{% if content_items %}
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Published</th>
+            <th>Duration</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in content_items %}
+        <tr>
+            <td>{{ c.title }}</td>
+            <td>
+                {% if c.status == 'transcribed' or c.status == 'complete' %}
+                <span class="healthy">{{ c.status }}</span>
+                {% elif c.status == 'pending' %}
+                <span class="warning">{{ c.status }}</span>
+                {% elif c.status == 'failed' or c.status == 'skipped' %}
+                <span class="error">{{ c.status }}</span>
+                {% else %}
+                <span>{{ c.status }}</span>
+                {% endif %}
+            </td>
+            <td>{{ c.published_at.strftime('%Y-%m-%d') if c.published_at else '—' }}</td>
+            <td>
+                {% if c.duration_seconds %}
+                {{ '%d:%02d' % (c.duration_seconds // 60, c.duration_seconds % 60) }}
+                {% else %}
+                —
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">No content found for this thinker.</p>
+{% endif %}

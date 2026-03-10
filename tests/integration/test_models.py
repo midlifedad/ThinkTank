@@ -215,10 +215,10 @@ async def test_create_system_config(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_create_rate_limit_usage(session: AsyncSession):
     """RateLimitUsage persists with timestamp."""
-    rl = await create_rate_limit_usage(session, api_name="listennotes")
+    rl = await create_rate_limit_usage(session, api_name="podcastindex")
     result = await session.get(RateLimitUsage, rl.id)
     assert result is not None
-    assert result.api_name == "listennotes"
+    assert result.api_name == "podcastindex"
     assert result.called_at is not None
 
 

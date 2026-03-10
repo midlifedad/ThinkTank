@@ -3,9 +3,61 @@
 **Defined:** 2026-03-08
 **Core Value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
 
-## v1 Requirements
+## v1.1 Requirements
 
-Requirements for initial release. Each maps to roadmap phases.
+Requirements for Admin Control Panel milestone. Phases 8-12.
+
+### Dashboard
+
+- [x] **DASH-01**: Operator can view a morning briefing page showing system health (worker status, DB connection, error rates), queue depth by job type, and pending approval counts
+- [x] **DASH-02**: Operator can toggle the global kill switch on/off from a prominent dashboard control
+- [x] **DASH-03**: Operator can view a recent activity feed showing the last 50 system actions (jobs completed, approvals made, errors, thinkers added)
+- [x] **DASH-04**: Dashboard auto-refreshes every 10 seconds via HTMX without full page reload
+
+### Thinker Management
+
+- [x] **THNK-01**: Operator can view a searchable, filterable list of all thinkers with name, tier, category, active status, and source count
+- [x] **THNK-02**: Operator can add a new thinker via a form (name, tier, categories) which creates the thinker and triggers LLM approval
+- [x] **THNK-03**: Operator can edit an existing thinker's name, tier, categories, and active status
+- [x] **THNK-04**: Operator can view a thinker detail page showing their sources, recent content, discovery status, and LLM review history
+- [x] **THNK-05**: Operator can view the candidate queue and promote or reject candidates with a reason
+- [x] **THNK-06**: Operator can trigger podcast discovery (PodcastIndex) for a specific thinker from the thinker detail page
+- [x] **THNK-07**: Operator can deactivate/reactivate a thinker without deleting their data
+
+### Source Management
+
+- [x] **SRC-01**: Operator can view all sources filterable by thinker, approval status, and source type
+- [x] **SRC-02**: Operator can approve or reject a pending source with a reason, bypassing LLM review
+- [x] **SRC-03**: Operator can add a source manually (RSS URL, name, thinker) which registers it as pending approval
+- [x] **SRC-04**: Operator can force-refresh a specific source immediately (creates a fetch_podcast_feed job)
+- [x] **SRC-05**: Operator can view source detail page showing feed health, last fetched time, episode count, and error history
+
+### Pipeline Control
+
+- [x] **PIPE-01**: Operator can view the job queue with filters by status (pending, running, failed, complete), job type, and date range
+- [x] **PIPE-02**: Operator can manually trigger pipeline jobs: refresh_due_sources, scan_for_candidates, discover_guests for a thinker
+- [x] **PIPE-03**: Operator can configure recurring task schedules with frequency (hours), enable/disable toggle, and a Run Now button
+- [x] **PIPE-04**: Operator can retry a failed job or cancel a pending job from the queue view
+- [x] **PIPE-05**: Operator can view job detail showing payload, attempts, error messages, and timing
+
+### System Configuration
+
+- [x] **CONF-01**: Operator can manage API keys (add, update, remove) for external services (Anthropic, PodcastIndex, YouTube)
+- [x] **CONF-02**: Operator can view and edit rate limit settings per external API
+- [x] **CONF-03**: Operator can view and edit system config values (worker settings, thresholds, timeouts)
+- [x] **CONF-04**: Operator can manage the category taxonomy (add, edit, reorder categories and subcategories)
+
+### Agent Chat
+
+- [x] **CHAT-01**: Operator can open a persistent chat drawer (bottom of page) on any admin page to interact with an LLM agent
+- [x] **CHAT-02**: Agent can answer questions about system state (how many thinkers, what's in the queue, recent errors) by querying the database
+- [x] **CHAT-03**: Agent proposes state-changing actions (add thinker, trigger discovery, approve source) and waits for operator confirmation before executing
+- [x] **CHAT-04**: Agent responses stream in real-time via SSE so the operator sees partial output as it generates
+- [x] **CHAT-05**: Operator can see a history of recent chat interactions within the current session
+
+## v1.0 Requirements (Complete)
+
+v1.0 ingestion engine requirements. All mapped to Phases 1-7.
 
 ### Foundation
 
@@ -137,6 +189,11 @@ Explicitly excluded. Documented to prevent scope creep.
 | Email/Slack/webhook notifications | Dashboard banners + LLM digests sufficient for single admin |
 | Custom transcription model fine-tuning | Parakeet works well out of the box (~6% WER) |
 | Third-party YouTube transcript services | yt-dlp auto-subs sufficient for v1 |
+| Agent chat: delete operations | Too dangerous for automated execution; manual controls only |
+| Agent chat: API key management | Security-sensitive, always manual via dedicated UI |
+| Agent chat: auto-healing/self-repair | Fail-safe principle; agent proposes, human executes |
+| Cron-style scheduling | Over-engineered for single-owner; frequency + toggle is sufficient |
+| Separate content management page | Too rare an action; content accessed via source/thinker detail pages |
 
 ## Traceability
 
@@ -208,12 +265,47 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUAL-05 | Phase 7 | Complete |
 | QUAL-06 | Phase 1 | Complete |
 | QUAL-07 | Phase 7 | Complete |
+| DASH-01 | Phase 8 | Complete |
+| DASH-02 | Phase 8 | Complete |
+| DASH-03 | Phase 8 | Complete |
+| DASH-04 | Phase 8 | Complete |
+| CONF-01 | Phase 8 | Complete |
+| CONF-02 | Phase 8 | Complete |
+| CONF-03 | Phase 8 | Complete |
+| CONF-04 | Phase 8 | Complete |
+| THNK-01 | Phase 9 | Complete |
+| THNK-02 | Phase 9 | Complete |
+| THNK-03 | Phase 9 | Complete |
+| THNK-04 | Phase 9 | Complete |
+| THNK-05 | Phase 9 | Complete |
+| THNK-06 | Phase 9 | Complete |
+| THNK-07 | Phase 9 | Complete |
+| SRC-01 | Phase 10 | Complete |
+| SRC-02 | Phase 10 | Complete |
+| SRC-03 | Phase 10 | Complete |
+| SRC-04 | Phase 10 | Complete |
+| SRC-05 | Phase 10 | Complete |
+| PIPE-01 | Phase 11 | Complete |
+| PIPE-02 | Phase 11 | Complete |
+| PIPE-03 | Phase 11 | Complete |
+| PIPE-04 | Phase 11 | Complete |
+| PIPE-05 | Phase 11 | Complete |
+| CHAT-01 | Phase 12 | Complete |
+| CHAT-02 | Phase 12 | Complete |
+| CHAT-03 | Phase 12 | Complete |
+| CHAT-04 | Phase 12 | Complete |
+| CHAT-05 | Phase 12 | Complete |
 
-**Coverage:**
-- v1 requirements: 64 total
+**v1.0 Coverage:**
+- v1.0 requirements: 64 total
 - Mapped to phases: 64
+- Unmapped: 0
+
+**v1.1 Coverage:**
+- v1.1 requirements: 30 total
+- Mapped to phases: 30
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-09 after Phase 6 Plan 01 completion*
+*Last updated: 2026-03-09 after v1.1 roadmap creation (Phases 8-12)*

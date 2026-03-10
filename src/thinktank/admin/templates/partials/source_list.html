@@ -1,0 +1,78 @@
+{% if success %}
+<div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+    {{ success }}
+</div>
+{% endif %}
+
+{% if error %}
+<div style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Sources</h3>
+    {% if sources %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Thinker</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Errors</th>
+                <th>Last Fetched</th>
+                <th>Items</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sources %}
+            <tr>
+                <td><a href="/admin/sources/{{ s.id }}">{{ s.name }}</a></td>
+                <td><a href="/admin/thinkers/{{ s.thinker_id }}">{{ s.thinker_name }}</a></td>
+                <td>{{ s.source_type }}</td>
+                <td>
+                    {% if s.approval_status == 'approved' %}
+                    <span class="healthy">{{ s.approval_status }}</span>
+                    {% elif s.approval_status == 'pending_llm' %}
+                    <span class="warning">{{ s.approval_status }}</span>
+                    {% elif s.approval_status == 'rejected' %}
+                    <span class="error">{{ s.approval_status }}</span>
+                    {% else %}
+                    <span>{{ s.approval_status }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if s.error_count > 0 %}
+                    <span class="error">{{ s.error_count }}</span>
+                    {% else %}
+                    {{ s.error_count }}
+                    {% endif %}
+                </td>
+                <td>{{ s.last_fetched.strftime('%Y-%m-%d %H:%M') if s.last_fetched else '—' }}</td>
+                <td>{{ s.item_count }}</td>
+                <td>
+                    {% if s.approval_status == 'pending_llm' %}
+                    <form style="display: inline;" hx-post="/admin/sources/{{ s.id }}/approve" hx-target="#source-list">
+                        <input type="hidden" name="reason" value="Admin approval" />
+                        <button type="submit" class="btn btn-sm" style="background: #0a0; color: #fff;">Approve</button>
+                    </form>
+                    <form style="display: inline;" hx-post="/admin/sources/{{ s.id }}/reject" hx-target="#source-list">
+                        <input type="hidden" name="reason" value="Admin rejection" />
+                        <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                    </form>
+                    {% elif s.approval_status == 'approved' %}
+                    <form style="display: inline;" hx-post="/admin/sources/{{ s.id }}/force-refresh" hx-target="#source-list">
+                        <button type="submit" class="btn btn-sm btn-primary">Refresh</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No sources found.</p>
+    {% endif %}
+</div>

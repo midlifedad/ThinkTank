@@ -78,12 +78,12 @@ class TestSetApiKey:
     async def test_set_key_persists_in_db(self, admin_client, session):
         await admin_client.post(
             "/admin/api-keys/set",
-            data={"key_name": "listennotes_api_key", "key_value": "ln-key-abcdef"},
+            data={"key_name": "youtube_api_key", "key_value": "yt-key-abcdef"},
         )
         from sqlalchemy import select
         result = await session.execute(
             select(SystemConfig.value).where(
-                SystemConfig.key == "secret_listennotes_api_key"
+                SystemConfig.key == "secret_youtube_api_key"
             )
         )
         value = result.scalar_one_or_none()

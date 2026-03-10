@@ -1,0 +1,97 @@
+<p style="color: #666; margin-bottom: 0.75rem;">{{ total_count }} job{{ 's' if total_count != 1 else '' }} matching filters</p>
+
+{% if jobs %}
+<table>
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Created</th>
+            <th>Started</th>
+            <th>Completed</th>
+            <th>Error</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in jobs %}
+        <tr>
+            <td>{{ job.job_type }}</td>
+            <td>
+                {% if job.status == 'pending' %}
+                <span style="background: #e0e0e0; color: #555; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">pending</span>
+                {% elif job.status == 'running' %}
+                <span style="background: #cce5ff; color: #004085; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">running</span>
+                {% elif job.status == 'failed' %}
+                <span style="background: #f8d7da; color: #721c24; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">failed</span>
+                {% elif job.status == 'done' %}
+                <span style="background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">done</span>
+                {% elif job.status == 'cancelled' %}
+                <span style="background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">cancelled</span>
+                {% else %}
+                <span style="background: #e0e0e0; color: #555; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">{{ job.status }}</span>
+                {% endif %}
+            </td>
+            <td>{{ job.priority }}</td>
+            <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '-' }}</td>
+            <td>{{ job.started_at.strftime('%Y-%m-%d %H:%M') if job.started_at else '-' }}</td>
+            <td>{{ job.completed_at.strftime('%Y-%m-%d %H:%M') if job.completed_at else '-' }}</td>
+            <td title="{{ job.error or '' }}">{{ (job.error[:60] + '...') if job.error and job.error|length > 60 else (job.error or '-') }}</td>
+            <td style="white-space: nowrap;">
+                {% if job.status == 'failed' %}
+                <button class="btn btn-primary btn-sm"
+                        hx-post="/admin/pipeline/jobs/{{ job.id }}/retry"
+                        hx-target="#trigger-result">
+                    Retry
+                </button>
+                {% endif %}
+                {% if job.status == 'pending' %}
+                <button class="btn btn-danger btn-sm"
+                        hx-post="/admin/pipeline/jobs/{{ job.id }}/cancel"
+                        hx-target="#trigger-result">
+                    Cancel
+                </button>
+                {% endif %}
+                <button class="btn btn-sm"
+                        style="background: #f0f0f0; color: #333;"
+                        hx-get="/admin/pipeline/jobs/{{ job.id }}"
+                        hx-target="#job-detail-modal">
+                    Detail
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #eee;">
+    {% if page > 1 %}
+    <button class="btn btn-sm"
+            style="background: #f0f0f0; color: #333;"
+            hx-get="/admin/pipeline/partials/jobs?page={{ page - 1 }}"
+            hx-target="#job-list"
+            hx-include="#pipeline-filters">
+        Previous
+    </button>
+    {% endif %}
+    <span style="color: #666; font-size: 0.9rem;">Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <button class="btn btn-sm"
+            style="background: #f0f0f0; color: #333;"
+            hx-get="/admin/pipeline/partials/jobs?page={{ page + 1 }}"
+            hx-target="#job-list"
+            hx-include="#pipeline-filters">
+        Next
+    </button>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<p class="empty">No jobs found matching the current filters.</p>
+{% endif %}
+
+<div id="job-detail-modal" style="margin-top: 1rem;"></div>

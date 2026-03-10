@@ -13,9 +13,6 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.discover_guests_listennotes import (
-    handle_discover_guests_listennotes,
-)
 from src.thinktank.handlers.discover_guests_podcastindex import (
     handle_discover_guests_podcastindex,
 )
@@ -66,65 +63,6 @@ class TestScanForCandidatesContract:
         assert candidate.status == "pending_llm"
         assert candidate.normalized_name == "alice johnson"
         assert candidate.appearance_count == 1
-
-
-class TestDiscoverGuestsListennotesContract:
-    """Given thinker + mocked API -> creates Source rows with approval_status=pending_llm."""
-
-    async def test_discover_guests_listennotes_contract(self, session: AsyncSession):
-        """API with 2 results (1 with RSS, 1 without) -> exactly 1 Source created."""
-        thinker = await create_thinker(session, name="Bob Wilson")
-        job = await create_job(
-            session,
-            job_type="discover_guests_listennotes",
-            payload={"thinker_id": str(thinker.id)},
-        )
-        await session.commit()
-
-        api_data = {
-            "results": [
-                {
-                    "podcast": {
-                        "title_original": "Podcast With RSS",
-                        "rss": "https://feeds.example.com/with-rss.xml",
-                    },
-                },
-                {
-                    "podcast": {
-                        "title_original": "Podcast Without RSS",
-                        # No rss key (free tier)
-                    },
-                },
-            ],
-        }
-
-        mock_instance = AsyncMock()
-        mock_instance.search_episodes_by_person = AsyncMock(return_value=api_data)
-
-        with (
-            patch(
-                "src.thinktank.handlers.discover_guests_listennotes.ListenNotesClient",
-                lambda api_key: mock_instance,
-            ),
-            patch.dict("os.environ", {"LISTENNOTES_API_KEY": "test-key"}),
-        ):
-            await handle_discover_guests_listennotes(session, job)
-
-        # Contract: exactly 1 Source created (the one with RSS)
-        source_count = await session.scalar(
-            select(func.count())
-            .select_from(Source)
-            .where(Source.approval_status == "pending_llm")
-        )
-        assert source_count == 1
-
-        # Contract: Source has correct approval_status
-        result = await session.execute(
-            select(Source).where(Source.approval_status == "pending_llm")
-        )
-        source = result.scalar_one()
-        assert source.approval_status == "pending_llm"
-        assert source.thinker_id == thinker.id
 
 
 class TestDiscoverGuestsPodcastindexContract:

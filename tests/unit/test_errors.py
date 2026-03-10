@@ -13,13 +13,13 @@ from src.thinktank.queue.errors import ErrorCategory, categorize_error
 
 
 class TestErrorCategoryEnum:
-    """ErrorCategory must be a StrEnum with exactly 19 members."""
+    """ErrorCategory must be a StrEnum with exactly 18 members."""
 
     def test_is_str_enum(self):
         assert issubclass(ErrorCategory, StrEnum)
 
-    def test_has_exactly_19_members(self):
-        assert len(ErrorCategory) == 19
+    def test_has_exactly_18_members(self):
+        assert len(ErrorCategory) == 18
 
     def test_all_expected_members_exist(self):
         expected = [
@@ -29,7 +29,6 @@ class TestErrorCategoryEnum:
             "rate_limited",
             "youtube_rate_limit",
             "api_error",
-            "listennotes_rate_limit",
             "podcastindex_error",
             "transcription_failed",
             "audio_download_failed",
@@ -187,10 +186,6 @@ class TestCategorizeErrorHttpx:
             response=response,
         )
         assert categorize_error(exc) == ErrorCategory.HTTP_ERROR
-
-    def test_listennotes_rate_limit_member_exists(self):
-        """LISTENNOTES_RATE_LIMIT member exists in ErrorCategory."""
-        assert ErrorCategory.LISTENNOTES_RATE_LIMIT == "listennotes_rate_limit"
 
     def test_podcastindex_error_member_exists(self):
         """PODCASTINDEX_ERROR member exists in ErrorCategory."""

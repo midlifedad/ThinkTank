@@ -19,17 +19,17 @@ class TestCheckAndAcquireRateLimit:
         """When under limit, all calls should return True."""
         from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
-        # Seed: listennotes_calls_per_hour = 3
+        # Seed: podcastindex_calls_per_hour = 3
         await create_system_config(
             session,
-            key="listennotes_calls_per_hour",
+            key="podcastindex_calls_per_hour",
             value={"value": 3},
         )
 
         # 3 calls should all succeed
         for i in range(3):
             result = await check_and_acquire_rate_limit(
-                session, "listennotes", f"worker-{i}"
+                session, "podcastindex", f"worker-{i}"
             )
             assert result is True, f"Call {i+1} should have succeeded"
 
@@ -37,20 +37,20 @@ class TestCheckAndAcquireRateLimit:
         """4th call should be blocked when limit is 3."""
         from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
-        # Seed: listennotes_calls_per_hour = 3
+        # Seed: podcastindex_calls_per_hour = 3
         await create_system_config(
             session,
-            key="listennotes_calls_per_hour",
+            key="podcastindex_calls_per_hour",
             value={"value": 3},
         )
 
         # Use up the limit
         for _ in range(3):
-            await check_and_acquire_rate_limit(session, "listennotes", "worker-1")
+            await check_and_acquire_rate_limit(session, "podcastindex", "worker-1")
 
         # 4th call should be blocked
         result = await check_and_acquire_rate_limit(
-            session, "listennotes", "worker-1"
+            session, "podcastindex", "worker-1"
         )
         assert result is False
 
@@ -104,7 +104,7 @@ class TestCheckAndAcquireRateLimit:
         # Seed limits for two APIs
         await create_system_config(
             session,
-            key="listennotes_calls_per_hour",
+            key="podcastindex_calls_per_hour",
             value={"value": 1},
         )
         await create_system_config(
@@ -113,9 +113,9 @@ class TestCheckAndAcquireRateLimit:
             value={"value": 1},
         )
 
-        # Use up listennotes limit
+        # Use up podcastindex limit
         result = await check_and_acquire_rate_limit(
-            session, "listennotes", "worker-1"
+            session, "podcastindex", "worker-1"
         )
         assert result is True
 

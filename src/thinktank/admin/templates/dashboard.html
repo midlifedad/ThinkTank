@@ -1,7 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 style="margin-bottom: 1rem;">Pipeline Dashboard</h1>
+<h1 style="margin-bottom: 1rem;">Morning Briefing</h1>
+
 <div class="dashboard-grid">
+    <!-- Row 1: Health Summary + Kill Switch -->
+    <div class="card">
+        <h3>Health Summary</h3>
+        <div hx-get="/admin/partials/health-summary"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+    <div class="card">
+        <h3>Kill Switch</h3>
+        <div id="kill-switch-container"
+             hx-get="/admin/partials/kill-switch"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+
+    <!-- Row 2: Pending Approvals + Queue Depth -->
+    <div class="card">
+        <h3>Pending Approvals</h3>
+        <div hx-get="/admin/partials/pending-approvals"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
     <div class="card">
         <h3>Queue Depth</h3>
         <div hx-get="/admin/partials/queue-depth"
@@ -10,6 +39,18 @@
             Loading...
         </div>
     </div>
+
+    <!-- Row 3: Activity Feed (full width) -->
+    <div class="card card-full">
+        <h3>Activity Feed</h3>
+        <div hx-get="/admin/partials/activity-feed"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            Loading...
+        </div>
+    </div>
+
+    <!-- Row 4: Error Log + Source Health -->
     <div class="card">
         <h3>Error Log</h3>
         <div hx-get="/admin/partials/error-log"
@@ -26,6 +67,8 @@
             Loading...
         </div>
     </div>
+
+    <!-- Row 5: GPU Status + Rate Limits + Cost Tracker -->
     <div class="card">
         <h3>GPU Status</h3>
         <div hx-get="/admin/partials/gpu-status"
@@ -42,7 +85,7 @@
             Loading...
         </div>
     </div>
-    <div class="card">
+    <div class="card card-full">
         <h3>API Cost Tracker (24h)</h3>
         <div hx-get="/admin/partials/cost-tracker"
              hx-trigger="load, every 10s"

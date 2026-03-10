@@ -1,0 +1,20 @@
+{% if activities %}
+<div style="max-height: 400px; overflow-y: auto;">
+    {% for item in activities %}
+    <div class="stat-row">
+        <span class="stat-label">
+            {% if item.action_type == 'job_completed' %}&#10003;
+            {% elif item.action_type == 'job_failed' %}&#10007;
+            {% elif item.action_type == 'llm_decision' %}&#9881;
+            {% endif %}
+            {{ item.detail }}
+        </span>
+        <span class="stat-value" style="font-size: 0.8rem; color: #999;">
+            {{ item.action_time.strftime('%Y-%m-%d %H:%M') if item.action_time else '' }}
+        </span>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="empty">No recent activity.</p>
+{% endif %}

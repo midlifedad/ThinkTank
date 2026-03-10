@@ -1,0 +1,13 @@
+<div style="text-align: center; padding: 0.5rem;">
+    <span style="font-size: 2rem; font-weight: 700; {% if pending_count > 0 %}color: #e67e22;{% else %}color: #999;{% endif %}">
+        {{ pending_count }}
+    </span>
+    <div style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">
+        Pending Approval{{ 's' if pending_count != 1 else '' }}
+    </div>
+    {% if pending_count > 0 %}
+    <a href="/admin/llm" class="btn btn-sm btn-primary" style="margin-top: 0.5rem; display: inline-block;">
+        Review
+    </a>
+    {% endif %}
+</div>

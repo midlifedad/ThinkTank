@@ -1,0 +1,18 @@
+<div class="stat-row">
+    <span class="stat-label">Workers</span>
+    <span class="stat-value {% if workers_active %}healthy{% else %}error{% endif %}">
+        {% if workers_active %}ACTIVE{% else %}STOPPED{% endif %}
+    </span>
+</div>
+<div class="stat-row">
+    <span class="stat-label">Database</span>
+    <span class="stat-value {% if db_ok %}healthy{% else %}error{% endif %}">
+        {% if db_ok %}OK{% else %}ERROR{% endif %}
+    </span>
+</div>
+<div class="stat-row">
+    <span class="stat-label">Errors (1h)</span>
+    <span class="stat-value {% if error_count > 0 %}error{% else %}healthy{% endif %}">
+        {{ error_count }}
+    </span>
+</div>
