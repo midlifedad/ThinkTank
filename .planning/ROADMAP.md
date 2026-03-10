@@ -204,7 +204,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 10-01-PLAN.md -- Source list page: filterable list, add form, approve/reject with audit trail, force-refresh, integration tests
+- [x] 10-01-PLAN.md -- Source list page: filterable list, add form, approve/reject with audit trail, force-refresh, integration tests
 - [ ] 10-02-PLAN.md -- Source detail page: health summary, episodes list, error history, integration tests
 
 ### Phase 11: Pipeline Control
@@ -252,6 +252,6 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 7. Operations, API, and Polish | v1.0 | 3/3 | Complete | 2026-03-09 |
 | 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
 | 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
-| 10. Source Management | v1.1 | 0/2 | Not started | - |
+| 10. Source Management | v1.1 | 1/2 | In Progress | - |
 | 11. Pipeline Control | v1.1 | 1/2 | In Progress | - |
 | 12. Agent Chat | v1.1 | 0/? | Not started | - |
