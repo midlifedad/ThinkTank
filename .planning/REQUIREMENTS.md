@@ -49,11 +49,11 @@ Requirements for Admin Control Panel milestone. Phases 8-12.
 
 ### Agent Chat
 
-- [ ] **CHAT-01**: Operator can open a persistent chat drawer (bottom of page) on any admin page to interact with an LLM agent
+- [x] **CHAT-01**: Operator can open a persistent chat drawer (bottom of page) on any admin page to interact with an LLM agent
 - [x] **CHAT-02**: Agent can answer questions about system state (how many thinkers, what's in the queue, recent errors) by querying the database
 - [x] **CHAT-03**: Agent proposes state-changing actions (add thinker, trigger discovery, approve source) and waits for operator confirmation before executing
 - [x] **CHAT-04**: Agent responses stream in real-time via SSE so the operator sees partial output as it generates
-- [ ] **CHAT-05**: Operator can see a history of recent chat interactions within the current session
+- [x] **CHAT-05**: Operator can see a history of recent chat interactions within the current session
 
 ## v1.0 Requirements (Complete)
 
@@ -290,11 +290,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PIPE-03 | Phase 11 | Complete |
 | PIPE-04 | Phase 11 | Complete |
 | PIPE-05 | Phase 11 | Complete |
-| CHAT-01 | Phase 12 | Pending |
+| CHAT-01 | Phase 12 | Complete |
 | CHAT-02 | Phase 12 | Complete |
 | CHAT-03 | Phase 12 | Complete |
 | CHAT-04 | Phase 12 | Complete |
-| CHAT-05 | Phase 12 | Pending |
+| CHAT-05 | Phase 12 | Complete |
 
 **v1.0 Coverage:**
 - v1.0 requirements: 64 total

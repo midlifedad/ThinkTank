@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Admin Control Panel
-status: executing
-stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-03-10T07:03:28Z"
-last_activity: 2026-03-10 -- Agent chat backend (system prompt, tools, session store, SSE streaming, 3 API endpoints)
+status: completed
+stopped_at: Completed 12-02-PLAN.md (v1.1 milestone complete)
+last_updated: "2026-03-10T07:12:01.678Z"
+last_activity: 2026-03-10 -- Agent chat drawer UI (SSE streaming, localStorage persistence, proposal confirm/dismiss)
 progress:
   total_phases: 12
-  completed_phases: 11
+  completed_phases: 12
   total_plans: 30
-  completed_plans: 29
-  percent: 97
+  completed_plans: 30
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** v1.1 Admin Control Panel -- Phases 8-11 complete, Phase 12 in progress (1/2 plans done)
+**Current focus:** v1.1 Admin Control Panel -- COMPLETE (all 12 phases, 30 plans)
 
 ## Current Position
 
-Phase: 12 of 12 (Agent Chat) -- in progress
-Plan: 1 of 2 complete
-Status: Executing
-Last activity: 2026-03-10 -- Agent chat backend (system prompt, tools, session store, SSE streaming, 3 API endpoints)
+Phase: 12 of 12 (Agent Chat) -- complete
+Plan: 2 of 2 complete
+Status: Complete
+Last activity: 2026-03-10 -- Agent chat drawer UI (SSE streaming, localStorage persistence, proposal confirm/dismiss)
 
-Progress: [##############################] 97% (v1.0 complete, Phases 8-11 of v1.1 done, Phase 12: 1/2 plans)
+Progress: [##########] 100% (v1.0 + v1.1 complete -- all 12 phases, 30 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29
-- Average duration: ~8min
-- Total execution time: ~3h 42min
+- Total plans completed: 30
+- Average duration: ~7min
+- Total execution time: ~3h 45min
 
 **By Phase:**
 
@@ -54,13 +54,14 @@ Progress: [##############################] 97% (v1.0 complete, Phases 8-11 of v1
 | 9. Thinker Management | 2/2 | 10min | 5min |
 | 10. Source Management | 2/2 | 7min | ~4min |
 | 11. Pipeline Control | 2/2 | 7min | ~4min |
-| 12. Agent Chat | 1/2 | 9min | 9min |
+| 12. Agent Chat | 2/2 | 12min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 10-01 (4min), 10-02 (3min), 11-01 (4min), 11-02 (3min), 12-01 (9min)
-- Trend: 12-01 longer due to complex streaming/tool infrastructure
+- Last 5 plans: 10-02 (3min), 11-01 (4min), 11-02 (3min), 12-01 (9min), 12-02 (3min)
+- Trend: Consistent fast execution, 12-01 was outlier due to streaming/tool complexity
 
 *Updated after each plan completion*
+| Phase 12 P02 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase 12]: stream.py yields dicts (not SSE strings) -- EventSourceResponse handles SSE framing via JSON serialization in router
 - [Phase 12]: async_session_factory() used directly in SSE endpoint (not Depends) since SSE outlives request lifecycle
 - [Phase 12]: In-memory session store singleton -- appropriate for single-admin, no DB overhead for chat history
+- [Phase 12]: fetch + ReadableStream for SSE consumption (not EventSource) since /admin/chat/send is POST
+- [Phase 12]: IIFE-scoped JavaScript in base.html with window.* exports only for onclick handlers
+- [Phase 12]: 100-message localStorage cap with oldest-first trimming
 
 ### Pending Todos
 
@@ -105,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T07:03:28Z
-Stopped at: Completed 12-01-PLAN.md
+Last session: 2026-03-10T07:12:01.676Z
+Stopped at: Completed 12-02-PLAN.md (v1.1 milestone complete)
 Resume file: None

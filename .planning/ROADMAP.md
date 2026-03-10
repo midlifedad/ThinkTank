@@ -3,7 +3,7 @@
 ## Milestones
 
 - **v1.0 Ingestion Engine** - Phases 1-7 (shipped 2026-03-09)
-- **v1.1 Admin Control Panel** - Phases 8-12 (in progress)
+- **v1.1 Admin Control Panel** - Phases 8-12 (shipped 2026-03-10)
 
 ## Overview
 
@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Thinker Management** - Searchable thinker list, add/edit/deactivate thinkers with LLM approval, thinker detail pages, candidate queue with promote/reject, triggered discovery
 - [x] **Phase 10: Source Management** - Filterable source list, manual source addition, approve/reject sources, force-refresh feeds, source detail pages with health and error history
 - [x] **Phase 11: Pipeline Control** - Job queue browser with status/type/date filters, manual job triggers, recurring task scheduler with frequency/toggle, job retry/cancel, job detail view
-- [ ] **Phase 12: Agent Chat** - Persistent chat drawer on all admin pages, LLM agent with database query capability, propose-then-execute mutations, SSE streaming responses, session chat history
+- [x] **Phase 12: Agent Chat** - Persistent chat drawer on all admin pages, LLM agent with database query capability, propose-then-execute mutations, SSE streaming responses, session chat history (completed 2026-03-10)
 
 ## Phase Details
 
@@ -232,11 +232,11 @@ Plans:
   3. When the operator requests a state-changing action ("add Nassim Taleb", "approve that source", "trigger discovery for Sam Harris"), the agent proposes the action with details and waits for explicit confirmation before executing
   4. Agent responses stream in real-time via SSE so the operator sees partial output as it generates, with no perceptible delay before the first token appears
   5. Operator can scroll through a history of recent chat interactions within the current session, providing context for follow-up questions
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 12-01-PLAN.md -- Agent backend: system prompt, tool definitions (query_database, propose_action), session store, Anthropic streaming, chat API endpoints, integration tests
-- [ ] 12-02-PLAN.md -- Chat drawer UI: persistent bottom drawer in base.html, SSE streaming consumption, propose/confirm UI, localStorage persistence, human verification
+- [x] 12-02-PLAN.md -- Chat drawer UI: persistent bottom drawer in base.html, SSE streaming consumption, propose/confirm UI, localStorage persistence, human verification
 
 ## Progress
 
@@ -258,4 +258,4 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
 | 10. Source Management | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
 | 11. Pipeline Control | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
-| 12. Agent Chat | v1.1 | 1/2 | In progress | - |
+| 12. Agent Chat | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
