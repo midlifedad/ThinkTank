@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 ### v1.1 Admin Control Panel (Phases 8-12)
 
 - [x] **Phase 8: Dashboard and System Configuration** - Morning briefing dashboard with health/activity/approvals, kill switch control, auto-refresh, and system config management (API keys, rate limits, worker settings, categories) (completed 2026-03-10)
-- [ ] **Phase 9: Thinker Management** - Searchable thinker list, add/edit/deactivate thinkers with LLM approval, thinker detail pages, candidate queue with promote/reject, triggered discovery
+- [x] **Phase 9: Thinker Management** - Searchable thinker list, add/edit/deactivate thinkers with LLM approval, thinker detail pages, candidate queue with promote/reject, triggered discovery
 - [ ] **Phase 10: Source Management** - Filterable source list, manual source addition, approve/reject sources, force-refresh feeds, source detail pages with health and error history
 - [ ] **Phase 11: Pipeline Control** - Job queue browser with status/type/date filters, manual job triggers, recurring task scheduler with frequency/toggle, job retry/cancel, job detail view
 - [ ] **Phase 12: Agent Chat** - Persistent chat drawer on all admin pages, LLM agent with database query capability, propose-then-execute mutations, SSE streaming responses, session chat history
@@ -190,7 +190,7 @@ Plans:
 
 Plans:
 - [x] 09-01-PLAN.md -- Thinker list page: searchable/filterable list, add form with LLM approval trigger, edit form, active toggle, integration tests
-- [ ] 09-02-PLAN.md -- Thinker detail page: sources/content/reviews tabs, candidate queue with promote/reject, PodcastIndex discovery trigger, integration tests
+- [x] 09-02-PLAN.md -- Thinker detail page: sources/content/reviews tabs, candidate queue with promote/reject, PodcastIndex discovery trigger, integration tests
 
 ### Phase 10: Source Management
 **Goal**: Operators can view, add, approve, reject, and inspect sources for any thinker -- with manual source addition, force-refresh capability, and detailed source health monitoring
@@ -243,7 +243,7 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 6. Discovery and Autonomous Growth | v1.0 | 2/2 | Complete | 2026-03-09 |
 | 7. Operations, API, and Polish | v1.0 | 3/3 | Complete | 2026-03-09 |
 | 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
-| 9. Thinker Management | v1.1 | 1/2 | In Progress | - |
+| 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
 | 10. Source Management | v1.1 | 0/? | Not started | - |
 | 11. Pipeline Control | v1.1 | 0/? | Not started | - |
 | 12. Agent Chat | v1.1 | 0/? | Not started | - |

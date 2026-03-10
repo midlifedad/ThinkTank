@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Admin Control Panel
 status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-03-10T06:06:14.000Z"
-last_activity: "2026-03-10 -- Phase 9 plan 01 complete (thinker list page with CRUD)"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-03-10T06:14:30.000Z"
+last_activity: "2026-03-10 -- Phase 9 complete (thinker detail, candidates, discovery)"
 progress:
   total_phases: 12
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 24
-  completed_plans: 23
-  percent: 77
+  completed_plans: 24
+  percent: 82
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** v1.1 Admin Control Panel -- Phase 9 in progress (plan 01 of 02 complete)
+**Current focus:** v1.1 Admin Control Panel -- Phase 9 complete, ready for Phase 10
 
 ## Current Position
 
-Phase: 9 of 12 (Thinker Management) -- v1.1 in progress
-Plan: 1 of 2 complete
+Phase: 9 of 12 (Thinker Management) -- v1.1 complete
+Plan: 2 of 2 complete
 Status: Executing
-Last activity: 2026-03-10 -- Phase 9 plan 01 complete (thinker list page with CRUD)
+Last activity: 2026-03-10 -- Phase 9 complete (thinker detail, candidates, discovery)
 
-Progress: [#######################░░░░░░░] 77% (v1.0 complete, Phase 9 plan 1 of v1.1 done)
+Progress: [#########################░░░░░] 82% (v1.0 complete, Phase 9 of v1.1 done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
+- Total plans completed: 24
 - Average duration: ~8min
-- Total execution time: ~3h 15min
+- Total execution time: ~3h 19min
 
 **By Phase:**
 
@@ -51,10 +51,10 @@ Progress: [#######################░░░░░░░] 77% (v1.0 complete, Pha
 | 6. Discovery | 2/2 | 13min | ~7min |
 | 7. Operations | 3/3 | 18min | ~6min |
 | 8. Dashboard & Config | 2/2 | ~6min | ~3min |
-| 9. Thinker Management | 1/2 | 6min | 6min |
+| 9. Thinker Management | 2/2 | 10min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 07-03 (6min), 08-01 (~3min), 08-02 (3min), 09-01 (6min)
+- Last 5 plans: 08-01 (~3min), 08-02 (3min), 09-01 (6min), 09-02 (4min)
 - Trend: Consistent ~3-6min/plan
 
 *Updated after each plan completion*
@@ -76,6 +76,9 @@ Recent decisions affecting current work:
 - [Phase 08]: Used naive datetimes (utcnow) for system_config writes to match TIMESTAMP WITHOUT TIME ZONE columns
 - [Phase 09]: Thinker CRUD uses outerjoin subquery for source counts, ILIKE for search, hx-include for combined filters
 - [Phase 09]: populate_existing=True needed in tests to bypass SQLAlchemy identity map after endpoint commits in separate session
+- [Phase 09]: Raw SQL text() for JSONB queries on llm_reviews.context_snapshot->>'thinker_id'
+- [Phase 09]: Route ordering discipline: /candidates before /{thinker_id} to avoid FastAPI UUID parsing conflict
+- [Phase 09]: Candidate promote sets tier=3 default; LLM approval refines tier through review
 
 ### Pending Todos
 
@@ -87,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T06:06:14Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-03-10T06:14:30Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
