@@ -5,7 +5,7 @@
 
 ## v1.1 Requirements
 
-Requirements for Admin Control Panel milestone. Phases 8+.
+Requirements for Admin Control Panel milestone. Phases 8-12.
 
 ### Dashboard
 
@@ -265,6 +265,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUAL-05 | Phase 7 | Complete |
 | QUAL-06 | Phase 1 | Complete |
 | QUAL-07 | Phase 7 | Complete |
+| DASH-01 | Phase 8 | Pending |
+| DASH-02 | Phase 8 | Pending |
+| DASH-03 | Phase 8 | Pending |
+| DASH-04 | Phase 8 | Pending |
+| CONF-01 | Phase 8 | Pending |
+| CONF-02 | Phase 8 | Pending |
+| CONF-03 | Phase 8 | Pending |
+| CONF-04 | Phase 8 | Pending |
+| THNK-01 | Phase 9 | Pending |
+| THNK-02 | Phase 9 | Pending |
+| THNK-03 | Phase 9 | Pending |
+| THNK-04 | Phase 9 | Pending |
+| THNK-05 | Phase 9 | Pending |
+| THNK-06 | Phase 9 | Pending |
+| THNK-07 | Phase 9 | Pending |
+| SRC-01 | Phase 10 | Pending |
+| SRC-02 | Phase 10 | Pending |
+| SRC-03 | Phase 10 | Pending |
+| SRC-04 | Phase 10 | Pending |
+| SRC-05 | Phase 10 | Pending |
+| PIPE-01 | Phase 11 | Pending |
+| PIPE-02 | Phase 11 | Pending |
+| PIPE-03 | Phase 11 | Pending |
+| PIPE-04 | Phase 11 | Pending |
+| PIPE-05 | Phase 11 | Pending |
+| CHAT-01 | Phase 12 | Pending |
+| CHAT-02 | Phase 12 | Pending |
+| CHAT-03 | Phase 12 | Pending |
+| CHAT-04 | Phase 12 | Pending |
+| CHAT-05 | Phase 12 | Pending |
 
 **v1.0 Coverage:**
 - v1.0 requirements: 64 total
@@ -272,10 +302,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Unmapped: 0
 
 **v1.1 Coverage:**
-- v1.1 requirements: 24 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 24
+- v1.1 requirements: 30 total
+- Mapped to phases: 30
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-09 after v1.1 requirements definition*
+*Last updated: 2026-03-09 after v1.1 roadmap creation (Phases 8-12)*
