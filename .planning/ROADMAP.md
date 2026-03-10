@@ -186,7 +186,11 @@ Plans:
   3. Operator can edit an existing thinker's name, tier, categories, and active status via an inline edit form, and can deactivate/reactivate a thinker without deleting their data
   4. Operator can view a thinker detail page showing their sources, recent content, discovery status, and LLM review history -- with links to drill into individual sources and content
   5. Operator can view the candidate queue, promote or reject candidates with a reason, and trigger podcast discovery (PodcastIndex) for a specific thinker from the thinker detail page
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md -- Thinker list page: searchable/filterable list, add form with LLM approval trigger, edit form, active toggle, integration tests
+- [ ] 09-02-PLAN.md -- Thinker detail page: sources/content/reviews tabs, candidate queue with promote/reject, PodcastIndex discovery trigger, integration tests
 
 ### Phase 10: Source Management
 **Goal**: Operators can view, add, approve, reject, and inspect sources for any thinker -- with manual source addition, force-refresh capability, and detailed source health monitoring
@@ -239,7 +243,7 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 6. Discovery and Autonomous Growth | v1.0 | 2/2 | Complete | 2026-03-09 |
 | 7. Operations, API, and Polish | v1.0 | 3/3 | Complete | 2026-03-09 |
 | 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
-| 9. Thinker Management | v1.1 | 0/? | Not started | - |
+| 9. Thinker Management | v1.1 | 0/2 | Planning | - |
 | 10. Source Management | v1.1 | 0/? | Not started | - |
 | 11. Pipeline Control | v1.1 | 0/? | Not started | - |
 | 12. Agent Chat | v1.1 | 0/? | Not started | - |
