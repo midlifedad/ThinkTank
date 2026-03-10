@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 style="margin-bottom: 1rem;">Pipeline Control</h2>
+
+<!-- Filter Bar -->
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Filters</h3>
+    <div id="pipeline-filters" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Status</label>
+            <select name="status"
+                    hx-get="/admin/pipeline/partials/jobs"
+                    hx-trigger="change"
+                    hx-target="#job-list"
+                    hx-include="#pipeline-filters">
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="running">Running</option>
+                <option value="failed">Failed</option>
+                <option value="done">Done</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Job Type</label>
+            <select name="job_type"
+                    hx-get="/admin/pipeline/partials/jobs"
+                    hx-trigger="change"
+                    hx-target="#job-list"
+                    hx-include="#pipeline-filters">
+                <option value="">All</option>
+                {% for jt in job_types %}
+                <option value="{{ jt }}">{{ jt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Date From</label>
+            <input type="date" name="date_from"
+                   hx-get="/admin/pipeline/partials/jobs"
+                   hx-trigger="change"
+                   hx-target="#job-list"
+                   hx-include="#pipeline-filters">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Date To</label>
+            <input type="date" name="date_to"
+                   hx-get="/admin/pipeline/partials/jobs"
+                   hx-trigger="change"
+                   hx-target="#job-list"
+                   hx-include="#pipeline-filters">
+        </div>
+    </div>
+</div>
+
+<!-- Manual Triggers -->
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Manual Triggers</h3>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+        <button class="btn btn-primary"
+                hx-post="/admin/pipeline/trigger/refresh_due_sources"
+                hx-target="#trigger-result">
+            Refresh Due Sources
+        </button>
+        <button class="btn btn-primary"
+                hx-post="/admin/pipeline/trigger/scan_for_candidates"
+                hx-target="#trigger-result">
+            Scan for Candidates
+        </button>
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Thinker ID (optional)</label>
+                <input type="text" name="thinker_id" id="discover-thinker-id"
+                       placeholder="UUID" style="width: 280px;">
+            </div>
+            <button class="btn btn-primary"
+                    hx-post="/admin/pipeline/trigger/discover_guests_podcastindex"
+                    hx-target="#trigger-result"
+                    hx-include="#discover-thinker-id">
+                Discover Guests
+            </button>
+        </div>
+    </div>
+    <div id="trigger-result" style="margin-top: 0.75rem;"></div>
+</div>
+
+<!-- Job List -->
+<div class="card">
+    <h3>Job Queue</h3>
+    <div id="job-list"
+         hx-get="/admin/pipeline/partials/jobs"
+         hx-trigger="load, refreshJobList from:body">
+        Loading jobs...
+    </div>
+</div>
+{% endblock %}

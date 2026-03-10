@@ -14,6 +14,8 @@ from thinktank.admin.routers.api_keys import router as api_keys_router
 from thinktank.admin.routers.categories import router as categories_router
 from thinktank.admin.routers.config import router as config_router
 from thinktank.admin.routers.dashboard import router as dashboard_router
+from thinktank.admin.routers.pipeline import router as pipeline_router
+from thinktank.admin.routers.sources import router as sources_router
 from thinktank.admin.routers.thinkers import router as thinkers_router
 from thinktank.admin.routers.llm_panel import router as llm_panel_router
 from thinktank.api.middleware import CorrelationIDMiddleware
@@ -62,3 +64,5 @@ app.include_router(categories_router)
 app.include_router(api_keys_router)
 app.include_router(config_router)
 app.include_router(thinkers_router)
+app.include_router(sources_router)
+app.include_router(pipeline_router)

@@ -1,0 +1,85 @@
+<div class="card" style="margin-top: 1rem; border: 2px solid #1a1a2e;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h3 style="margin-bottom: 0;">Job Detail</h3>
+        <button class="btn btn-sm"
+                style="background: #f0f0f0; color: #333;"
+                onclick="document.getElementById('job-detail-modal').innerHTML = ''">
+            Close
+        </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem;">
+        <div class="stat-row">
+            <span class="stat-label">Job ID</span>
+            <span class="stat-value" style="font-family: monospace; font-size: 0.85rem;">{{ job.id }}</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Type</span>
+            <span class="stat-value">{{ job.job_type }}</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Status</span>
+            <span class="stat-value">
+                {% if job.status == 'pending' %}
+                <span style="background: #e0e0e0; color: #555; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">pending</span>
+                {% elif job.status == 'running' %}
+                <span style="background: #cce5ff; color: #004085; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">running</span>
+                {% elif job.status == 'failed' %}
+                <span style="background: #f8d7da; color: #721c24; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">failed</span>
+                {% elif job.status == 'done' %}
+                <span style="background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">done</span>
+                {% elif job.status == 'cancelled' %}
+                <span style="background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">cancelled</span>
+                {% else %}
+                <span style="background: #e0e0e0; color: #555; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">{{ job.status }}</span>
+                {% endif %}
+            </span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Priority</span>
+            <span class="stat-value">{{ job.priority }}</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Attempts</span>
+            <span class="stat-value">{{ job.attempts }} of {{ job.max_attempts }}</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Worker ID</span>
+            <span class="stat-value">{{ job.worker_id or '-' }}</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Created</span>
+            <span class="stat-value">{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if job.created_at else '-' }}</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Started</span>
+            <span class="stat-value">{{ job.started_at.strftime('%Y-%m-%d %H:%M:%S') if job.started_at else '-' }}</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Completed</span>
+            <span class="stat-value">{{ job.completed_at.strftime('%Y-%m-%d %H:%M:%S') if job.completed_at else '-' }}</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Last Error At</span>
+            <span class="stat-value">{{ job.last_error_at.strftime('%Y-%m-%d %H:%M:%S') if job.last_error_at else '-' }}</span>
+        </div>
+    </div>
+
+    {% if job.error %}
+    <div style="margin-top: 0.75rem;">
+        <div class="stat-row">
+            <span class="stat-label">Error Category</span>
+            <span class="stat-value error">{{ job.error_category or 'uncategorized' }}</span>
+        </div>
+        <div style="margin-top: 0.5rem;">
+            <span class="stat-label">Error Message:</span>
+            <pre style="background: #fff3f3; border: 1px solid #f5c6cb; padding: 0.75rem; border-radius: 4px; margin-top: 0.25rem; white-space: pre-wrap; word-break: break-word; font-size: 0.85rem;">{{ job.error }}</pre>
+        </div>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 0.75rem;">
+        <span class="stat-label">Payload:</span>
+        <pre style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 0.75rem; border-radius: 4px; margin-top: 0.25rem; white-space: pre-wrap; word-break: break-word; font-size: 0.85rem;">{{ payload_str }}</pre>
+    </div>
+</div>
