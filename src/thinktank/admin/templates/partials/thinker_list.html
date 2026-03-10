@@ -1,0 +1,73 @@
+{% if success %}
+<div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+    {{ success }}
+</div>
+{% endif %}
+
+{% if error %}
+<div style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Thinkers</h3>
+    {% if thinkers %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Tier</th>
+                <th>Categories</th>
+                <th>Status</th>
+                <th>Active</th>
+                <th>Sources</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in thinkers %}
+            <tr>
+                <td><a href="/admin/thinkers/{{ t.id }}">{{ t.name }}</a></td>
+                <td>{{ t.tier }}</td>
+                <td>{{ t.category_names or '—' }}</td>
+                <td>
+                    {% if t.approval_status == 'approved' %}
+                    <span class="healthy">{{ t.approval_status }}</span>
+                    {% elif t.approval_status == 'awaiting_llm' or t.approval_status == 'pending_llm' %}
+                    <span class="warning">{{ t.approval_status }}</span>
+                    {% elif t.approval_status == 'rejected' %}
+                    <span class="error">{{ t.approval_status }}</span>
+                    {% else %}
+                    <span>{{ t.approval_status }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if t.active %}
+                    <span class="healthy">Active</span>
+                    {% else %}
+                    <span class="error">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>{{ t.source_count }}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary"
+                        hx-get="/admin/thinkers/{{ t.id }}/edit"
+                        hx-target="#thinker-list"
+                        hx-swap="innerHTML"
+                    >Edit</button>
+                    <button class="btn btn-sm"
+                        style="background: {% if t.active %}#c90{% else %}#0a0{% endif %}; color: #fff;"
+                        hx-post="/admin/thinkers/{{ t.id }}/toggle-active"
+                        hx-target="#thinker-list"
+                        hx-swap="innerHTML"
+                    >{% if t.active %}Deactivate{% else %}Activate{% endif %}</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No thinkers found.</p>
+    {% endif %}
+</div>

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 style="margin-bottom: 1rem;">Thinker Management</h2>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+            <label for="search-q">Search</label>
+            <input type="text" id="search-q" name="q" placeholder="Search by name..."
+                hx-get="/admin/thinkers/partials/list"
+                hx-trigger="input changed delay:300ms"
+                hx-target="#thinker-list"
+                hx-include="[name='tier'],[name='active']"
+            />
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filter-tier">Tier</label>
+            <select id="filter-tier" name="tier"
+                hx-get="/admin/thinkers/partials/list"
+                hx-trigger="change"
+                hx-target="#thinker-list"
+                hx-include="[name='q'],[name='active']"
+            >
+                <option value="">All Tiers</option>
+                <option value="1">Tier 1</option>
+                <option value="2">Tier 2</option>
+                <option value="3">Tier 3</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filter-active">Status</label>
+            <select id="filter-active" name="active"
+                hx-get="/admin/thinkers/partials/list"
+                hx-trigger="change"
+                hx-target="#thinker-list"
+                hx-include="[name='q'],[name='tier']"
+            >
+                <option value="all">All</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+            </select>
+        </div>
+        <div style="margin-bottom: 0;">
+            <button class="btn btn-primary"
+                hx-get="/admin/thinkers/partials/add-form"
+                hx-target="#add-form-container"
+                hx-swap="innerHTML"
+            >Add Thinker</button>
+        </div>
+    </div>
+</div>
+
+<div id="add-form-container"></div>
+
+<div id="thinker-list" hx-get="/admin/thinkers/partials/list" hx-trigger="load">
+    <p class="empty">Loading...</p>
+</div>
+{% endblock %}

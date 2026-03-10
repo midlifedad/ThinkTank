@@ -1,0 +1,41 @@
+<div class="card" style="margin-bottom: 1rem; border-left: 4px solid #1a1a2e;">
+    <h3>Add New Thinker</h3>
+    <form hx-post="/admin/thinkers/add" hx-target="#thinker-list" hx-swap="innerHTML">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="add-name">Name *</label>
+                <input type="text" id="add-name" name="name" required placeholder="e.g. Nassim Taleb" />
+            </div>
+            <div class="form-group">
+                <label for="add-tier">Tier *</label>
+                <select id="add-tier" name="tier" required>
+                    <option value="1">Tier 1 (Primary)</option>
+                    <option value="2" selected>Tier 2 (Standard)</option>
+                    <option value="3">Tier 3 (Peripheral)</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="add-bio">Bio</label>
+            <textarea id="add-bio" name="bio" rows="2" placeholder="Brief description (optional)"></textarea>
+        </div>
+        {% if categories %}
+        <div class="form-group">
+            <label>Categories</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                {% for cat in categories %}
+                <label style="font-weight: normal; font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <input type="checkbox" name="category_ids" value="{{ cat.id }}" />
+                    {{ cat.name }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <button type="submit" class="btn btn-primary">Add Thinker</button>
+            <button type="button" class="btn" style="background: #eee;"
+                onclick="document.getElementById('add-form-container').innerHTML = ''">Cancel</button>
+        </div>
+    </form>
+</div>
