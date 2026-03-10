@@ -85,6 +85,14 @@
     <div id="trigger-result" style="margin-top: 0.75rem;"></div>
 </div>
 
+<!-- Recurring Task Schedule -->
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Recurring Task Schedule</h3>
+    <div id="scheduler-editor" hx-get="/admin/pipeline/partials/scheduler" hx-trigger="load">
+        Loading scheduler...
+    </div>
+</div>
+
 <!-- Job List -->
 <div class="card">
     <h3>Job Queue</h3>
