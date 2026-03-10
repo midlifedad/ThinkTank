@@ -173,8 +173,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md -- Morning briefing dashboard: health summary, kill switch toggle, activity feed, pending approvals, reorganized layout, integration tests
-- [ ] 08-02-PLAN.md -- System configuration page: rate limits editor, system config editor, config landing page with links to API keys and categories, integration tests
+- [x] 08-01-PLAN.md -- Morning briefing dashboard: health summary, kill switch toggle, activity feed, pending approvals, reorganized layout, integration tests
+- [x] 08-02-PLAN.md -- System configuration page: rate limits editor, system config editor, config landing page with links to API keys and categories, integration tests
 
 ### Phase 9: Thinker Management
 **Goal**: Operators can manage the full thinker lifecycle from the admin panel -- browsing, searching, adding new thinkers (with LLM approval), editing existing thinkers, viewing detailed thinker profiles, managing the candidate queue, and triggering discovery
@@ -238,7 +238,7 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 5. LLM Governance | v1.0 | 3/3 | Complete | 2026-03-09 |
 | 6. Discovery and Autonomous Growth | v1.0 | 2/2 | Complete | 2026-03-09 |
 | 7. Operations, API, and Polish | v1.0 | 3/3 | Complete | 2026-03-09 |
-| 8. Dashboard and System Configuration | v1.1 | 0/2 | Not started | - |
+| 8. Dashboard and System Configuration | v1.1 | 2/2 | Complete | 2026-03-10 |
 | 9. Thinker Management | v1.1 | 0/? | Not started | - |
 | 10. Source Management | v1.1 | 0/? | Not started | - |
 | 11. Pipeline Control | v1.1 | 0/? | Not started | - |

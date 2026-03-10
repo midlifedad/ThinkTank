@@ -9,10 +9,10 @@ Requirements for Admin Control Panel milestone. Phases 8-12.
 
 ### Dashboard
 
-- [ ] **DASH-01**: Operator can view a morning briefing page showing system health (worker status, DB connection, error rates), queue depth by job type, and pending approval counts
-- [ ] **DASH-02**: Operator can toggle the global kill switch on/off from a prominent dashboard control
-- [ ] **DASH-03**: Operator can view a recent activity feed showing the last 50 system actions (jobs completed, approvals made, errors, thinkers added)
-- [ ] **DASH-04**: Dashboard auto-refreshes every 10 seconds via HTMX without full page reload
+- [x] **DASH-01**: Operator can view a morning briefing page showing system health (worker status, DB connection, error rates), queue depth by job type, and pending approval counts
+- [x] **DASH-02**: Operator can toggle the global kill switch on/off from a prominent dashboard control
+- [x] **DASH-03**: Operator can view a recent activity feed showing the last 50 system actions (jobs completed, approvals made, errors, thinkers added)
+- [x] **DASH-04**: Dashboard auto-refreshes every 10 seconds via HTMX without full page reload
 
 ### Thinker Management
 
@@ -42,10 +42,10 @@ Requirements for Admin Control Panel milestone. Phases 8-12.
 
 ### System Configuration
 
-- [ ] **CONF-01**: Operator can manage API keys (add, update, remove) for external services (Anthropic, PodcastIndex, YouTube)
-- [ ] **CONF-02**: Operator can view and edit rate limit settings per external API
-- [ ] **CONF-03**: Operator can view and edit system config values (worker settings, thresholds, timeouts)
-- [ ] **CONF-04**: Operator can manage the category taxonomy (add, edit, reorder categories and subcategories)
+- [x] **CONF-01**: Operator can manage API keys (add, update, remove) for external services (Anthropic, PodcastIndex, YouTube)
+- [x] **CONF-02**: Operator can view and edit rate limit settings per external API
+- [x] **CONF-03**: Operator can view and edit system config values (worker settings, thresholds, timeouts)
+- [x] **CONF-04**: Operator can manage the category taxonomy (add, edit, reorder categories and subcategories)
 
 ### Agent Chat
 
@@ -265,14 +265,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUAL-05 | Phase 7 | Complete |
 | QUAL-06 | Phase 1 | Complete |
 | QUAL-07 | Phase 7 | Complete |
-| DASH-01 | Phase 8 | Pending |
-| DASH-02 | Phase 8 | Pending |
-| DASH-03 | Phase 8 | Pending |
-| DASH-04 | Phase 8 | Pending |
-| CONF-01 | Phase 8 | Pending |
-| CONF-02 | Phase 8 | Pending |
-| CONF-03 | Phase 8 | Pending |
-| CONF-04 | Phase 8 | Pending |
+| DASH-01 | Phase 8 | Complete |
+| DASH-02 | Phase 8 | Complete |
+| DASH-03 | Phase 8 | Complete |
+| DASH-04 | Phase 8 | Complete |
+| CONF-01 | Phase 8 | Complete |
+| CONF-02 | Phase 8 | Complete |
+| CONF-03 | Phase 8 | Complete |
+| CONF-04 | Phase 8 | Complete |
 | THNK-01 | Phase 9 | Pending |
 | THNK-02 | Phase 9 | Pending |
 | THNK-03 | Phase 9 | Pending |
