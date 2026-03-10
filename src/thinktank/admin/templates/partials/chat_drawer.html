@@ -1,0 +1,13 @@
+<div id="chat-drawer" class="chat-drawer chat-collapsed">
+    <div class="chat-header" onclick="toggleChat()">
+        <span class="chat-title">Agent Chat</span>
+        <span class="chat-toggle-icon">&#9650;</span>
+    </div>
+    <div class="chat-body">
+        <div id="chat-messages" class="chat-messages"></div>
+        <form id="chat-form" class="chat-input-area" onsubmit="sendMessage(event)">
+            <input type="text" id="chat-input" placeholder="Ask about system state or request actions..." autocomplete="off">
+            <button type="submit" id="chat-send-btn" class="btn btn-primary btn-sm">Send</button>
+        </form>
+    </div>
+</div>
