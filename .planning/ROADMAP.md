@@ -189,7 +189,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 09-01-PLAN.md -- Thinker list page: searchable/filterable list, add form with LLM approval trigger, edit form, active toggle, integration tests
+- [x] 09-01-PLAN.md -- Thinker list page: searchable/filterable list, add form with LLM approval trigger, edit form, active toggle, integration tests
 - [ ] 09-02-PLAN.md -- Thinker detail page: sources/content/reviews tabs, candidate queue with promote/reject, PodcastIndex discovery trigger, integration tests
 
 ### Phase 10: Source Management
@@ -243,7 +243,7 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 6. Discovery and Autonomous Growth | v1.0 | 2/2 | Complete | 2026-03-09 |
 | 7. Operations, API, and Polish | v1.0 | 3/3 | Complete | 2026-03-09 |
 | 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
-| 9. Thinker Management | v1.1 | 0/2 | Planning | - |
+| 9. Thinker Management | v1.1 | 1/2 | In Progress | - |
 | 10. Source Management | v1.1 | 0/? | Not started | - |
 | 11. Pipeline Control | v1.1 | 0/? | Not started | - |
 | 12. Agent Chat | v1.1 | 0/? | Not started | - |

@@ -16,13 +16,13 @@ Requirements for Admin Control Panel milestone. Phases 8-12.
 
 ### Thinker Management
 
-- [ ] **THNK-01**: Operator can view a searchable, filterable list of all thinkers with name, tier, category, active status, and source count
-- [ ] **THNK-02**: Operator can add a new thinker via a form (name, tier, categories) which creates the thinker and triggers LLM approval
-- [ ] **THNK-03**: Operator can edit an existing thinker's name, tier, categories, and active status
+- [x] **THNK-01**: Operator can view a searchable, filterable list of all thinkers with name, tier, category, active status, and source count
+- [x] **THNK-02**: Operator can add a new thinker via a form (name, tier, categories) which creates the thinker and triggers LLM approval
+- [x] **THNK-03**: Operator can edit an existing thinker's name, tier, categories, and active status
 - [ ] **THNK-04**: Operator can view a thinker detail page showing their sources, recent content, discovery status, and LLM review history
 - [ ] **THNK-05**: Operator can view the candidate queue and promote or reject candidates with a reason
 - [ ] **THNK-06**: Operator can trigger podcast discovery (PodcastIndex) for a specific thinker from the thinker detail page
-- [ ] **THNK-07**: Operator can deactivate/reactivate a thinker without deleting their data
+- [x] **THNK-07**: Operator can deactivate/reactivate a thinker without deleting their data
 
 ### Source Management
 
@@ -273,13 +273,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONF-02 | Phase 8 | Complete |
 | CONF-03 | Phase 8 | Complete |
 | CONF-04 | Phase 8 | Complete |
-| THNK-01 | Phase 9 | Pending |
-| THNK-02 | Phase 9 | Pending |
-| THNK-03 | Phase 9 | Pending |
+| THNK-01 | Phase 9 | Complete |
+| THNK-02 | Phase 9 | Complete |
+| THNK-03 | Phase 9 | Complete |
 | THNK-04 | Phase 9 | Pending |
 | THNK-05 | Phase 9 | Pending |
 | THNK-06 | Phase 9 | Pending |
-| THNK-07 | Phase 9 | Pending |
+| THNK-07 | Phase 9 | Complete |
 | SRC-01 | Phase 10 | Pending |
 | SRC-02 | Phase 10 | Pending |
 | SRC-03 | Phase 10 | Pending |

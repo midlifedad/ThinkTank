@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Admin Control Panel
-status: planning
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-03-10T05:51:36.500Z"
-last_activity: "2026-03-10 -- Phase 8 complete (2 plans: morning briefing + config page)"
+status: executing
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-03-10T06:06:14.000Z"
+last_activity: "2026-03-10 -- Phase 9 plan 01 complete (thinker list page with CRUD)"
 progress:
   total_phases: 12
   completed_phases: 8
-  total_plans: 22
-  completed_plans: 22
-  percent: 73
+  total_plans: 24
+  completed_plans: 23
+  percent: 77
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** v1.1 Admin Control Panel -- Phase 8 complete, ready for Phase 9
+**Current focus:** v1.1 Admin Control Panel -- Phase 9 in progress (plan 01 of 02 complete)
 
 ## Current Position
 
-Phase: 9 of 12 (Thinker Management) -- next phase of v1.1
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-10 -- Phase 8 complete (2 plans: morning briefing + config page)
+Phase: 9 of 12 (Thinker Management) -- v1.1 in progress
+Plan: 1 of 2 complete
+Status: Executing
+Last activity: 2026-03-10 -- Phase 9 plan 01 complete (thinker list page with CRUD)
 
-Progress: [######################░░░░░░░░] 73% (v1.0 complete, Phase 8 of v1.1 done)
+Progress: [#######################░░░░░░░] 77% (v1.0 complete, Phase 9 plan 1 of v1.1 done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22
+- Total plans completed: 23
 - Average duration: ~8min
-- Total execution time: ~3h 9min
+- Total execution time: ~3h 15min
 
 **By Phase:**
 
@@ -51,9 +51,10 @@ Progress: [######################░░░░░░░░] 73% (v1.0 complete, P
 | 6. Discovery | 2/2 | 13min | ~7min |
 | 7. Operations | 3/3 | 18min | ~6min |
 | 8. Dashboard & Config | 2/2 | ~6min | ~3min |
+| 9. Thinker Management | 1/2 | 6min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 07-01 (6min), 07-02 (6min), 07-03 (6min), 08-01 (~3min), 08-02 (3min)
+- Last 5 plans: 07-03 (6min), 08-01 (~3min), 08-02 (3min), 09-01 (6min)
 - Trend: Consistent ~3-6min/plan
 
 *Updated after each plan completion*
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 8]: Rate limits stored as single JSONB dict, system config keys as individual rows with raw int values
 - [Phase 8]: Config editor pattern: HTMX partial loaded on page load, hx-post save, re-render partial with success message
 - [Phase 08]: Used naive datetimes (utcnow) for system_config writes to match TIMESTAMP WITHOUT TIME ZONE columns
+- [Phase 09]: Thinker CRUD uses outerjoin subquery for source counts, ILIKE for search, hx-include for combined filters
+- [Phase 09]: populate_existing=True needed in tests to bypass SQLAlchemy identity map after endpoint commits in separate session
 
 ### Pending Todos
 
@@ -84,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T05:50:40.507Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-03-10T06:06:14Z
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
