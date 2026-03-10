@@ -5,7 +5,7 @@ for queue depth, error log, source health, GPU status, rate limits, cost trackin
 health summary, kill switch, activity feed, and pending approvals.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select, text
@@ -295,17 +295,17 @@ async def kill_switch_toggle(
         if isinstance(current, dict):
             new_val = not bool(current.get("value", True))
         else:
-            new_val = not bool(current.value)
+            new_val = not bool(current)
         config.value = new_val
         config.set_by = "admin"
-        config.updated_at = datetime.now(UTC)
+        config.updated_at = datetime.utcnow()
     else:
         # Create with value False (turning off)
         config = SystemConfig(
             key="workers_active",
             value=False,
             set_by="admin",
-            updated_at=datetime.now(UTC),
+            updated_at=datetime.utcnow(),
         )
         session.add(config)
 
