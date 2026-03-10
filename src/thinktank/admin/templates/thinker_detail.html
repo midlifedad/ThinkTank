@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a href="/admin/thinkers" style="color: #555; text-decoration: none;">&larr; Back to Thinkers</a>
+</div>
+
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+    <h2 style="margin: 0;">{{ thinker.name }}</h2>
+    <span style="background: #1a1a2e; color: #fff; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.75rem;">Tier {{ thinker.tier }}</span>
+    {% if thinker.approval_status == 'approved' %}
+    <span style="background: #d4edda; color: #155724; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.75rem;">{{ thinker.approval_status }}</span>
+    {% elif thinker.approval_status == 'awaiting_llm' or thinker.approval_status == 'pending_llm' %}
+    <span style="background: #fff3cd; color: #856404; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.75rem;">{{ thinker.approval_status }}</span>
+    {% elif thinker.approval_status == 'rejected' %}
+    <span style="background: #f8d7da; color: #721c24; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.75rem;">{{ thinker.approval_status }}</span>
+    {% else %}
+    <span style="background: #e2e3e5; color: #383d41; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.75rem;">{{ thinker.approval_status }}</span>
+    {% endif %}
+    {% if thinker.active %}
+    <span class="healthy">Active</span>
+    {% else %}
+    <span class="error">Inactive</span>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Details</h3>
+    <div class="stat-row">
+        <span class="stat-label">Slug</span>
+        <span class="stat-value">{{ thinker.slug }}</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Bio</span>
+        <span class="stat-value">{{ thinker.bio or '—' }}</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Categories</span>
+        <span class="stat-value">{{ category_names | join(', ') if category_names else '—' }}</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Added</span>
+        <span class="stat-value">{{ thinker.added_at.strftime('%Y-%m-%d %H:%M') if thinker.added_at else '—' }}</span>
+    </div>
+    <div style="margin-top: 1rem;">
+        <button class="btn btn-primary"
+            hx-post="/admin/thinkers/{{ thinker.id }}/discover"
+            hx-target="#discovery-result"
+            hx-swap="innerHTML"
+        >Trigger PodcastIndex Discovery</button>
+        <div id="discovery-result" style="margin-top: 0.5rem;"></div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Sources</h3>
+    <div id="thinker-sources"
+        hx-get="/admin/thinkers/{{ thinker.id }}/partials/sources"
+        hx-trigger="load">
+        <p class="empty">Loading sources...</p>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Recent Content</h3>
+    <div id="thinker-content"
+        hx-get="/admin/thinkers/{{ thinker.id }}/partials/content"
+        hx-trigger="load">
+        <p class="empty">Loading content...</p>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>LLM Review History</h3>
+    <div id="thinker-reviews"
+        hx-get="/admin/thinkers/{{ thinker.id }}/partials/reviews"
+        hx-trigger="load">
+        <p class="empty">Loading reviews...</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,19 +1,25 @@
 """Thinker management router for admin dashboard.
 
 Provides full CRUD for thinkers: searchable/filterable list, inline add form
-with LLM approval trigger, inline edit form, and active/inactive toggle.
+with LLM approval trigger, inline edit form, active/inactive toggle,
+thinker detail page with HTMX-loaded sections, candidate queue with
+promote/reject, and PodcastIndex discovery trigger.
 """
 
 import re
 import uuid
+from datetime import datetime, UTC
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, Request
-from sqlalchemy import delete, func, select
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.thinktank.models.candidate import CandidateThinker
 from src.thinktank.models.category import Category, ThinkerCategory
+from src.thinktank.models.content import Content
 from src.thinktank.models.job import Job
+from src.thinktank.models.review import LLMReview
 from src.thinktank.models.source import Source
 from src.thinktank.models.thinker import Thinker
 from thinktank.admin.dependencies import get_session, get_templates
@@ -189,6 +195,247 @@ async def add_thinker(
         request,
         "partials/thinker_list.html",
         {"thinkers": thinkers, "success": f"Thinker '{name}' added. LLM approval queued."},
+    )
+
+
+@router.get("/candidates")
+async def candidate_queue_page(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """Candidate queue page showing pending and reviewed candidates."""
+    result = await session.execute(
+        select(CandidateThinker).order_by(CandidateThinker.appearance_count.desc())
+    )
+    candidates = result.scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "candidate_queue.html",
+        {"candidates": candidates},
+    )
+
+
+@router.post("/candidates/{candidate_id}/promote")
+async def promote_candidate(
+    request: Request,
+    candidate_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    reason: str = Form(""),
+):
+    """Promote a candidate to a full thinker with LLM approval job."""
+    result = await session.execute(
+        select(CandidateThinker).where(CandidateThinker.id == candidate_id)
+    )
+    candidate = result.scalar_one_or_none()
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    # Create new thinker from candidate data
+    slug = _slugify(candidate.name)
+    thinker = Thinker(
+        id=uuid.uuid4(),
+        name=candidate.name,
+        slug=slug,
+        tier=3,
+        bio=f"Promoted from candidate. Reason: {reason}",
+        approval_status="awaiting_llm",
+        active=True,
+    )
+    session.add(thinker)
+    await session.flush()
+
+    # Create LLM approval job for the new thinker
+    job = Job(
+        id=uuid.uuid4(),
+        job_type="llm_approval_check",
+        payload={"entity_type": "thinker", "entity_id": str(thinker.id)},
+        status="pending",
+        priority=5,
+    )
+    session.add(job)
+
+    # Update candidate status
+    now = datetime.now(UTC).replace(tzinfo=None)
+    candidate.status = "promoted"
+    candidate.thinker_id = thinker.id
+    candidate.reviewed_by = "admin"
+    candidate.reviewed_at = now
+
+    await session.commit()
+
+    # Re-render the candidate queue
+    result = await session.execute(
+        select(CandidateThinker).order_by(CandidateThinker.appearance_count.desc())
+    )
+    candidates = result.scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "partials/candidate_list.html",
+        {"candidates": candidates, "success": f"'{candidate.name}' promoted to thinker. LLM approval queued."},
+    )
+
+
+@router.post("/candidates/{candidate_id}/reject")
+async def reject_candidate(
+    request: Request,
+    candidate_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    reason: str = Form(""),
+):
+    """Reject a candidate with a reason."""
+    result = await session.execute(
+        select(CandidateThinker).where(CandidateThinker.id == candidate_id)
+    )
+    candidate = result.scalar_one_or_none()
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    now = datetime.now(UTC).replace(tzinfo=None)
+    candidate.status = "rejected"
+    candidate.reviewed_by = "admin"
+    candidate.reviewed_at = now
+
+    await session.commit()
+
+    # Re-render the candidate queue
+    result = await session.execute(
+        select(CandidateThinker).order_by(CandidateThinker.appearance_count.desc())
+    )
+    candidates = result.scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "partials/candidate_list.html",
+        {"candidates": candidates, "success": f"'{candidate.name}' rejected."},
+    )
+
+
+@router.get("/{thinker_id}")
+async def thinker_detail_page(
+    request: Request,
+    thinker_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """Thinker detail page with HTMX-loaded sources, content, and reviews."""
+    result = await session.execute(select(Thinker).where(Thinker.id == thinker_id))
+    thinker = result.scalar_one_or_none()
+    if thinker is None:
+        raise HTTPException(status_code=404, detail="Thinker not found")
+
+    # Resolve category names
+    category_names = []
+    for tc in thinker.categories:
+        cat_result = await session.execute(
+            select(Category.name).where(Category.id == tc.category_id)
+        )
+        cat_name = cat_result.scalar_one_or_none()
+        if cat_name:
+            category_names.append(cat_name)
+
+    return templates.TemplateResponse(
+        request,
+        "thinker_detail.html",
+        {"thinker": thinker, "category_names": category_names},
+    )
+
+
+@router.get("/{thinker_id}/partials/sources")
+async def thinker_sources_partial(
+    request: Request,
+    thinker_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTMX partial listing a thinker's sources."""
+    result = await session.execute(
+        select(Source).where(Source.thinker_id == thinker_id).order_by(Source.name)
+    )
+    sources = result.scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "partials/thinker_sources.html",
+        {"sources": sources},
+    )
+
+
+@router.get("/{thinker_id}/partials/content")
+async def thinker_content_partial(
+    request: Request,
+    thinker_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTMX partial listing a thinker's recent content."""
+    result = await session.execute(
+        select(Content)
+        .where(Content.source_owner_id == thinker_id)
+        .order_by(Content.published_at.desc().nulls_last())
+        .limit(20)
+    )
+    content_items = result.scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "partials/thinker_content.html",
+        {"content_items": content_items},
+    )
+
+
+@router.get("/{thinker_id}/partials/reviews")
+async def thinker_reviews_partial(
+    request: Request,
+    thinker_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTMX partial listing LLM review history for a thinker."""
+    result = await session.execute(
+        text(
+            "SELECT id, review_type, decision, decision_reasoning, created_at "
+            "FROM llm_reviews "
+            "WHERE context_snapshot->>'thinker_id' = :tid "
+            "ORDER BY created_at DESC LIMIT 20"
+        ),
+        {"tid": str(thinker_id)},
+    )
+    reviews = [
+        {
+            "id": str(row[0]),
+            "review_type": row[1],
+            "decision": row[2],
+            "decision_reasoning": row[3],
+            "created_at": row[4],
+        }
+        for row in result.fetchall()
+    ]
+    return templates.TemplateResponse(
+        request,
+        "partials/thinker_reviews.html",
+        {"reviews": reviews},
+    )
+
+
+@router.post("/{thinker_id}/discover")
+async def trigger_discovery(
+    request: Request,
+    thinker_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """Trigger PodcastIndex guest discovery for a specific thinker."""
+    result = await session.execute(select(Thinker).where(Thinker.id == thinker_id))
+    thinker = result.scalar_one_or_none()
+    if thinker is None:
+        raise HTTPException(status_code=404, detail="Thinker not found")
+
+    job = Job(
+        id=uuid.uuid4(),
+        job_type="discover_guests_podcastindex",
+        payload={"thinker_id": str(thinker_id)},
+        status="pending",
+        priority=5,
+    )
+    session.add(job)
+    await session.commit()
+
+    return templates.TemplateResponse(
+        request,
+        "partials/discovery_result.html",
+        {"thinker": thinker},
     )
 
 

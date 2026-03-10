@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a href="/admin/thinkers" style="color: #555; text-decoration: none;">&larr; Back to Thinkers</a>
+</div>
+
+<h2 style="margin-bottom: 1rem;">Candidate Queue</h2>
+
+<div id="candidate-list">
+    {% include "partials/candidate_list.html" %}
+</div>
+{% endblock %}
