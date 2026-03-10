@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Admin Control Panel
 status: executing
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-03-10T06:33:37Z"
-last_activity: 2026-03-10 -- Phase 10 plan 1 complete (source list, add, approve, reject, force-refresh)
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-03-10T06:39:59Z"
+last_activity: 2026-03-10 -- Phase 10 complete (source detail page with health summary, episodes, errors)
 progress:
   total_phases: 12
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 28
-  completed_plans: 26
-  percent: 87
+  completed_plans: 27
+  percent: 93
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** v1.1 Admin Control Panel -- Phase 10 plan 1 + Phase 11 plan 1 complete
+**Current focus:** v1.1 Admin Control Panel -- Phases 8-10 complete, Phase 11 plan 1 complete
 
 ## Current Position
 
-Phase: 10 of 12 (Source Management) -- plan 1 of 2 complete
+Phase: 11 of 12 (Pipeline Control) -- plan 1 of 2 complete
 Plan: 1 of 2 complete
 Status: Executing
-Last activity: 2026-03-10 -- Phase 10 plan 1 complete (source list, add, approve, reject, force-refresh)
+Last activity: 2026-03-10 -- Phase 10 complete (source detail page with health summary, episodes, errors)
 
-Progress: [############################░░] 87% (v1.0 complete, Phases 10+11 plan 1 of v1.1 done)
+Progress: [#############################░] 93% (v1.0 complete, Phases 8-10 + 11 plan 1 of v1.1 done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26
+- Total plans completed: 27
 - Average duration: ~8min
-- Total execution time: ~3h 27min
+- Total execution time: ~3h 30min
 
 **By Phase:**
 
@@ -52,11 +52,11 @@ Progress: [############################░░] 87% (v1.0 complete, Phases 10+11 
 | 7. Operations | 3/3 | 18min | ~6min |
 | 8. Dashboard & Config | 2/2 | ~6min | ~3min |
 | 9. Thinker Management | 2/2 | 10min | 5min |
-| 10. Source Management | 1/2 | 4min | 4min |
+| 10. Source Management | 2/2 | 7min | ~4min |
 | 11. Pipeline Control | 1/2 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 09-01 (6min), 09-02 (4min), 11-01 (4min), 10-01 (4min)
+- Last 5 plans: 09-02 (4min), 11-01 (4min), 10-01 (4min), 10-02 (3min)
 - Trend: Consistent ~4min/plan
 
 *Updated after each plan completion*
@@ -86,6 +86,8 @@ Recent decisions affecting current work:
 - [Phase 11]: HX-Trigger refreshJobList for auto-refresh after retry/cancel instead of inline partial replacement
 - [Phase 11]: Job status 'done' (not 'complete') matching existing claim.py convention
 - [Phase 11]: Trigger validation 422 for invalid types; retry/cancel inline error messages for status mismatches
+- [Phase 10]: Raw SQL text() for JSONB payload->>'source_id' query on jobs table for error history
+- [Phase 10]: Route ordering: episode/error partials before /{source_id} to prevent FastAPI UUID parsing conflict
 
 ### Pending Todos
 
@@ -97,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T06:33:37Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-03-10T06:39:59Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None

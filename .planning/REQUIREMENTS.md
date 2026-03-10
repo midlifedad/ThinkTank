@@ -30,7 +30,7 @@ Requirements for Admin Control Panel milestone. Phases 8-12.
 - [x] **SRC-02**: Operator can approve or reject a pending source with a reason, bypassing LLM review
 - [x] **SRC-03**: Operator can add a source manually (RSS URL, name, thinker) which registers it as pending approval
 - [x] **SRC-04**: Operator can force-refresh a specific source immediately (creates a fetch_podcast_feed job)
-- [ ] **SRC-05**: Operator can view source detail page showing feed health, last fetched time, episode count, and error history
+- [x] **SRC-05**: Operator can view source detail page showing feed health, last fetched time, episode count, and error history
 
 ### Pipeline Control
 
@@ -284,7 +284,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRC-02 | Phase 10 | Complete |
 | SRC-03 | Phase 10 | Complete |
 | SRC-04 | Phase 10 | Complete |
-| SRC-05 | Phase 10 | Pending |
+| SRC-05 | Phase 10 | Complete |
 | PIPE-01 | Phase 11 | Complete |
 | PIPE-02 | Phase 11 | Complete |
 | PIPE-03 | Phase 11 | Pending |

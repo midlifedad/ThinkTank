@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 8: Dashboard and System Configuration** - Morning briefing dashboard with health/activity/approvals, kill switch control, auto-refresh, and system config management (API keys, rate limits, worker settings, categories) (completed 2026-03-10)
 - [x] **Phase 9: Thinker Management** - Searchable thinker list, add/edit/deactivate thinkers with LLM approval, thinker detail pages, candidate queue with promote/reject, triggered discovery
-- [ ] **Phase 10: Source Management** - Filterable source list, manual source addition, approve/reject sources, force-refresh feeds, source detail pages with health and error history
+- [x] **Phase 10: Source Management** - Filterable source list, manual source addition, approve/reject sources, force-refresh feeds, source detail pages with health and error history
 - [ ] **Phase 11: Pipeline Control** - Job queue browser with status/type/date filters, manual job triggers, recurring task scheduler with frequency/toggle, job retry/cancel, job detail view
 - [ ] **Phase 12: Agent Chat** - Persistent chat drawer on all admin pages, LLM agent with database query capability, propose-then-execute mutations, SSE streaming responses, session chat history
 
@@ -205,7 +205,7 @@ Plans:
 
 Plans:
 - [x] 10-01-PLAN.md -- Source list page: filterable list, add form, approve/reject with audit trail, force-refresh, integration tests
-- [ ] 10-02-PLAN.md -- Source detail page: health summary, episodes list, error history, integration tests
+- [x] 10-02-PLAN.md -- Source detail page: health summary, episodes list, error history, integration tests
 
 ### Phase 11: Pipeline Control
 **Goal**: Operators have full visibility and control over the job pipeline -- browsing the queue, triggering jobs manually, configuring recurring task schedules, and managing individual job lifecycle (retry, cancel, inspect)
@@ -252,6 +252,6 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 7. Operations, API, and Polish | v1.0 | 3/3 | Complete | 2026-03-09 |
 | 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
 | 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
-| 10. Source Management | v1.1 | 1/2 | In Progress | - |
+| 10. Source Management | v1.1 | 2/2 | Complete | 2026-03-10 |
 | 11. Pipeline Control | v1.1 | 1/2 | In Progress | - |
 | 12. Agent Chat | v1.1 | 0/? | Not started | - |
