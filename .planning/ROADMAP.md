@@ -201,7 +201,7 @@ Plans:
   2. Operator can approve or reject a pending source with a reason, bypassing LLM review -- and the decision is logged in the audit trail alongside LLM decisions
   3. Operator can add a source manually (RSS URL, name, thinker) which registers it as pending approval, and can force-refresh a specific approved source immediately (creating a fetch_podcast_feed job)
   4. Operator can view a source detail page showing feed health, last fetched time, episode count, and error history -- providing enough context to diagnose feed problems without checking logs
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 10-01-PLAN.md -- Source list page: filterable list, add form, approve/reject with audit trail, force-refresh, integration tests
@@ -216,7 +216,7 @@ Plans:
   2. Operator can manually trigger pipeline jobs (refresh_due_sources, scan_for_candidates, discover_guests for a thinker) from the pipeline page, and the created job appears in the queue immediately
   3. Operator can configure recurring task schedules with frequency (in hours), an enable/disable toggle, and a Run Now button -- without cron syntax, just simple frequency controls
   4. Operator can retry a failed job or cancel a pending job from the queue view, and can view job detail showing payload, attempts, error messages, and timing for any job
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 11-01-PLAN.md -- Pipeline page with job queue browser (filters, pagination), manual triggers, retry/cancel, job detail view, integration tests
@@ -252,6 +252,6 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 7. Operations, API, and Polish | v1.0 | 3/3 | Complete | 2026-03-09 |
 | 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
 | 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
-| 10. Source Management | v1.1 | 2/2 | Complete | 2026-03-10 |
-| 11. Pipeline Control | v1.1 | 2/2 | Complete | 2026-03-10 |
+| 10. Source Management | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
+| 11. Pipeline Control | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
 | 12. Agent Chat | v1.1 | 0/? | Not started | - |
