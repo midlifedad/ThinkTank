@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Admin Control Panel
 status: planning
-stopped_at: Completed 08-02-PLAN.md -- Phase 8 fully complete, ready for Phase 9 (Thinker Management)
-last_updated: "2026-03-10T05:50:23.178Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-03-10T05:50:45.097Z"
 last_activity: "2026-03-10 -- Phase 8 complete (2 plans: morning briefing + config page)"
 progress:
   total_phases: 12
@@ -72,6 +72,7 @@ Recent decisions affecting current work:
 - [v1.1 Roadmap]: Persistent chat drawer (not separate page), propose-then-execute for mutations, simple scheduler (frequency + toggle, not cron)
 - [Phase 8]: Rate limits stored as single JSONB dict, system config keys as individual rows with raw int values
 - [Phase 8]: Config editor pattern: HTMX partial loaded on page load, hx-post save, re-render partial with success message
+- [Phase 08]: Used naive datetimes (utcnow) for system_config writes to match TIMESTAMP WITHOUT TIME ZONE columns
 
 ### Pending Todos
 
@@ -83,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T05:48:03.000Z
-Stopped at: Completed 08-02-PLAN.md -- Phase 8 fully complete, ready for Phase 9 (Thinker Management)
+Last session: 2026-03-10T05:50:40.507Z
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None

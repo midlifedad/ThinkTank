@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### v1.1 Admin Control Panel (Phases 8-12)
 
-- [ ] **Phase 8: Dashboard and System Configuration** - Morning briefing dashboard with health/activity/approvals, kill switch control, auto-refresh, and system config management (API keys, rate limits, worker settings, categories)
+- [x] **Phase 8: Dashboard and System Configuration** - Morning briefing dashboard with health/activity/approvals, kill switch control, auto-refresh, and system config management (API keys, rate limits, worker settings, categories) (completed 2026-03-10)
 - [ ] **Phase 9: Thinker Management** - Searchable thinker list, add/edit/deactivate thinkers with LLM approval, thinker detail pages, candidate queue with promote/reject, triggered discovery
 - [ ] **Phase 10: Source Management** - Filterable source list, manual source addition, approve/reject sources, force-refresh feeds, source detail pages with health and error history
 - [ ] **Phase 11: Pipeline Control** - Job queue browser with status/type/date filters, manual job triggers, recurring task scheduler with frequency/toggle, job retry/cancel, job detail view
@@ -170,7 +170,7 @@ Plans:
   3. Operator can view a recent activity feed showing the last 50 system actions (jobs completed, approvals made, errors, thinkers added), and the entire dashboard auto-refreshes every 10 seconds via HTMX without a full page reload
   4. Operator can manage API keys (add, update, remove) for external services, view and edit rate limit settings per API, and view and edit system config values (worker settings, thresholds, timeouts) from dedicated configuration pages
   5. Operator can manage the category taxonomy (add, edit, reorder categories and subcategories) from the configuration section, with changes immediately reflected in thinker forms
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 08-01-PLAN.md -- Morning briefing dashboard: health summary, kill switch toggle, activity feed, pending approvals, reorganized layout, integration tests
@@ -238,7 +238,7 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 5. LLM Governance | v1.0 | 3/3 | Complete | 2026-03-09 |
 | 6. Discovery and Autonomous Growth | v1.0 | 2/2 | Complete | 2026-03-09 |
 | 7. Operations, API, and Polish | v1.0 | 3/3 | Complete | 2026-03-09 |
-| 8. Dashboard and System Configuration | v1.1 | 2/2 | Complete | 2026-03-10 |
+| 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
 | 9. Thinker Management | v1.1 | 0/? | Not started | - |
 | 10. Source Management | v1.1 | 0/? | Not started | - |
 | 11. Pipeline Control | v1.1 | 0/? | Not started | - |
