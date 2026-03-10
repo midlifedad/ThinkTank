@@ -19,7 +19,7 @@ async def get_rate_limit_config(session: AsyncSession, api_name: str) -> int | N
 
     Args:
         session: Async database session.
-        api_name: The API identifier (e.g., 'listennotes', 'youtube').
+        api_name: The API identifier (e.g., 'podcastindex', 'youtube').
 
     Returns:
         The integer limit, or None if no config exists (fail-open).
@@ -53,7 +53,7 @@ async def check_and_acquire_rate_limit(
 
     Args:
         session: Async database session.
-        api_name: The API identifier (e.g., 'listennotes', 'youtube').
+        api_name: The API identifier (e.g., 'podcastindex', 'youtube').
         worker_id: The worker acquiring the slot.
         window_minutes: Sliding window size in minutes (default 60).
 

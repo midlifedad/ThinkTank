@@ -19,7 +19,6 @@ templates = get_templates()
 # Keys that can be managed via the admin interface
 MANAGED_KEYS = [
     {"name": "anthropic_api_key", "label": "Anthropic API Key", "required": True},
-    {"name": "listennotes_api_key", "label": "Listen Notes API Key", "required": False},
     {"name": "podcastindex_api_key", "label": "Podcast Index API Key", "required": False},
     {"name": "podcastindex_api_secret", "label": "Podcast Index API Secret", "required": False},
     {"name": "youtube_api_key", "label": "YouTube API Key", "required": False},

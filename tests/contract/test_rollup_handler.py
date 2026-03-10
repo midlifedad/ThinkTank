@@ -37,7 +37,7 @@ class TestRollupApiUsageHandler:
         for _ in range(5):
             await create_rate_limit_usage(
                 session,
-                api_name="listennotes",
+                api_name="podcastindex",
                 worker_id="w1",
                 called_at=three_hours_ago,
             )
@@ -48,7 +48,7 @@ class TestRollupApiUsageHandler:
         await session.commit()
 
         result = await session.execute(
-            select(ApiUsage).where(ApiUsage.api_name == "listennotes")
+            select(ApiUsage).where(ApiUsage.api_name == "podcastindex")
         )
         rows = result.scalars().all()
         assert len(rows) >= 1
@@ -63,7 +63,7 @@ class TestRollupApiUsageHandler:
         for _ in range(10):
             await create_rate_limit_usage(
                 session,
-                api_name="listennotes",
+                api_name="youtube",
                 worker_id="w1",
                 called_at=three_hours_ago,
             )
@@ -74,12 +74,12 @@ class TestRollupApiUsageHandler:
         await session.commit()
 
         result = await session.execute(
-            select(ApiUsage).where(ApiUsage.api_name == "listennotes")
+            select(ApiUsage).where(ApiUsage.api_name == "youtube")
         )
         rows = result.scalars().all()
         total_cost = sum(float(r.estimated_cost_usd) for r in rows if r.estimated_cost_usd)
-        # 10 calls * $0.005 = $0.05
-        assert abs(total_cost - 0.05) < 0.001
+        # 10 calls * $0.001 = $0.01
+        assert abs(total_cost - 0.01) < 0.001
 
     async def test_idempotent_on_rerun(self, session: AsyncSession):
         """Running handler twice on same data does not duplicate api_usage rows."""

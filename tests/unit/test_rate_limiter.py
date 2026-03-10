@@ -23,7 +23,7 @@ class TestGetRateLimitConfig:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
 
-        result = await get_rate_limit_config(mock_session, "listennotes")
+        result = await get_rate_limit_config(mock_session, "podcastindex")
         assert result is None
 
     async def test_extracts_int_from_jsonb_dict(self):
@@ -35,7 +35,7 @@ class TestGetRateLimitConfig:
         mock_result.scalar_one_or_none.return_value = {"value": 100}
         mock_session.execute.return_value = mock_result
 
-        result = await get_rate_limit_config(mock_session, "listennotes")
+        result = await get_rate_limit_config(mock_session, "podcastindex")
         assert result == 100
 
     async def test_extracts_int_from_raw_int(self):
@@ -59,7 +59,7 @@ class TestGetRateLimitConfig:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
 
-        await get_rate_limit_config(mock_session, "listennotes")
+        await get_rate_limit_config(mock_session, "podcastindex")
 
         # Verify execute was called (the actual SQL is tested in integration)
         mock_session.execute.assert_called_once()
@@ -83,7 +83,7 @@ class TestCheckAndAcquireRateLimit:
         mock_session.execute.side_effect = [mock_count_result, mock_config_result]
 
         result = await check_and_acquire_rate_limit(
-            mock_session, "listennotes", "worker-1"
+            mock_session, "podcastindex", "worker-1"
         )
         assert result is True
 
@@ -102,7 +102,7 @@ class TestCheckAndAcquireRateLimit:
         mock_session.execute.side_effect = [mock_count_result, mock_config_result]
 
         result = await check_and_acquire_rate_limit(
-            mock_session, "listennotes", "worker-1"
+            mock_session, "podcastindex", "worker-1"
         )
         assert result is False
 
@@ -121,7 +121,7 @@ class TestCheckAndAcquireRateLimit:
         mock_session.execute.side_effect = [mock_count_result, mock_config_result]
 
         result = await check_and_acquire_rate_limit(
-            mock_session, "listennotes", "worker-1"
+            mock_session, "podcastindex", "worker-1"
         )
         assert result is True
         # Should have added a RateLimitUsage row

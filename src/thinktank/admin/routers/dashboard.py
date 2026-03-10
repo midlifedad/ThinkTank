@@ -133,7 +133,6 @@ async def rate_limits_partial(
 ):
     """HTML fragment: rate limit gauges per API."""
     apis = {
-        "listennotes": 100,
         "youtube": 200,
         "podcastindex": 500,
         "anthropic": 50,

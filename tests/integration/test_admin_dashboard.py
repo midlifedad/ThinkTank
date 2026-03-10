@@ -144,7 +144,6 @@ class TestRateLimitsPartial:
     async def test_shows_api_gauges(self, admin_client):
         response = await admin_client.get("/admin/partials/rate-limits")
         assert response.status_code == 200
-        assert "listennotes" in response.text
         assert "youtube" in response.text
         assert "anthropic" in response.text
 

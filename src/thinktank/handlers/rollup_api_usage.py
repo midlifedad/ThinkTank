@@ -22,7 +22,6 @@ logger = structlog.get_logger(__name__)
 
 # Cost per API call in USD. Unknown APIs default to $0.001.
 API_COST_MAP: dict[str, float] = {
-    "listennotes": 0.005,
     "youtube": 0.001,
     "podcastindex": 0.0,
     "anthropic": 0.015,

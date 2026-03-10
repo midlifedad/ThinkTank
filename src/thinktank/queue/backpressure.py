@@ -21,7 +21,6 @@ BACKPRESSURE_JOB_TYPES: set[str] = {
     "scrape_substack",
     "fetch_youtube_channel",
     "fetch_guest_feed",
-    "discover_guests_listennotes",
     "discover_guests_podcastindex",
     "search_youtube_appearances",
     "scan_for_candidates",
