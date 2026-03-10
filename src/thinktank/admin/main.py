@@ -17,6 +17,7 @@ from thinktank.admin.routers.dashboard import router as dashboard_router
 from thinktank.admin.routers.pipeline import router as pipeline_router
 from thinktank.admin.routers.sources import router as sources_router
 from thinktank.admin.routers.thinkers import router as thinkers_router
+from thinktank.admin.routers.chat import router as chat_router
 from thinktank.admin.routers.llm_panel import router as llm_panel_router
 from thinktank.api.middleware import CorrelationIDMiddleware
 from thinktank.config import get_settings
@@ -66,3 +67,4 @@ app.include_router(config_router)
 app.include_router(thinkers_router)
 app.include_router(sources_router)
 app.include_router(pipeline_router)
+app.include_router(chat_router)
