@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Admin Control Panel
 status: executing
-stopped_at: Completed 09-02-PLAN.md
-last_updated: "2026-03-10T06:17:44.800Z"
-last_activity: 2026-03-10 -- Phase 9 complete (thinker detail, candidates, discovery)
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-03-10T06:33:37Z"
+last_activity: 2026-03-10 -- Phase 10 plan 1 complete (source list, add, approve, reject, force-refresh)
 progress:
   total_phases: 12
   completed_phases: 9
-  total_plans: 24
-  completed_plans: 24
-  percent: 82
+  total_plans: 28
+  completed_plans: 26
+  percent: 87
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
-**Current focus:** v1.1 Admin Control Panel -- Phase 9 complete, ready for Phase 10
+**Current focus:** v1.1 Admin Control Panel -- Phase 10 plan 1 + Phase 11 plan 1 complete
 
 ## Current Position
 
-Phase: 9 of 12 (Thinker Management) -- v1.1 complete
-Plan: 2 of 2 complete
+Phase: 10 of 12 (Source Management) -- plan 1 of 2 complete
+Plan: 1 of 2 complete
 Status: Executing
-Last activity: 2026-03-10 -- Phase 9 complete (thinker detail, candidates, discovery)
+Last activity: 2026-03-10 -- Phase 10 plan 1 complete (source list, add, approve, reject, force-refresh)
 
-Progress: [#########################░░░░░] 82% (v1.0 complete, Phase 9 of v1.1 done)
+Progress: [############################░░] 87% (v1.0 complete, Phases 10+11 plan 1 of v1.1 done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24
+- Total plans completed: 26
 - Average duration: ~8min
-- Total execution time: ~3h 19min
+- Total execution time: ~3h 27min
 
 **By Phase:**
 
@@ -52,10 +52,12 @@ Progress: [#########################░░░░░] 82% (v1.0 complete, Phase 9
 | 7. Operations | 3/3 | 18min | ~6min |
 | 8. Dashboard & Config | 2/2 | ~6min | ~3min |
 | 9. Thinker Management | 2/2 | 10min | 5min |
+| 10. Source Management | 1/2 | 4min | 4min |
+| 11. Pipeline Control | 1/2 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 08-01 (~3min), 08-02 (3min), 09-01 (6min), 09-02 (4min)
-- Trend: Consistent ~3-6min/plan
+- Last 5 plans: 09-01 (6min), 09-02 (4min), 11-01 (4min), 10-01 (4min)
+- Trend: Consistent ~4min/plan
 
 *Updated after each plan completion*
 
@@ -79,6 +81,11 @@ Recent decisions affecting current work:
 - [Phase 09]: Raw SQL text() for JSONB queries on llm_reviews.context_snapshot->>'thinker_id'
 - [Phase 09]: Route ordering discipline: /candidates before /{thinker_id} to avoid FastAPI UUID parsing conflict
 - [Phase 09]: Candidate promote sets tier=3 default; LLM approval refines tier through review
+- [Phase 10]: Source list uses JOIN (not outerjoin) since every source must have a thinker
+- [Phase 10]: Approve/reject creates LLMReview with trigger=admin_override for audit trail
+- [Phase 11]: HX-Trigger refreshJobList for auto-refresh after retry/cancel instead of inline partial replacement
+- [Phase 11]: Job status 'done' (not 'complete') matching existing claim.py convention
+- [Phase 11]: Trigger validation 422 for invalid types; retry/cancel inline error messages for status mismatches
 
 ### Pending Todos
 
@@ -90,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T06:14:30Z
-Stopped at: Completed 09-02-PLAN.md
+Last session: 2026-03-10T06:33:37Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None

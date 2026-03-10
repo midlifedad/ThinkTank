@@ -219,7 +219,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md -- Pipeline page with job queue browser (filters, pagination), manual triggers, retry/cancel, job detail view, integration tests
+- [x] 11-01-PLAN.md -- Pipeline page with job queue browser (filters, pagination), manual triggers, retry/cancel, job detail view, integration tests
 - [ ] 11-02-PLAN.md -- Recurring task scheduler editor with frequency/toggle/Run Now, system_config persistence, integration tests
 
 ### Phase 12: Agent Chat
@@ -253,5 +253,5 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 8. Dashboard and System Configuration | 2/2 | Complete   | 2026-03-10 | 2026-03-10 |
 | 9. Thinker Management | v1.1 | 2/2 | Complete | 2026-03-10 |
 | 10. Source Management | v1.1 | 0/2 | Not started | - |
-| 11. Pipeline Control | v1.1 | 0/2 | Planned | - |
+| 11. Pipeline Control | v1.1 | 1/2 | In Progress | - |
 | 12. Agent Chat | v1.1 | 0/? | Not started | - |
