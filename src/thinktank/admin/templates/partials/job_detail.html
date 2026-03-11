@@ -82,4 +82,71 @@
         <span class="stat-label">Payload:</span>
         <pre style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 0.75rem; border-radius: 4px; margin-top: 0.25rem; white-space: pre-wrap; word-break: break-word; font-size: 0.85rem;">{{ payload_str }}</pre>
     </div>
+
+    {% if llm_review %}
+    <div style="margin-top: 1rem; border-top: 2px solid #1a1a2e; padding-top: 0.75rem;">
+        <h3>LLM Review Result</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem;">
+            <div class="stat-row">
+                <span class="stat-label">Decision</span>
+                <span class="stat-value">
+                    {% if llm_review.decision == 'approve' %}
+                    <span class="healthy">{{ llm_review.decision }}</span>
+                    {% elif llm_review.decision == 'reject' %}
+                    <span class="error">{{ llm_review.decision }}</span>
+                    {% else %}
+                    {{ llm_review.decision or '-' }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Model</span>
+                <span class="stat-value">{{ llm_review.model or '-' }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Tokens Used</span>
+                <span class="stat-value">{{ llm_review.tokens_used or '-' }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Duration</span>
+                <span class="stat-value">{{ llm_review.duration_ms or '-' }}ms</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Reviewed At</span>
+                <span class="stat-value">{{ llm_review.created_at.strftime('%Y-%m-%d %H:%M:%S') if llm_review.created_at else '-' }}</span>
+            </div>
+        </div>
+        {% if llm_review.reasoning %}
+        <div style="margin-top: 0.5rem;">
+            <span class="stat-label">Reasoning:</span>
+            <pre style="background: #f0f7ff; border: 1px solid #b8d4f0; padding: 0.75rem; border-radius: 4px; margin-top: 0.25rem; white-space: pre-wrap; word-break: break-word; font-size: 0.85rem;">{{ llm_review.reasoning }}</pre>
+        </div>
+        {% endif %}
+        {% if llm_review.prompt_used %}
+        <details style="margin-top: 0.5rem;">
+            <summary style="cursor: pointer; color: #666; font-size: 0.85rem;">Show Prompt Sent to LLM</summary>
+            <pre style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 0.75rem; border-radius: 4px; margin-top: 0.25rem; white-space: pre-wrap; word-break: break-word; font-size: 0.8rem; max-height: 400px; overflow-y: auto;">{{ llm_review.prompt_used }}</pre>
+        </details>
+        {% endif %}
+        {% if llm_review.llm_response %}
+        <details style="margin-top: 0.5rem;">
+            <summary style="cursor: pointer; color: #666; font-size: 0.85rem;">Show Raw LLM Response</summary>
+            <pre style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 0.75rem; border-radius: 4px; margin-top: 0.25rem; white-space: pre-wrap; word-break: break-word; font-size: 0.8rem; max-height: 400px; overflow-y: auto;">{{ llm_review.llm_response }}</pre>
+        </details>
+        {% endif %}
+    </div>
+    {% elif job.job_type == 'llm_approval_check' and job.status in ['running', 'pending', 'retrying'] %}
+    <div style="margin-top: 1rem; border-top: 2px solid #e0e0e0; padding-top: 0.75rem;">
+        <h3>LLM Review</h3>
+        <p style="color: #666; font-size: 0.85rem;">
+            {% if job.status == 'running' %}
+            Waiting for LLM response... (calling Claude API)
+            {% elif job.status == 'retrying' %}
+            Previous attempt failed. Will retry at {{ job.scheduled_at.strftime('%H:%M:%S') if job.scheduled_at else 'soon' }}.
+            {% else %}
+            Queued — waiting for worker to pick up this job.
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
 </div>

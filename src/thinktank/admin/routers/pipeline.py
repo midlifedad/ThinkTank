@@ -15,6 +15,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import text as sa_text
+
 from src.thinktank.models.config_table import SystemConfig
 from src.thinktank.models.job import Job
 from thinktank.admin.dependencies import get_session, get_templates
@@ -145,13 +147,37 @@ async def job_list_partial(
     )
 
 
+@router.get("/partials/activity")
+async def activity_feed_partial(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTMX partial: live activity feed showing the 20 most recent job state changes."""
+    query = (
+        select(Job)
+        .where(Job.status.in_(["running", "done", "failed", "retrying"]))
+        .order_by(
+            func.coalesce(Job.completed_at, Job.started_at, Job.last_error_at, Job.created_at).desc()
+        )
+        .limit(20)
+    )
+    result = await session.execute(query)
+    jobs = result.scalars().all()
+
+    return templates.TemplateResponse(
+        request,
+        "partials/activity_feed.html",
+        {"jobs": jobs},
+    )
+
+
 @router.get("/jobs/{job_id}")
 async def job_detail(
     request: Request,
     job_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ):
-    """Job detail view showing all job fields."""
+    """Job detail view showing all job fields plus linked LLM review if applicable."""
     result = await session.execute(select(Job).where(Job.id == job_id))
     job = result.scalar_one_or_none()
     if not job:
@@ -160,10 +186,42 @@ async def job_detail(
     # Format payload as pretty JSON string
     payload_str = json.dumps(job.payload, indent=2, default=str) if job.payload else "{}"
 
+    # Look up linked LLM review for llm_approval_check jobs
+    llm_review = None
+    if job.job_type == "llm_approval_check" and job.payload:
+        entity_id = job.payload.get("entity_id")
+        review_type = job.payload.get("review_type")
+        if entity_id and review_type:
+            review_result = await session.execute(
+                sa_text(
+                    "SELECT id, review_type, decision, decision_reasoning, model, "
+                    "tokens_used, duration_ms, created_at, prompt_used, llm_response "
+                    "FROM llm_reviews "
+                    "WHERE review_type = :rt "
+                    "AND context_snapshot->>'thinker_id' = :eid "
+                    "ORDER BY created_at DESC LIMIT 1"
+                ),
+                {"rt": review_type, "eid": entity_id},
+            )
+            row = review_result.fetchone()
+            if row:
+                llm_review = {
+                    "id": str(row[0]),
+                    "review_type": row[1],
+                    "decision": row[2],
+                    "reasoning": row[3],
+                    "model": row[4],
+                    "tokens_used": row[5],
+                    "duration_ms": row[6],
+                    "created_at": row[7],
+                    "prompt_used": row[8],
+                    "llm_response": row[9],
+                }
+
     return templates.TemplateResponse(
         request,
         "partials/job_detail.html",
-        {"job": job, "payload_str": payload_str},
+        {"job": job, "payload_str": payload_str, "llm_review": llm_review},
     )
 
 
