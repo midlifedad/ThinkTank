@@ -198,6 +198,108 @@ async def add_thinker(
     )
 
 
+@router.get("/partials/bulk-import-form")
+async def bulk_import_form_partial(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTML fragment: bulk import form with category multi-select."""
+    result = await session.execute(select(Category).order_by(Category.name))
+    categories = result.scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "partials/thinker_bulk_import_form.html",
+        {"categories": categories},
+    )
+
+
+@router.post("/bulk-import")
+async def bulk_import_thinkers(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    names: str = Form(...),
+    tier: int = Form(...),
+):
+    """Create multiple thinkers from a newline-separated list of names."""
+    form_data = await request.form()
+    category_ids = form_data.getlist("category_ids")
+
+    raw_names = [n.strip() for n in names.strip().splitlines() if n.strip()]
+    if not raw_names:
+        thinkers = await _build_thinker_list(session)
+        return templates.TemplateResponse(
+            request,
+            "partials/thinker_list.html",
+            {"thinkers": thinkers, "error": "No names provided."},
+        )
+
+    # Check for duplicate slugs against existing thinkers
+    existing_slugs_result = await session.execute(select(Thinker.slug))
+    existing_slugs = {row[0] for row in existing_slugs_result.all()}
+
+    created = []
+    skipped = []
+    for name in raw_names:
+        slug = _slugify(name)
+        if slug in existing_slugs:
+            skipped.append(name)
+            continue
+        existing_slugs.add(slug)
+
+        thinker = Thinker(
+            id=uuid.uuid4(),
+            name=name,
+            slug=slug,
+            tier=tier,
+            bio="",
+            approval_status="awaiting_llm",
+            active=True,
+        )
+        session.add(thinker)
+        await session.flush()
+
+        # Category associations
+        for cid_str in category_ids:
+            try:
+                cid = uuid.UUID(cid_str)
+            except ValueError:
+                continue
+            tc = ThinkerCategory(
+                thinker_id=thinker.id,
+                category_id=cid,
+                relevance=5,
+            )
+            session.add(tc)
+
+        # LLM approval job
+        job = Job(
+            id=uuid.uuid4(),
+            job_type="llm_approval_check",
+            payload={"entity_type": "thinker", "entity_id": str(thinker.id), "review_type": "thinker_approval"},
+            status="pending",
+            priority=5,
+        )
+        session.add(job)
+        created.append(name)
+
+    await session.commit()
+
+    # Build result message
+    parts = []
+    if created:
+        parts.append(f"{len(created)} thinker(s) imported")
+    if skipped:
+        parts.append(f"{len(skipped)} skipped (already exist: {', '.join(skipped)})")
+    msg = ". ".join(parts) + "."
+
+    thinkers = await _build_thinker_list(session)
+    return templates.TemplateResponse(
+        request,
+        "partials/thinker_list.html",
+        {"thinkers": thinkers, "success": msg},
+    )
+
+
 @router.get("/candidates")
 async def candidate_queue_page(
     request: Request,
