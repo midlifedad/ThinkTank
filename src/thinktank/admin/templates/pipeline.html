@@ -93,6 +93,19 @@
     </div>
 </div>
 
+<!-- Live Activity Feed -->
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Live Activity <span style="font-size: 0.7rem; color: #999; font-weight: normal;">(auto-refreshes every 5s)</span></h3>
+    <div id="activity-feed"
+         hx-get="/admin/pipeline/partials/activity"
+         hx-trigger="load, every 5s">
+        Loading activity...
+    </div>
+</div>
+
+<!-- Job Detail Modal (populated by clicking activity rows or job list) -->
+<div id="job-detail-modal"></div>
+
 <!-- Job List -->
 <div class="card">
     <h3>Job Queue</h3>
