@@ -1,20 +1,61 @@
-{% if activities %}
-<div style="max-height: 400px; overflow-y: auto;">
-    {% for item in activities %}
-    <div class="stat-row">
-        <span class="stat-label">
-            {% if item.action_type == 'job_completed' %}&#10003;
-            {% elif item.action_type == 'job_failed' %}&#10007;
-            {% elif item.action_type == 'llm_decision' %}&#9881;
-            {% endif %}
-            {{ item.detail }}
-        </span>
-        <span class="stat-value" style="font-size: 0.8rem; color: #999;">
-            {{ item.action_time.strftime('%Y-%m-%d %H:%M') if item.action_time else '' }}
-        </span>
-    </div>
-    {% endfor %}
-</div>
+{% if jobs %}
+<table>
+    <thead>
+        <tr>
+            <th style="width: 140px;">Time</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Worker</th>
+            <th>Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in jobs %}
+        <tr style="cursor: pointer;"
+            hx-get="/admin/pipeline/jobs/{{ job.id }}"
+            hx-target="#job-detail-modal"
+            hx-swap="innerHTML">
+            <td style="font-size: 0.8rem; color: #666; white-space: nowrap;">
+                {% if job.status == 'done' and job.completed_at %}
+                    {{ job.completed_at.strftime('%H:%M:%S') }}
+                {% elif job.status == 'running' and job.started_at %}
+                    {{ job.started_at.strftime('%H:%M:%S') }}
+                {% elif job.last_error_at %}
+                    {{ job.last_error_at.strftime('%H:%M:%S') }}
+                {% else %}
+                    {{ job.created_at.strftime('%H:%M:%S') }}
+                {% endif %}
+            </td>
+            <td style="font-size: 0.85rem;">{{ job.job_type }}</td>
+            <td>
+                {% if job.status == 'running' %}
+                <span style="background: #cce5ff; color: #004085; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">running</span>
+                {% elif job.status == 'done' %}
+                <span style="background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">done</span>
+                {% elif job.status == 'failed' %}
+                <span style="background: #f8d7da; color: #721c24; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">failed</span>
+                {% elif job.status == 'retrying' %}
+                <span style="background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">retry #{{ job.attempts }}</span>
+                {% else %}
+                <span style="background: #e0e0e0; color: #555; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">{{ job.status }}</span>
+                {% endif %}
+            </td>
+            <td style="font-size: 0.8rem; color: #666;">{{ job.worker_id or '-' }}</td>
+            <td style="font-size: 0.8rem; color: #888; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {% if job.error %}
+                <span class="error">{{ job.error[:80] }}{% if job.error|length > 80 %}...{% endif %}</span>
+                {% elif job.status == 'done' and job.started_at and job.completed_at %}
+                {{ ((job.completed_at - job.started_at).total_seconds() * 1000)|int }}ms
+                {% elif job.status == 'running' %}
+                processing...
+                {% else %}
+                -
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% else %}
-<p class="empty">No recent activity.</p>
+<p style="color: #999; font-size: 0.85rem;">No recent activity.</p>
 {% endif %}
