@@ -147,6 +147,8 @@ async def apply_source_decision(
         result: Parsed approval response.
     """
     source = await session.get(Source, source_id)
+    if source is None:
+        return
 
     if result.decision == "approved":
         source.approval_status = "approved"

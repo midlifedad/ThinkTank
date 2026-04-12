@@ -91,16 +91,24 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
         )
     )
     for thinker in approved_result.scalars().all():
-        # Create discover_thinker job for guest appearance discovery
-        discover_job = Job(
-            id=uuid.uuid4(),
-            job_type="discover_thinker",
-            payload={"thinker_id": str(thinker.id)},
-            priority=5,
-            status="pending",
+        # Create discover_thinker job if none already pending
+        existing_discover = await session.execute(
+            select(Job.id).where(
+                Job.job_type == "discover_thinker",
+                Job.payload["thinker_id"].astext == str(thinker.id),
+                Job.status.in_(["pending", "running", "retrying"]),
+            )
         )
-        session.add(discover_job)
-        pipeline_jobs += 1
+        if existing_discover.scalar_one_or_none() is None:
+            discover_job = Job(
+                id=uuid.uuid4(),
+                job_type="discover_thinker",
+                payload={"thinker_id": str(thinker.id)},
+                priority=5,
+                status="pending",
+            )
+            session.add(discover_job)
+            pipeline_jobs += 1
 
         # Create fetch jobs for approved, never-fetched sources
         source_result = await session.execute(
@@ -112,10 +120,27 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
             )
         )
         for source in source_result.scalars().all():
+            # Skip if fetch job already pending for this source
+            existing_fetch = await session.execute(
+                select(Job.id).where(
+                    Job.job_type == "fetch_podcast_feed",
+                    Job.payload["source_id"].astext == str(source.id),
+                    Job.status.in_(["pending", "running", "retrying"]),
+                )
+            )
+            if existing_fetch.scalar_one_or_none() is not None:
+                continue
+
+            fetch_payload = {"source_id": str(source.id)}
+            # Add guest filtering if this is a guest discovery source
+            is_guest = source.config.get("is_guest_source", False) if source.config else False
+            if is_guest:
+                fetch_payload["guest_filter_thinker_id"] = str(thinker.id)
+
             fetch_job = Job(
                 id=uuid.uuid4(),
                 job_type="fetch_podcast_feed",
-                payload={"source_id": str(source.id)},
+                payload=fetch_payload,
                 priority=2,
                 status="pending",
             )

@@ -66,19 +66,27 @@ async def handle_discover_thinker(
     now = _now()
     jobs_created = 0
 
-    # 1. Create guest discovery job (Podcast Index search)
-    guest_job = Job(
-        id=uuid.uuid4(),
-        job_type="discover_guests_podcastindex",
-        payload={"thinker_id": str(thinker.id)},
-        priority=5,
-        status="pending",
-        attempts=0,
-        max_attempts=3,
-        created_at=now,
+    # 1. Create guest discovery job (Podcast Index search) if none pending
+    existing_guest = await session.execute(
+        select(Job.id).where(
+            Job.job_type == "discover_guests_podcastindex",
+            Job.payload["thinker_id"].astext == str(thinker.id),
+            Job.status.in_(["pending", "running", "retrying"]),
+        )
     )
-    session.add(guest_job)
-    jobs_created += 1
+    if existing_guest.scalar_one_or_none() is None:
+        guest_job = Job(
+            id=uuid.uuid4(),
+            job_type="discover_guests_podcastindex",
+            payload={"thinker_id": str(thinker.id)},
+            priority=5,
+            status="pending",
+            attempts=0,
+            max_attempts=3,
+            created_at=now,
+        )
+        session.add(guest_job)
+        jobs_created += 1
 
     # 2. Create fetch jobs for approved, never-fetched owned sources
     result = await session.execute(
@@ -92,6 +100,17 @@ async def handle_discover_thinker(
     unfetched_sources = result.scalars().all()
 
     for source in unfetched_sources:
+        # Skip if a fetch job is already pending for this source
+        existing_fetch = await session.execute(
+            select(Job.id).where(
+                Job.job_type == "fetch_podcast_feed",
+                Job.payload["source_id"].astext == str(source.id),
+                Job.status.in_(["pending", "running", "retrying"]),
+            )
+        )
+        if existing_fetch.scalar_one_or_none() is not None:
+            continue
+
         fetch_payload = {"source_id": str(source.id)}
         # If this is a guest source, add guest filtering
         is_guest = source.config.get("is_guest_source", False) if source.config else False
