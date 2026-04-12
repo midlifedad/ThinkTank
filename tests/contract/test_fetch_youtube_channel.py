@@ -32,12 +32,16 @@ pytestmark = pytest.mark.anyio
 
 
 def _make_youtube_videos(videos: list[dict]) -> list[dict]:
-    """Create video dicts in the format returned by YouTubeClient.fetch_all_channel_videos."""
+    """Create video dicts in the format returned by YouTubeClient.fetch_all_channel_videos.
+
+    Note: YouTube video IDs are exactly 11 characters. Use 11-char IDs in tests
+    to match the URL normalizer's YouTube regex pattern.
+    """
     results = []
     for v in videos:
         results.append(
             {
-                "video_id": v.get("video_id", "vid_default"),
+                "video_id": v.get("video_id", "dQw4w9WgXcQ"),
                 "title": v.get("title", "Test Video"),
                 "description": v.get("description", "Test description"),
                 "published_at": v.get("published_at", "2024-01-15T10:00:00Z"),
@@ -98,9 +102,9 @@ class TestFetchYouTubeChannelContract:
         mock_client_cls.return_value = mock_client
         mock_client.fetch_all_channel_videos.return_value = _make_youtube_videos(
             [
-                {"video_id": "vid001", "title": "Deep Interview", "duration_seconds": 5400, "category_id": "27"},
-                {"video_id": "vid002", "title": "Long Discussion", "duration_seconds": 3600, "category_id": "24"},
-                {"video_id": "vid003", "title": "Panel Talk", "duration_seconds": 2700, "category_id": "22"},
+                {"video_id": "aB3cD4eF5gH", "title": "Deep Interview", "duration_seconds": 5400, "category_id": "27"},
+                {"video_id": "iJ6kL7mN8oP", "title": "Long Discussion", "duration_seconds": 3600, "category_id": "24"},
+                {"video_id": "qR9sT0uV1wX", "title": "Panel Talk", "duration_seconds": 2700, "category_id": "22"},
             ]
         )
         mock_client.quota_used = 3
@@ -129,8 +133,8 @@ class TestFetchYouTubeChannelContract:
         mock_client_cls.return_value = mock_client
         mock_client.fetch_all_channel_videos.return_value = _make_youtube_videos(
             [
-                {"video_id": "vid_long", "title": "Long Interview", "duration_seconds": 3600, "category_id": "27"},
-                {"video_id": "vid_short", "title": "Short Clip", "duration_seconds": 300, "category_id": "27"},
+                {"video_id": "yZ2aB3cD4eF", "title": "Long Interview", "duration_seconds": 3600, "category_id": "27"},
+                {"video_id": "gH5iJ6kL7mN", "title": "Short Clip", "duration_seconds": 300, "category_id": "27"},
             ]
         )
         mock_client.quota_used = 2
@@ -143,8 +147,8 @@ class TestFetchYouTubeChannelContract:
         content_rows = result.scalars().all()
         by_url = {c.canonical_url: c for c in content_rows}
 
-        long_url = "https://youtube.com/watch?v=vid_long"
-        short_url = "https://youtube.com/watch?v=vid_short"
+        long_url = "https://youtube.com/watch?v=yZ2aB3cD4eF"
+        short_url = "https://youtube.com/watch?v=gH5iJ6kL7mN"
 
         assert by_url[long_url].status == "cataloged"
         assert by_url[short_url].status == "skipped"
@@ -160,8 +164,8 @@ class TestFetchYouTubeChannelContract:
         mock_client_cls.return_value = mock_client
         mock_client.fetch_all_channel_videos.return_value = _make_youtube_videos(
             [
-                {"video_id": "vid_edu", "title": "Education Talk", "duration_seconds": 3600, "category_id": "27"},
-                {"video_id": "vid_music", "title": "Music Video", "duration_seconds": 2700, "category_id": "10"},
+                {"video_id": "oP8qR9sT0uV", "title": "Education Talk", "duration_seconds": 3600, "category_id": "27"},
+                {"video_id": "wX1yZ2aB3cD", "title": "Music Video", "duration_seconds": 2700, "category_id": "10"},
             ]
         )
         mock_client.quota_used = 2
@@ -174,8 +178,8 @@ class TestFetchYouTubeChannelContract:
         content_rows = result.scalars().all()
         by_url = {c.canonical_url: c for c in content_rows}
 
-        assert by_url["https://youtube.com/watch?v=vid_edu"].status == "cataloged"
-        assert by_url["https://youtube.com/watch?v=vid_music"].status == "skipped"
+        assert by_url["https://youtube.com/watch?v=oP8qR9sT0uV"].status == "cataloged"
+        assert by_url["https://youtube.com/watch?v=wX1yZ2aB3cD"].status == "skipped"
 
     @patch("src.thinktank.handlers.fetch_youtube_channel.YouTubeClient")
     async def test_fetch_applies_title_filter(
@@ -188,8 +192,8 @@ class TestFetchYouTubeChannelContract:
         mock_client_cls.return_value = mock_client
         mock_client.fetch_all_channel_videos.return_value = _make_youtube_videos(
             [
-                {"video_id": "vid_ok", "title": "Great Interview", "duration_seconds": 3600, "category_id": "27"},
-                {"video_id": "vid_shorts", "title": "Best of #shorts compilation", "duration_seconds": 3600, "category_id": "27"},
+                {"video_id": "eF5gH6iJ7kL", "title": "Great Interview", "duration_seconds": 3600, "category_id": "27"},
+                {"video_id": "mN8oP9qR0sT", "title": "Best of #shorts compilation", "duration_seconds": 3600, "category_id": "27"},
             ]
         )
         mock_client.quota_used = 2
@@ -202,8 +206,8 @@ class TestFetchYouTubeChannelContract:
         content_rows = result.scalars().all()
         by_url = {c.canonical_url: c for c in content_rows}
 
-        assert by_url["https://youtube.com/watch?v=vid_ok"].status == "cataloged"
-        assert by_url["https://youtube.com/watch?v=vid_shorts"].status == "skipped"
+        assert by_url["https://youtube.com/watch?v=eF5gH6iJ7kL"].status == "cataloged"
+        assert by_url["https://youtube.com/watch?v=mN8oP9qR0sT"].status == "skipped"
 
     @patch("src.thinktank.handlers.fetch_youtube_channel.YouTubeClient")
     async def test_fetch_enqueues_scan_job(
@@ -216,8 +220,8 @@ class TestFetchYouTubeChannelContract:
         mock_client_cls.return_value = mock_client
         mock_client.fetch_all_channel_videos.return_value = _make_youtube_videos(
             [
-                {"video_id": "vid_scan1", "title": "Interview 1", "duration_seconds": 3600, "category_id": "27"},
-                {"video_id": "vid_scan2", "title": "Interview 2", "duration_seconds": 2700, "category_id": "24"},
+                {"video_id": "uV1wX2yZ3aB", "title": "Interview 1", "duration_seconds": 3600, "category_id": "27"},
+                {"video_id": "cD4eF5gH6iJ", "title": "Interview 2", "duration_seconds": 2700, "category_id": "24"},
             ]
         )
         mock_client.quota_used = 2
@@ -246,8 +250,8 @@ class TestFetchYouTubeChannelContract:
         await create_content(
             session,
             source_id=source.id,
-            url="https://www.youtube.com/watch?v=vid_existing",
-            canonical_url="https://youtube.com/watch?v=vid_existing",
+            url="https://www.youtube.com/watch?v=kL7mN8oP9qR",
+            canonical_url="https://youtube.com/watch?v=kL7mN8oP9qR",
             title="Existing Video",
         )
         await session.commit()
@@ -256,8 +260,8 @@ class TestFetchYouTubeChannelContract:
         mock_client_cls.return_value = mock_client
         mock_client.fetch_all_channel_videos.return_value = _make_youtube_videos(
             [
-                {"video_id": "vid_existing", "title": "Existing Video", "duration_seconds": 3600, "category_id": "27"},
-                {"video_id": "vid_new", "title": "New Video", "duration_seconds": 3600, "category_id": "27"},
+                {"video_id": "kL7mN8oP9qR", "title": "Existing Video", "duration_seconds": 3600, "category_id": "27"},
+                {"video_id": "sT0uV1wX2yZ", "title": "New Video", "duration_seconds": 3600, "category_id": "27"},
             ]
         )
         mock_client.quota_used = 2
@@ -282,8 +286,8 @@ class TestFetchYouTubeChannelContract:
         mock_client_cls.return_value = mock_client
         mock_client.fetch_all_channel_videos.return_value = _make_youtube_videos(
             [
-                {"video_id": "vid_meta1", "title": "Meta Video 1", "duration_seconds": 3600, "category_id": "27"},
-                {"video_id": "vid_meta2", "title": "Meta Video 2", "duration_seconds": 3600, "category_id": "27"},
+                {"video_id": "aB3cD4eF5g1", "title": "Meta Video 1", "duration_seconds": 3600, "category_id": "27"},
+                {"video_id": "hI6jK7lM8n2", "title": "Meta Video 2", "duration_seconds": 3600, "category_id": "27"},
             ]
         )
         mock_client.quota_used = 2
