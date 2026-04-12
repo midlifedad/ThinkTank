@@ -5,6 +5,7 @@ with LLMReview audit trail, force-refresh capability, and source detail
 page with health summary, episodes list, and error history.
 """
 
+import re
 import uuid
 from datetime import datetime, UTC
 from typing import Optional
@@ -144,6 +145,13 @@ async def add_source(
         approval_status="pending_llm",
         active=True,
     )
+
+    # Extract YouTube channel ID from URL for youtube_channel sources
+    if source_type == "youtube_channel":
+        match = re.search(r"youtube\.com/channel/(UC[a-zA-Z0-9_-]+)", url)
+        if match:
+            source.external_id = match.group(1)
+
     session.add(source)
 
     # Create junction row if thinker provided
@@ -249,15 +257,21 @@ async def force_refresh_source(
     source_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ):
-    """Create a fetch_podcast_feed job for the source."""
+    """Create a fetch job for the source based on its type."""
     result = await session.execute(select(Source).where(Source.id == source_id))
     source = result.scalar_one_or_none()
     if source is None:
         raise HTTPException(status_code=404, detail="Source not found")
 
+    # Dispatch job type based on source_type
+    if source.source_type == "youtube_channel":
+        job_type = "fetch_youtube_channel"
+    else:
+        job_type = "fetch_podcast_feed"
+
     job = Job(
         id=uuid.uuid4(),
-        job_type="fetch_podcast_feed",
+        job_type=job_type,
         payload={"source_id": str(source_id)},
         status="pending",
         priority=5,
