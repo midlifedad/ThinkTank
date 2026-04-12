@@ -96,7 +96,7 @@ async def handle_llm_approval_check(session: AsyncSession, job: Job) -> None:
         raise ValueError(f"Unknown review_type: {review_type}")
 
     # 2. Extract target_id (required for thinker/source, optional for candidate batch)
-    raw_target_id = job.payload.get("target_id")
+    raw_target_id = job.payload.get("target_id") or job.payload.get("entity_id")
     if not raw_target_id and review_type != "candidate_review":
         raise ValueError("Missing target_id in job payload")
 
