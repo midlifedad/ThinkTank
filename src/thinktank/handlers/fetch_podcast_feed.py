@@ -2,10 +2,15 @@
 
 Fetches an RSS feed for a single source, parses episodes, applies 3-layer
 dedup (URL normalization + fingerprint + incremental date check), filters
-by duration/title, inserts Content rows, and enqueues a tag_content_thinkers
-job for attribution.
+by duration/title, inserts Content rows with status='cataloged', and enqueues
+a scan_episodes_for_thinkers job for thinker detection and selective promotion.
 
-Spec reference: Sections 5.5, 5.6, 5.7.
+Non-skipped episodes start as 'cataloged' rather than 'pending' -- they are
+only promoted to 'pending' (and therefore queued for transcription) after the
+scan handler confirms a thinker name match. This dramatically reduces
+unnecessary transcription spend on guest-appearance sources.
+
+Spec reference: Sections 5.5, 5.6, 5.7; Phase 13 catalog-then-promote.
 """
 
 from __future__ import annotations
@@ -69,7 +74,7 @@ async def handle_fetch_podcast_feed(
         4. Parse with feedparser
         5. For each entry: normalize URL, compute fingerprint, check dedup, filter, insert
         6. Update source.last_fetched and source.item_count
-        7. Enqueue tag_content_thinkers job for new content batch
+        7. Enqueue scan_episodes_for_thinkers job for new content batch
 
     Args:
         session: Active database session.
@@ -212,7 +217,7 @@ async def handle_fetch_podcast_feed(
             status = "skipped"
             skipped_count += 1
         else:
-            status = "pending"
+            status = "cataloged"
 
         # Insert Content row
         content = Content(
@@ -247,15 +252,16 @@ async def handle_fetch_podcast_feed(
     if is_backfill:
         source.backfill_complete = True
 
-    # Enqueue tag_content_thinkers job if we inserted any content
+    # Enqueue scan_episodes_for_thinkers job if we inserted any content
     if inserted_content:
-        tag_job = Job(
+        scan_job = Job(
             id=uuid.uuid4(),
-            job_type="tag_content_thinkers",
+            job_type="scan_episodes_for_thinkers",
             payload={
                 "content_ids": [str(c.id) for c in inserted_content],
                 "source_id": str(source_id),
                 "descriptions": descriptions,
+                "raw_xml": response.text,
             },
             priority=3,
             status="pending",
@@ -263,7 +269,7 @@ async def handle_fetch_podcast_feed(
             max_attempts=3,
             created_at=_now(),
         )
-        session.add(tag_job)
+        session.add(scan_job)
 
     # l. Commit everything in one transaction
     await session.commit()
