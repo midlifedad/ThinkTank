@@ -1,0 +1,80 @@
+{
+  "kind": "youtube#playlistItemListResponse",
+  "etag": "abc123etag",
+  "pageInfo": {
+    "totalResults": 3,
+    "resultsPerPage": 50
+  },
+  "items": [
+    {
+      "kind": "youtube#playlistItem",
+      "etag": "item1etag",
+      "id": "UExhYmMxMjM",
+      "snippet": {
+        "publishedAt": "2024-01-15T10:00:00Z",
+        "channelId": "UCtest123channel",
+        "title": "Deep Dive: AI and the Future of Education",
+        "description": "An in-depth interview about AI in education.",
+        "thumbnails": {
+          "default": {"url": "https://i.ytimg.com/vi/vid001/default.jpg", "width": 120, "height": 90},
+          "medium": {"url": "https://i.ytimg.com/vi/vid001/mqdefault.jpg", "width": 320, "height": 180},
+          "high": {"url": "https://i.ytimg.com/vi/vid001/hqdefault.jpg", "width": 480, "height": 360}
+        },
+        "channelTitle": "Test Channel",
+        "playlistId": "UUtest123channel",
+        "position": 0,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid001"
+        }
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "etag": "item2etag",
+      "id": "UExhYmMxMjQ",
+      "snippet": {
+        "publishedAt": "2024-01-10T14:30:00Z",
+        "channelId": "UCtest123channel",
+        "title": "Quick Update: New Book Release",
+        "description": "Short clip about the new book.",
+        "thumbnails": {
+          "default": {"url": "https://i.ytimg.com/vi/vid002/default.jpg", "width": 120, "height": 90},
+          "medium": {"url": "https://i.ytimg.com/vi/vid002/mqdefault.jpg", "width": 320, "height": 180},
+          "high": {"url": "https://i.ytimg.com/vi/vid002/hqdefault.jpg", "width": 480, "height": 360}
+        },
+        "channelTitle": "Test Channel",
+        "playlistId": "UUtest123channel",
+        "position": 1,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid002"
+        }
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "etag": "item3etag",
+      "id": "UExhYmMxMjU",
+      "snippet": {
+        "publishedAt": "2024-01-05T08:00:00Z",
+        "channelId": "UCtest123channel",
+        "title": "Live Performance: Jazz Masterclass",
+        "description": "A live music performance and jazz masterclass.",
+        "thumbnails": {
+          "default": {"url": "https://i.ytimg.com/vi/vid003/default.jpg", "width": 120, "height": 90},
+          "medium": {"url": "https://i.ytimg.com/vi/vid003/mqdefault.jpg", "width": 320, "height": 180},
+          "high": {"url": "https://i.ytimg.com/vi/vid003/hqdefault.jpg", "width": 480, "height": 360}
+        },
+        "channelTitle": "Test Channel",
+        "playlistId": "UUtest123channel",
+        "position": 2,
+        "resourceId": {
+          "kind": "youtube#video",
+          "videoId": "vid003"
+        }
+      }
+    }
+  ],
+  "nextPageToken": null
+}

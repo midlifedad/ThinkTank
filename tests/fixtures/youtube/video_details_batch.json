@@ -1,0 +1,85 @@
+{
+  "kind": "youtube#videoListResponse",
+  "etag": "details_etag_123",
+  "pageInfo": {
+    "totalResults": 3,
+    "resultsPerPage": 50
+  },
+  "items": [
+    {
+      "kind": "youtube#video",
+      "etag": "detail1etag",
+      "id": "vid001",
+      "snippet": {
+        "publishedAt": "2024-01-15T10:00:00Z",
+        "channelId": "UCtest123channel",
+        "title": "Deep Dive: AI and the Future of Education",
+        "description": "An in-depth interview with Dr. Smith about how artificial intelligence is transforming education, learning methodologies, and the future of academic institutions.",
+        "thumbnails": {
+          "default": {"url": "https://i.ytimg.com/vi/vid001/default.jpg", "width": 120, "height": 90},
+          "medium": {"url": "https://i.ytimg.com/vi/vid001/mqdefault.jpg", "width": 320, "height": 180},
+          "high": {"url": "https://i.ytimg.com/vi/vid001/hqdefault.jpg", "width": 480, "height": 360}
+        },
+        "channelTitle": "Test Channel",
+        "categoryId": "27",
+        "tags": ["AI", "education", "interview"]
+      },
+      "contentDetails": {
+        "duration": "PT1H30M0S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "true"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "detail2etag",
+      "id": "vid002",
+      "snippet": {
+        "publishedAt": "2024-01-10T14:30:00Z",
+        "channelId": "UCtest123channel",
+        "title": "Quick Update: New Book Release",
+        "description": "Short announcement about the upcoming book release.",
+        "thumbnails": {
+          "default": {"url": "https://i.ytimg.com/vi/vid002/default.jpg", "width": 120, "height": 90},
+          "medium": {"url": "https://i.ytimg.com/vi/vid002/mqdefault.jpg", "width": 320, "height": 180},
+          "high": {"url": "https://i.ytimg.com/vi/vid002/hqdefault.jpg", "width": 480, "height": 360}
+        },
+        "channelTitle": "Test Channel",
+        "categoryId": "27",
+        "tags": ["book", "update"]
+      },
+      "contentDetails": {
+        "duration": "PT5M30S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "detail3etag",
+      "id": "vid003",
+      "snippet": {
+        "publishedAt": "2024-01-05T08:00:00Z",
+        "channelId": "UCtest123channel",
+        "title": "Live Performance: Jazz Masterclass",
+        "description": "A live music performance and jazz masterclass featuring world-renowned musicians.",
+        "thumbnails": {
+          "default": {"url": "https://i.ytimg.com/vi/vid003/default.jpg", "width": 120, "height": 90},
+          "medium": {"url": "https://i.ytimg.com/vi/vid003/mqdefault.jpg", "width": 320, "height": 180},
+          "high": {"url": "https://i.ytimg.com/vi/vid003/hqdefault.jpg", "width": 480, "height": 360}
+        },
+        "channelTitle": "Test Channel",
+        "categoryId": "10",
+        "tags": ["music", "jazz", "live"]
+      },
+      "contentDetails": {
+        "duration": "PT45M0S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false"
+      }
+    }
+  ]
+}
