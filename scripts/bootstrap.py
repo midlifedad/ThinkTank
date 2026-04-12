@@ -9,6 +9,7 @@ Usage:
 """
 
 import asyncio
+import uuid
 
 import structlog
 from sqlalchemy import select, text, func
@@ -19,6 +20,9 @@ from scripts.seed_config import seed_config
 from scripts.seed_thinkers import seed_thinkers
 from src.thinktank.models.category import Category
 from src.thinktank.models.config_table import SystemConfig
+from src.thinktank.models.job import Job
+from src.thinktank.models.source import Source
+from src.thinktank.models.thinker import Thinker
 
 logger = structlog.get_logger(__name__)
 
@@ -72,8 +76,56 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
     thinker_count = await seed_thinkers(session)
     await logger.ainfo("bootstrap.seed_thinkers.done", count=thinker_count)
 
-    # Step 6: Activate workers
-    await logger.ainfo("bootstrap.activate_workers", step=6)
+    # Step 6: Create initial pipeline jobs for seeded thinkers
+    await logger.ainfo("bootstrap.create_pipeline_jobs", step=6)
+    pipeline_jobs = 0
+
+    # Note: Seeded thinkers start as pending_llm and will go through LLM approval.
+    # The trigger chain in decisions.py will automatically create discover_thinker
+    # jobs when thinkers are approved. But for any thinkers that were already approved
+    # in the database (e.g., re-running bootstrap on existing data), create jobs now.
+    approved_result = await session.execute(
+        select(Thinker).where(
+            Thinker.approval_status == "approved",
+            Thinker.active == True,  # noqa: E712
+        )
+    )
+    for thinker in approved_result.scalars().all():
+        # Create discover_thinker job for guest appearance discovery
+        discover_job = Job(
+            id=uuid.uuid4(),
+            job_type="discover_thinker",
+            payload={"thinker_id": str(thinker.id)},
+            priority=5,
+            status="pending",
+        )
+        session.add(discover_job)
+        pipeline_jobs += 1
+
+        # Create fetch jobs for approved, never-fetched sources
+        source_result = await session.execute(
+            select(Source).where(
+                Source.thinker_id == thinker.id,
+                Source.approval_status == "approved",
+                Source.active == True,  # noqa: E712
+                Source.last_fetched == None,  # noqa: E711
+            )
+        )
+        for source in source_result.scalars().all():
+            fetch_job = Job(
+                id=uuid.uuid4(),
+                job_type="fetch_podcast_feed",
+                payload={"source_id": str(source.id)},
+                priority=2,
+                status="pending",
+            )
+            session.add(fetch_job)
+            pipeline_jobs += 1
+
+    await logger.ainfo("bootstrap.create_pipeline_jobs.done", jobs=pipeline_jobs)
+
+    # Step 7: Activate workers
+    await logger.ainfo("bootstrap.activate_workers", step=7)
     stmt = (
         select(SystemConfig)
         .where(SystemConfig.key == "workers_active")
@@ -87,6 +139,7 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
         "categories": cat_count,
         "config": config_count,
         "thinkers": thinker_count,
+        "pipeline_jobs": pipeline_jobs,
     }
     await logger.ainfo("bootstrap.complete", results=results)
     return results
@@ -104,6 +157,7 @@ if __name__ == "__main__":
             print(f"  Categories: {results['categories']}")
             print(f"  Config entries: {results['config']}")
             print(f"  Thinkers: {results['thinkers']}")
+            print(f"  Pipeline jobs: {results['pipeline_jobs']}")
             print("  Workers: ACTIVE")
 
     asyncio.run(_main())

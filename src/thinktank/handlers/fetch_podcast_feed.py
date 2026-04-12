@@ -129,6 +129,19 @@ async def handle_fetch_podcast_feed(
     entries = parse_feed(response.text)
     log.info("feed_parsed", entry_count=len(entries))
 
+    # h2. Guest filtering setup: if this is a guest source, only keep episodes
+    # where the thinker is mentioned in the title or description
+    guest_filter_id = job.payload.get("guest_filter_thinker_id")
+    guest_thinker_name: str | None = None
+    guest_last_name: str | None = None
+    if guest_filter_id:
+        guest_thinker = await session.get(Thinker, uuid.UUID(guest_filter_id))
+        if guest_thinker:
+            guest_thinker_name = guest_thinker.name.lower()
+            parts = guest_thinker_name.split()
+            guest_last_name = parts[-1] if len(parts) > 1 else None
+            log.info("guest_filter_active", guest_name=guest_thinker.name)
+
     # i. Determine backfill vs incremental mode
     is_backfill = not source.backfill_complete
 
@@ -137,6 +150,7 @@ async def handle_fetch_podcast_feed(
     descriptions: dict[str, str] = {}
     skipped_count = 0
     dedup_count = 0
+    guest_filtered_count = 0
 
     for entry in entries:
         # Incremental mode: skip entries published before last_fetched
@@ -147,6 +161,18 @@ async def handle_fetch_podcast_feed(
             and entry.published_at <= source.last_fetched
         ):
             continue
+
+        # Guest filter: only keep episodes mentioning the guest thinker
+        if guest_thinker_name:
+            title_lower = (entry.title or "").lower()
+            desc_lower = (entry.description or "").lower()
+            name_match = guest_thinker_name in title_lower or guest_thinker_name in desc_lower
+            last_name_match = guest_last_name and (
+                guest_last_name in title_lower or guest_last_name in desc_lower
+            )
+            if not name_match and not last_name_match:
+                guest_filtered_count += 1
+                continue
 
         # Normalize URL (Layer 1 dedup prep)
         canonical = normalize_url(entry.url)
@@ -248,5 +274,6 @@ async def handle_fetch_podcast_feed(
         inserted=len(inserted_content),
         skipped=skipped_count,
         deduped=dedup_count,
+        guest_filtered=guest_filtered_count,
         backfill=is_backfill,
     )

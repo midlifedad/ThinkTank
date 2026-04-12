@@ -29,6 +29,7 @@ ALLOWED_TRIGGER_TYPES = {
     "refresh_due_sources",
     "scan_for_candidates",
     "discover_guests_podcastindex",
+    "discover_thinker",
 }
 
 # All known job types for the filter dropdown
@@ -39,6 +40,7 @@ KNOWN_JOB_TYPES = [
     "process_content",
     "llm_approval_check",
     "scan_for_candidates",
+    "discover_thinker",
     "discover_guests_podcastindex",
     "rollup_api_usage",
 ]
