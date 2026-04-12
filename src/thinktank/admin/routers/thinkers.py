@@ -518,7 +518,7 @@ async def trigger_discovery(
     thinker_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ):
-    """Trigger PodcastIndex guest discovery for a specific thinker."""
+    """Trigger discovery pipeline for a specific thinker (guest search + feed fetch)."""
     result = await session.execute(select(Thinker).where(Thinker.id == thinker_id))
     thinker = result.scalar_one_or_none()
     if thinker is None:
@@ -526,7 +526,7 @@ async def trigger_discovery(
 
     job = Job(
         id=uuid.uuid4(),
-        job_type="discover_guests_podcastindex",
+        job_type="discover_thinker",
         payload={"thinker_id": str(thinker_id)},
         status="pending",
         priority=5,

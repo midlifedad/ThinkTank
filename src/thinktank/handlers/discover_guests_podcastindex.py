@@ -9,6 +9,8 @@ Spec reference: Section 5.4 (guest discovery), DISC-02.
 
 from __future__ import annotations
 
+import uuid
+
 import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -79,14 +81,31 @@ async def handle_discover_guests_podcastindex(
             continue
 
         source = Source(
+            id=uuid.uuid4(),
             thinker_id=thinker.id,
             source_type="podcast_rss",
             name=item.get("feedTitle", "Unknown Podcast"),
             url=normalized,
             approval_status="pending_llm",
+            config={"is_guest_source": True},
         )
         session.add(source)
         sources_created += 1
+
+        # Create LLM approval job for the new source
+        llm_job = Job(
+            id=uuid.uuid4(),
+            job_type="llm_approval_check",
+            payload={
+                "review_type": "source_approval",
+                "target_id": str(source.id),
+            },
+            priority=3,
+            status="pending",
+            attempts=0,
+            max_attempts=3,
+        )
+        session.add(llm_job)
 
     await session.commit()
 

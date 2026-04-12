@@ -120,6 +120,17 @@ async def apply_thinker_decision(
     elif result.decision == "escalate_to_human":
         thinker.approval_status = "pending_human"
 
+    # Trigger discovery pipeline for approved thinkers
+    if thinker.approval_status == "approved":
+        discover_job = Job(
+            id=uuid.uuid4(),
+            job_type="discover_thinker",
+            payload={"thinker_id": str(thinker_id)},
+            priority=5,
+            status="pending",
+        )
+        session.add(discover_job)
+
     await session.flush()
 
 
@@ -151,6 +162,22 @@ async def apply_source_decision(
             source.approved_backfill_days = result.modifications["approved_backfill_days"]
     elif result.decision == "escalate_to_human":
         source.approval_status = "pending_human"
+
+    # Trigger feed fetch for approved sources
+    if source.approval_status == "approved":
+        fetch_payload = {"source_id": str(source_id)}
+        # Add guest filtering if this is a guest discovery source
+        is_guest = source.config.get("is_guest_source", False) if source.config else False
+        if is_guest:
+            fetch_payload["guest_filter_thinker_id"] = str(source.thinker_id)
+        fetch_job = Job(
+            id=uuid.uuid4(),
+            job_type="fetch_podcast_feed",
+            payload=fetch_payload,
+            priority=3,
+            status="pending",
+        )
+        session.add(fetch_job)
 
     await session.flush()
 
@@ -228,5 +255,15 @@ async def promote_candidate_to_thinker(
     # Link candidate to the new thinker
     candidate.thinker_id = thinker.id
     candidate.status = "promoted"
+
+    # Trigger discovery pipeline for the newly promoted thinker (cascade)
+    discover_job = Job(
+        id=uuid.uuid4(),
+        job_type="discover_thinker",
+        payload={"thinker_id": str(thinker.id)},
+        priority=5,
+        status="pending",
+    )
+    session.add(discover_job)
 
     return thinker
