@@ -13,9 +13,9 @@
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
-                <label for="add-thinker">Thinker *</label>
-                <select id="add-thinker" name="thinker_id" required>
-                    <option value="">Select a thinker...</option>
+                <label for="add-thinker">Associated Thinker (optional)</label>
+                <select id="add-thinker" name="thinker_id">
+                    <option value="">None (independent source)</option>
                     {% for t in thinkers %}
                     <option value="{{ t.id }}">{{ t.name }}</option>
                     {% endfor %}

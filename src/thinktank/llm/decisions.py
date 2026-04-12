@@ -22,7 +22,9 @@ from src.thinktank.llm.schemas import (
 )
 from src.thinktank.models.candidate import CandidateThinker
 from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
+from sqlalchemy import select
+
+from src.thinktank.models.source import Source, SourceThinker
 from src.thinktank.models.thinker import Thinker
 
 
@@ -168,10 +170,16 @@ async def apply_source_decision(
     # Trigger feed fetch for approved sources
     if source.approval_status == "approved":
         fetch_payload = {"source_id": str(source_id)}
-        # Add guest filtering if this is a guest discovery source
-        is_guest = source.config.get("is_guest_source", False) if source.config else False
-        if is_guest:
-            fetch_payload["guest_filter_thinker_id"] = str(source.thinker_id)
+        # Add guest filtering if a thinker has a guest_appearance relationship
+        guest_result = await session.execute(
+            select(SourceThinker.thinker_id).where(
+                SourceThinker.source_id == source.id,
+                SourceThinker.relationship_type == "guest_appearance",
+            ).limit(1)
+        )
+        guest_thinker_id = guest_result.scalar_one_or_none()
+        if guest_thinker_id is not None:
+            fetch_payload["guest_filter_thinker_id"] = str(guest_thinker_id)
         fetch_job = Job(
             id=uuid.uuid4(),
             job_type="fetch_podcast_feed",

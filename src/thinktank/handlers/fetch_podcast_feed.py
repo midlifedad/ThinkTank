@@ -104,8 +104,7 @@ async def handle_fetch_podcast_feed(
         )
         return
 
-    # d. Load source owner thinker
-    thinker = await session.get(Thinker, source.thinker_id)
+    # d. source.thinker_id is deprecated — thinker lookup happens via junction if needed
 
     # e. Read global config values
     global_min_duration = await get_config_value(
@@ -219,7 +218,7 @@ async def handle_fetch_podcast_feed(
         content = Content(
             id=uuid.uuid4(),
             source_id=source.id,
-            source_owner_id=source.thinker_id,
+            source_owner_id=None,  # DEPRECATED — use content_thinkers junction
             content_type="episode",
             url=entry.url,
             canonical_url=canonical,

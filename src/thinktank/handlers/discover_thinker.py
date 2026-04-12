@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
+from src.thinktank.models.source import Source, SourceThinker
 from src.thinktank.models.thinker import Thinker
 
 logger = structlog.get_logger(__name__)
@@ -88,10 +88,12 @@ async def handle_discover_thinker(
         session.add(guest_job)
         jobs_created += 1
 
-    # 2. Create fetch jobs for approved, never-fetched owned sources
+    # 2. Create fetch jobs for approved, never-fetched sources linked via junction
     result = await session.execute(
-        select(Source).where(
-            Source.thinker_id == thinker.id,
+        select(Source)
+        .join(SourceThinker)
+        .where(
+            SourceThinker.thinker_id == thinker.id,
             Source.approval_status == "approved",
             Source.active == True,  # noqa: E712
             Source.last_fetched == None,  # noqa: E711
@@ -112,9 +114,15 @@ async def handle_discover_thinker(
             continue
 
         fetch_payload = {"source_id": str(source.id)}
-        # If this is a guest source, add guest filtering
-        is_guest = source.config.get("is_guest_source", False) if source.config else False
-        if is_guest:
+        # If this is a guest source (thinker appears as guest), add guest filtering
+        st_result = await session.execute(
+            select(SourceThinker.relationship_type).where(
+                SourceThinker.source_id == source.id,
+                SourceThinker.thinker_id == thinker.id,
+            )
+        )
+        rel_type = st_result.scalar_one_or_none()
+        if rel_type == "guest_appearance":
             fetch_payload["guest_filter_thinker_id"] = str(thinker.id)
 
         fetch_job = Job(

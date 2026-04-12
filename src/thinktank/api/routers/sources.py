@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import PaginatedResponse, SourceResponse
 
-from src.thinktank.models.source import Source
+from src.thinktank.models.source import Source, SourceThinker
 
 router = APIRouter(prefix="/api/sources", tags=["sources"])
 
@@ -27,7 +27,7 @@ async def list_sources(
     query = select(Source)
 
     if thinker_id is not None:
-        query = query.where(Source.thinker_id == thinker_id)
+        query = query.join(SourceThinker).where(SourceThinker.thinker_id == thinker_id)
     if approval_status is not None:
         query = query.where(Source.approval_status == approval_status)
 

@@ -39,7 +39,7 @@ from src.thinktank.ingestion.trigram import find_similar_candidates, find_simila
 from src.thinktank.models.candidate import CandidateThinker
 from src.thinktank.models.content import Content, ContentThinker
 from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
+from src.thinktank.models.source import Source, SourceThinker
 from src.thinktank.models.thinker import Thinker
 
 logger = structlog.get_logger(__name__)
@@ -95,13 +95,21 @@ async def handle_tag_content_thinkers(
     thinkers = result.scalars().all()
     thinker_names = [{"id": t.id, "name": t.name} for t in thinkers]
 
-    # c. Load source to get source owner name
+    # c. Load source and look up associated thinkers via junction
     source = await session.get(Source, source_id)
     source_owner_name: str | None = None
     if source is not None:
-        owner = await session.get(Thinker, source.thinker_id)
-        if owner is not None:
-            source_owner_name = owner.name
+        # Find the 'host' thinker via source_thinkers junction
+        host_result = await session.execute(
+            select(Thinker.name)
+            .join(SourceThinker, SourceThinker.thinker_id == Thinker.id)
+            .where(
+                SourceThinker.source_id == source.id,
+                SourceThinker.relationship_type == "host",
+            )
+            .limit(1)
+        )
+        source_owner_name = host_result.scalar_one_or_none()
 
     # d. Process each content item
     attribution_count = 0

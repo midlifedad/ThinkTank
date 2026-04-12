@@ -12,13 +12,14 @@ DATABASE SCHEMA SUMMARY:
    twitter_handle, wikipedia_url, personal_site, approval_status, approved_backfill_days,
    approved_source_types, active (bool), added_at
 
-2. sources - Content sources (RSS feeds, YouTube channels) belonging to thinkers
-   Columns: id (UUID PK), thinker_id (FK->thinkers), source_type, name, url (unique),
-   external_id, config (JSONB), approval_status, approved_backfill_days, backfill_complete,
+2. sources - Content sources (RSS feeds, YouTube channels) — first-class entities independent of thinkers
+   Columns: id (UUID PK), thinker_id (FK->thinkers, nullable, DEPRECATED), source_type, name,
+   slug (unique), url (unique), external_id, tier (1-3), description, host_name,
+   config (JSONB), approval_status, approved_backfill_days, backfill_complete,
    refresh_interval_hours, last_fetched, item_count, active (bool), error_count, created_at
 
 3. content - Ingested content items (episodes, videos, articles)
-   Columns: id (UUID PK), source_id (FK->sources), source_owner_id (FK->thinkers),
+   Columns: id (UUID PK), source_id (FK->sources), source_owner_id (FK->thinkers, nullable, DEPRECATED),
    content_type, url, canonical_url (unique), content_fingerprint (unique), title,
    body_text (nullable), word_count, published_at, duration_seconds, show_name, host_name,
    thumbnail_url, transcription_method, status, error_message, discovered_at, processed_at
@@ -53,15 +54,25 @@ DATABASE SCHEMA SUMMARY:
 11. api_usage - Aggregated API usage for cost monitoring
     Columns: id (UUID PK), api_name, endpoint, period_start, call_count, units_consumed, estimated_cost_usd
 
+12. source_thinkers - Junction: links sources to thinkers with relationship type
+    Columns: source_id (FK->sources, PK), thinker_id (FK->thinkers, PK), relationship_type ('host', 'guest_appearance', 'curated'), added_at
+
+13. source_categories - Junction: links sources to categories with relevance
+    Columns: source_id (FK->sources, PK), category_id (FK->categories, PK), relevance (1-10), added_at
+
 RELATIONSHIPS:
-- thinkers -> sources (one-to-many via thinker_id)
-- thinkers -> content (via source_owner_id)
+- thinkers <-> sources (many-to-many via source_thinkers junction)
 - sources -> content (one-to-many via source_id)
 - content <-> thinkers (many-to-many via content_thinkers junction)
+- thinkers <-> categories (many-to-many via thinker_categories junction)
+- sources <-> categories (many-to-many via source_categories junction)
 - categories -> categories (self-referential via parent_id)
 - jobs -> llm_reviews (optional FK via llm_review_id)
 - candidate_thinkers -> llm_reviews (optional FK via llm_review_id)
 - candidate_thinkers -> thinkers (optional FK via thinker_id, set on promotion)
+
+NOTE: source.thinker_id and content.source_owner_id are DEPRECATED.
+Use source_thinkers and content_thinkers junction tables instead.
 """.strip()
 
 

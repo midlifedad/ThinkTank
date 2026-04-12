@@ -81,7 +81,7 @@ class SourceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    thinker_id: uuid.UUID
+    thinker_id: Optional[uuid.UUID] = None
     source_type: str
     name: str
     url: str
@@ -101,7 +101,7 @@ class ContentResponse(BaseModel):
 
     id: uuid.UUID
     source_id: uuid.UUID
-    source_owner_id: uuid.UUID
+    source_owner_id: Optional[uuid.UUID] = None
     title: str
     content_type: str
     status: str

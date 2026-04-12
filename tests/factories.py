@@ -22,6 +22,8 @@ from src.thinktank.models import (
     LLMReview,
     RateLimitUsage,
     Source,
+    SourceCategory,
+    SourceThinker,
     SystemConfig,
     Thinker,
     ThinkerCategory,
@@ -171,9 +173,10 @@ async def create_thinker_metrics(session: AsyncSession, **overrides: Any) -> Thi
 
 
 def make_source(**overrides: Any) -> Source:
-    """Create a Source with sensible defaults. Requires thinker_id."""
+    """Create a Source with sensible defaults. thinker_id is optional (deprecated)."""
     defaults: dict[str, Any] = {
         "id": uuid.uuid4(),
+        "thinker_id": None,
         "source_type": "podcast_rss",
         "name": "Test Podcast",
         "url": f"https://example.com/feed/{_hex8()}.xml",
@@ -197,11 +200,53 @@ async def create_source(session: AsyncSession, **overrides: Any) -> Source:
     return source
 
 
+# ---------- SourceThinker (junction) ----------
+
+
+def make_source_thinker(**overrides: Any) -> SourceThinker:
+    """Create a SourceThinker junction entry. Requires source_id and thinker_id."""
+    defaults: dict[str, Any] = {
+        "relationship_type": "host",
+        "added_at": _now(),
+    }
+    defaults.update(overrides)
+    return SourceThinker(**defaults)
+
+
+async def create_source_thinker(session: AsyncSession, **overrides: Any) -> SourceThinker:
+    """Create and persist a SourceThinker. Returns the persisted instance."""
+    st = make_source_thinker(**overrides)
+    session.add(st)
+    await session.flush()
+    return st
+
+
+# ---------- SourceCategory (junction) ----------
+
+
+def make_source_category(**overrides: Any) -> SourceCategory:
+    """Create a SourceCategory junction entry. Requires source_id and category_id."""
+    defaults: dict[str, Any] = {
+        "relevance": 5,
+        "added_at": _now(),
+    }
+    defaults.update(overrides)
+    return SourceCategory(**defaults)
+
+
+async def create_source_category(session: AsyncSession, **overrides: Any) -> SourceCategory:
+    """Create and persist a SourceCategory. Returns the persisted instance."""
+    sc = make_source_category(**overrides)
+    session.add(sc)
+    await session.flush()
+    return sc
+
+
 # ---------- Content (spec 3.7) ----------
 
 
 def make_content(**overrides: Any) -> Content:
-    """Create a Content item. Requires source_id and source_owner_id."""
+    """Create a Content item. Requires source_id. source_owner_id is optional (deprecated)."""
     hex_id = _hex8()
     defaults: dict[str, Any] = {
         "id": uuid.uuid4(),

@@ -1,9 +1,11 @@
-"""Seed initial thinkers with LLM approval jobs and known podcast sources.
+"""Seed initial thinkers — top minds in AI, science, and technology.
 
 Each thinker is created with approval_status="pending_llm" and a corresponding
-llm_approval_check job is enqueued for LLM review. Thinkers who host their own
-podcasts get pre-approved Source rows so the pipeline can start fetching
-immediately after thinker approval.
+llm_approval_check job is enqueued for LLM review.
+
+NOTE: Thinkers are people whose IDEAS and OPINIONS we want to track (e.g., Jensen
+Huang, Demis Hassabis). Podcast hosts who are primarily interviewers (e.g., Lex
+Fridman) are seeded as sources, not thinkers.
 
 Uses ON CONFLICT DO UPDATE for idempotent thinker upserts and checks for
 existing jobs to avoid duplicates.
@@ -20,90 +22,111 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
 from src.thinktank.models.thinker import Thinker
 
 INITIAL_THINKERS = [
+    # Tier 1 — Most influential voices in AI/tech
     {
-        "name": "Lex Fridman",
-        "slug": "lex-fridman",
+        "name": "Jensen Huang",
+        "slug": "jensen-huang",
         "tier": 1,
-        "bio": "MIT AI researcher and podcast host",
-        "approved_source_types": ["podcast_rss"],
-        "approved_backfill_days": 365,
-        "sources": [
-            {
-                "name": "Lex Fridman Podcast",
-                "url": "https://lexfridman.com/feed/podcast/",
-                "source_type": "podcast_rss",
-                "refresh_interval_hours": 6,
-                "approved_backfill_days": 365,
-            },
-        ],
+        "bio": "NVIDIA CEO, driving the AI hardware revolution",
     },
     {
-        "name": "Andrew Huberman",
-        "slug": "andrew-huberman",
+        "name": "Demis Hassabis",
+        "slug": "demis-hassabis",
         "tier": 1,
-        "bio": "Stanford neuroscientist",
-        "approved_source_types": ["podcast_rss"],
-        "approved_backfill_days": 365,
-        "sources": [
-            {
-                "name": "Huberman Lab",
-                "url": "https://feeds.megaphone.fm/hubermanlab",
-                "source_type": "podcast_rss",
-                "refresh_interval_hours": 6,
-                "approved_backfill_days": 365,
-            },
-        ],
+        "bio": "DeepMind CEO, Nobel laureate, AGI research pioneer",
+    },
+    {
+        "name": "Sam Altman",
+        "slug": "sam-altman",
+        "tier": 1,
+        "bio": "OpenAI CEO, leading commercial AGI development",
+    },
+    {
+        "name": "Dario Amodei",
+        "slug": "dario-amodei",
+        "tier": 1,
+        "bio": "Anthropic CEO, AI safety researcher",
+    },
+    {
+        "name": "Ilya Sutskever",
+        "slug": "ilya-sutskever",
+        "tier": 1,
+        "bio": "SSI co-founder, former OpenAI Chief Scientist",
+    },
+    {
+        "name": "Yann LeCun",
+        "slug": "yann-lecun",
+        "tier": 1,
+        "bio": "Meta Chief AI Scientist, Turing Award winner",
+    },
+    {
+        "name": "Geoffrey Hinton",
+        "slug": "geoffrey-hinton",
+        "tier": 1,
+        "bio": "Godfather of deep learning, Nobel laureate, AI safety advocate",
+    },
+    # Tier 2 — Highly influential thinkers
+    {
+        "name": "Andrej Karpathy",
+        "slug": "andrej-karpathy",
+        "tier": 2,
+        "bio": "Former Tesla/OpenAI, AI educator and researcher",
+    },
+    {
+        "name": "Fei-Fei Li",
+        "slug": "fei-fei-li",
+        "tier": 2,
+        "bio": "Stanford professor, ImageNet pioneer, World Labs founder",
+    },
+    {
+        "name": "Satya Nadella",
+        "slug": "satya-nadella",
+        "tier": 2,
+        "bio": "Microsoft CEO, driving enterprise AI adoption",
     },
     {
         "name": "Balaji Srinivasan",
         "slug": "balaji-srinivasan",
         "tier": 2,
-        "bio": "Technology entrepreneur and author",
-        "approved_source_types": ["podcast_rss"],
-        "approved_backfill_days": 180,
-        "sources": [],
+        "bio": "Technology entrepreneur, author of The Network State",
     },
     {
-        "name": "Tyler Cowen",
-        "slug": "tyler-cowen",
+        "name": "Marc Andreessen",
+        "slug": "marc-andreessen",
         "tier": 2,
-        "bio": "Economist and author of Marginal Revolution",
-        "approved_source_types": ["podcast_rss"],
-        "approved_backfill_days": 180,
-        "sources": [
-            {
-                "name": "Conversations with Tyler",
-                "url": "https://feeds.megaphone.fm/conversations-with-tyler",
-                "source_type": "podcast_rss",
-                "refresh_interval_hours": 24,
-                "approved_backfill_days": 180,
-            },
-        ],
+        "bio": "a16z co-founder, technology optimist and philosopher",
+    },
+    {
+        "name": "Ray Kurzweil",
+        "slug": "ray-kurzweil",
+        "tier": 2,
+        "bio": "Futurist, inventor, author of The Singularity Is Nearer",
+    },
+    {
+        "name": "Peter Diamandis",
+        "slug": "peter-diamandis",
+        "tier": 2,
+        "bio": "XPRIZE founder, abundance thinker, longevity advocate",
     },
     {
         "name": "Joscha Bach",
         "slug": "joscha-bach",
         "tier": 2,
         "bio": "AI researcher and cognitive scientist",
-        "approved_source_types": ["podcast_rss"],
-        "approved_backfill_days": 180,
-        "sources": [],
     },
 ]
 
 
 async def seed_thinkers(session: AsyncSession) -> int:
-    """Seed initial thinkers with LLM approval jobs and known sources.
+    """Seed initial thinkers with LLM approval jobs.
 
     For each thinker:
     1. Upsert the thinker row (ON CONFLICT DO UPDATE on slug)
-    2. Create pre-approved Source rows for known podcasts (idempotent by URL)
-    3. Check if an llm_approval_check job already exists for this thinker
-    4. If not, create one to trigger LLM review
+    2. Check if an llm_approval_check job already exists
+    3. If not, create one to trigger LLM review
 
     Returns the number of thinkers seeded.
     """
@@ -120,40 +143,18 @@ async def seed_thinkers(session: AsyncSession) -> int:
             tier=entry["tier"],
             bio=entry["bio"],
             approval_status="pending_llm",
-            approved_source_types=entry.get("approved_source_types"),
-            approved_backfill_days=entry.get("approved_backfill_days"),
         ).on_conflict_do_update(
             index_elements=["slug"],
             set_={
                 "name": entry["name"],
                 "tier": entry["tier"],
                 "bio": entry["bio"],
-                "approved_source_types": entry.get("approved_source_types"),
-                "approved_backfill_days": entry.get("approved_backfill_days"),
             },
         ).returning(Thinker.id)
 
         result = await session.execute(stmt)
         actual_id = result.scalar_one()
         count += 1
-
-        # Create pre-approved sources for known podcasts
-        for src in entry.get("sources", []):
-            existing_source = await session.execute(
-                select(Source.id).where(Source.url == src["url"])
-            )
-            if existing_source.scalar_one_or_none() is None:
-                source = Source(
-                    id=uuid.uuid4(),
-                    thinker_id=actual_id,
-                    source_type=src["source_type"],
-                    name=src["name"],
-                    url=src["url"],
-                    approval_status="approved",
-                    refresh_interval_hours=src.get("refresh_interval_hours"),
-                    approved_backfill_days=src.get("approved_backfill_days"),
-                )
-                session.add(source)
 
         # Check if LLM approval job already exists for this thinker
         existing_job = await session.execute(
@@ -163,7 +164,6 @@ async def seed_thinkers(session: AsyncSession) -> int:
             )
         )
         if existing_job.scalar_one_or_none() is None:
-            # Create LLM approval job
             job = Job(
                 job_type="llm_approval_check",
                 payload={

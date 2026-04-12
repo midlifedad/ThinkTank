@@ -20,7 +20,8 @@ from src.thinktank.models.category import Category, ThinkerCategory
 from src.thinktank.models.content import Content
 from src.thinktank.models.job import Job
 from src.thinktank.models.review import LLMReview
-from src.thinktank.models.source import Source
+from src.thinktank.models.content import ContentThinker
+from src.thinktank.models.source import Source, SourceThinker
 from src.thinktank.models.thinker import Thinker
 from thinktank.admin.dependencies import get_session, get_templates
 
@@ -42,13 +43,13 @@ async def _build_thinker_list(
     active: Optional[str] = None,
 ) -> list[dict]:
     """Build thinker list with source counts and category names, applying filters."""
-    # Source count subquery
+    # Source count subquery via junction
     source_count_sq = (
         select(
-            Source.thinker_id,
-            func.count(Source.id).label("source_count"),
+            SourceThinker.thinker_id,
+            func.count(SourceThinker.source_id).label("source_count"),
         )
-        .group_by(Source.thinker_id)
+        .group_by(SourceThinker.thinker_id)
         .subquery()
     )
 
@@ -446,11 +447,17 @@ async def thinker_sources_partial(
     thinker_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ):
-    """HTMX partial listing a thinker's sources."""
+    """HTMX partial listing a thinker's sources via junction."""
     result = await session.execute(
-        select(Source).where(Source.thinker_id == thinker_id).order_by(Source.name)
+        select(Source, SourceThinker.relationship_type)
+        .join(SourceThinker, SourceThinker.source_id == Source.id)
+        .where(SourceThinker.thinker_id == thinker_id)
+        .order_by(Source.name)
     )
-    sources = result.scalars().all()
+    sources = [
+        {"source": row[0], "relationship_type": row[1]}
+        for row in result.all()
+    ]
     return templates.TemplateResponse(
         request,
         "partials/thinker_sources.html",
@@ -464,10 +471,11 @@ async def thinker_content_partial(
     thinker_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ):
-    """HTMX partial listing a thinker's recent content."""
+    """HTMX partial listing a thinker's recent content via content_thinkers junction."""
     result = await session.execute(
         select(Content)
-        .where(Content.source_owner_id == thinker_id)
+        .join(ContentThinker, ContentThinker.content_id == Content.id)
+        .where(ContentThinker.thinker_id == thinker_id)
         .order_by(Content.published_at.desc().nulls_last())
         .limit(20)
     )

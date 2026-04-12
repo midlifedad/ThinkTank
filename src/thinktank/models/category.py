@@ -63,3 +63,26 @@ class ThinkerCategory(Base):
 
     def __repr__(self) -> str:
         return f"<ThinkerCategory(thinker={self.thinker_id}, cat={self.category_id})>"
+
+
+class SourceCategory(Base):
+    """Junction table linking sources to categories with relevance score.
+
+    Composite primary key on (source_id, category_id).
+    """
+
+    __tablename__ = "source_categories"
+
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("sources.id"),
+        primary_key=True,
+    )
+    category_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("categories.id"),
+        primary_key=True,
+    )
+    relevance: Mapped[int] = mapped_column(sa.SmallInteger)
+    added_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+
+    def __repr__(self) -> str:
+        return f"<SourceCategory(source={self.source_id}, cat={self.category_id})>"

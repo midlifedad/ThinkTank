@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.thinktank.models.content import Content
 from src.thinktank.models.job import Job
 from src.thinktank.models.review import LLMReview
-from src.thinktank.models.source import Source
+from src.thinktank.models.source import Source, SourceThinker
 from src.thinktank.models.thinker import Thinker
 from thinktank.admin.dependencies import get_session, get_templates
 
@@ -30,15 +30,13 @@ async def _build_source_list(
     status: Optional[str] = None,
     source_type: Optional[str] = None,
 ) -> list[dict]:
-    """Build source list with thinker names, applying filters."""
-    stmt = select(Source, Thinker.name.label("thinker_name")).join(
-        Thinker, Source.thinker_id == Thinker.id
-    )
+    """Build source list with associated thinker names via junction, applying filters."""
+    stmt = select(Source)
 
     if thinker_id and thinker_id != "all":
         try:
             tid = uuid.UUID(thinker_id)
-            stmt = stmt.where(Source.thinker_id == tid)
+            stmt = stmt.join(SourceThinker).where(SourceThinker.thinker_id == tid)
         except ValueError:
             pass
 
@@ -50,18 +48,25 @@ async def _build_source_list(
 
     stmt = stmt.order_by(Source.name)
     result = await session.execute(stmt)
-    rows = result.all()
+    source_rows = result.scalars().all()
 
     sources = []
-    for source, thinker_name in rows:
+    for source in source_rows:
+        # Get associated thinker names via junction
+        thinker_result = await session.execute(
+            select(Thinker.name)
+            .join(SourceThinker, SourceThinker.thinker_id == Thinker.id)
+            .where(SourceThinker.source_id == source.id)
+        )
+        thinker_names = [r[0] for r in thinker_result.all()]
+
         sources.append({
             "id": str(source.id),
             "name": source.name,
             "url": source.url,
             "source_type": source.source_type,
             "approval_status": source.approval_status,
-            "thinker_name": thinker_name,
-            "thinker_id": str(source.thinker_id),
+            "thinker_names": ", ".join(thinker_names) if thinker_names else "—",
             "error_count": source.error_count,
             "last_fetched": source.last_fetched,
             "item_count": source.item_count,
@@ -126,18 +131,13 @@ async def add_source(
     session: AsyncSession = Depends(get_session),
     name: str = Form(...),
     url: str = Form(...),
-    thinker_id: str = Form(...),
+    thinker_id: str = Form(""),
     source_type: str = Form("podcast_rss"),
 ):
-    """Create a new source with pending_llm status."""
-    try:
-        tid = uuid.UUID(thinker_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid thinker_id")
-
+    """Create a new source with pending_llm status. Thinker is optional."""
     source = Source(
         id=uuid.uuid4(),
-        thinker_id=tid,
+        thinker_id=None,
         name=name,
         url=url,
         source_type=source_type,
@@ -145,6 +145,20 @@ async def add_source(
         active=True,
     )
     session.add(source)
+
+    # Create junction row if thinker provided
+    if thinker_id:
+        try:
+            tid = uuid.UUID(thinker_id)
+            junction = SourceThinker(
+                source_id=source.id,
+                thinker_id=tid,
+                relationship_type="curated",
+            )
+            session.add(junction)
+        except ValueError:
+            pass
+
     await session.commit()
 
     sources = await _build_source_list(session)
@@ -312,18 +326,28 @@ async def source_detail(
     session: AsyncSession = Depends(get_session),
 ):
     """Source detail page with health summary and HTMX-loaded sections."""
-    result = await session.execute(
-        select(Source, Thinker.name.label("thinker_name"))
-        .join(Thinker, Source.thinker_id == Thinker.id)
-        .where(Source.id == source_id)
-    )
-    row = result.one_or_none()
-    if row is None:
+    result = await session.execute(select(Source).where(Source.id == source_id))
+    source = result.scalar_one_or_none()
+    if source is None:
         raise HTTPException(status_code=404, detail="Source not found")
 
-    source, thinker_name = row
+    # Get associated thinkers via junction
+    thinker_result = await session.execute(
+        select(Thinker.name, SourceThinker.relationship_type)
+        .join(SourceThinker, SourceThinker.thinker_id == Thinker.id)
+        .where(SourceThinker.source_id == source_id)
+    )
+    associated_thinkers = [
+        {"name": r[0], "relationship_type": r[1]} for r in thinker_result.all()
+    ]
+    thinker_name = associated_thinkers[0]["name"] if associated_thinkers else "—"
+
     return templates.TemplateResponse(
         request,
         "source_detail.html",
-        {"source": source, "thinker_name": thinker_name},
+        {
+            "source": source,
+            "thinker_name": thinker_name,
+            "associated_thinkers": associated_thinkers,
+        },
     )

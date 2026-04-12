@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.thinktank.discovery.podcastindex_client import PodcastIndexClient
 from src.thinktank.ingestion.url_normalizer import normalize_url
 from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
+from src.thinktank.models.source import Source, SourceThinker
 from src.thinktank.models.thinker import Thinker
 from src.thinktank.secrets import get_secret
 
@@ -82,7 +82,7 @@ async def handle_discover_guests_podcastindex(
 
         source = Source(
             id=uuid.uuid4(),
-            thinker_id=thinker.id,
+            thinker_id=None,
             source_type="podcast_rss",
             name=item.get("feedTitle", "Unknown Podcast"),
             url=normalized,
@@ -90,6 +90,14 @@ async def handle_discover_guests_podcastindex(
             config={"is_guest_source": True},
         )
         session.add(source)
+
+        # Create junction row linking source to thinker as guest appearance
+        junction = SourceThinker(
+            source_id=source.id,
+            thinker_id=thinker.id,
+            relationship_type="guest_appearance",
+        )
+        session.add(junction)
         sources_created += 1
 
         # Create LLM approval job for the new source
