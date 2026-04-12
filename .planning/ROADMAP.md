@@ -259,7 +259,7 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 10. Source Management | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
 | 11. Pipeline Control | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
 | 12. Agent Chat | 2/2 | Complete    | 2026-03-10 | 2026-03-10 |
-| 13. Episode Cataloging & Guest Detection | v1.2 | 0/3 | Planning Complete | — |
+| 13. Episode Cataloging & Guest Detection | v1.2 | 3/3 | Complete    | 2026-04-12 |
 
 ### Phase 13: Efficient episode cataloging and thinker guest detection
 
@@ -274,9 +274,9 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
   5. YouTube channels can be added as sources, and fetch_youtube_channel creates cataloged Content rows using quota-efficient YouTube Data API calls
   6. When a new thinker is approved, rescan_cataloged_for_thinker retroactively promotes matching cataloged episodes
   7. End-to-end integration test proves 80%+ cost savings for guest-appearance sources
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 13-01-PLAN.md -- Core scan modules: podcast_person_parser, scan_episodes_for_thinkers handler, rescan_cataloged_for_thinker handler, unit + contract tests
-- [ ] 13-02-PLAN.md -- YouTube support: YouTube Data API client, fetch_youtube_channel handler, google-api-python-client dependency, unit + contract tests
-- [ ] 13-03-PLAN.md -- Pipeline wiring: modify fetch_podcast_feed, register handlers, LLM rescan trigger, admin YouTube source support, Alembic migration, integration tests
+- [x] 13-01-PLAN.md -- Core scan modules: podcast_person_parser, scan_episodes_for_thinkers handler, rescan_cataloged_for_thinker handler, unit + contract tests
+- [x] 13-02-PLAN.md -- YouTube support: YouTube Data API client, fetch_youtube_channel handler, google-api-python-client dependency, unit + contract tests
+- [x] 13-03-PLAN.md -- Pipeline wiring: modify fetch_podcast_feed, register handlers, LLM rescan trigger, admin YouTube source support, Alembic migration, integration tests
