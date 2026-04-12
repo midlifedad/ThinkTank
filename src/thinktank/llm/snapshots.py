@@ -22,7 +22,7 @@ from sqlalchemy.orm import selectinload
 from src.thinktank.models.candidate import CandidateThinker
 from src.thinktank.models.content import Content
 from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
+from src.thinktank.models.source import Source, SourceThinker
 from src.thinktank.models.thinker import Thinker
 
 
@@ -44,14 +44,21 @@ async def build_thinker_approval_context(
     Returns:
         Dict with proposed_thinker info and corpus_stats.
     """
-    # Use selectinload to eagerly load relationships in async context
-    # (session.get from identity map may not trigger selectin loading)
+    # Load thinker with categories (sources loaded via junction below)
     result = await session.execute(
         select(Thinker)
         .where(Thinker.id == thinker_id)
-        .options(selectinload(Thinker.sources), selectinload(Thinker.categories))
+        .options(selectinload(Thinker.categories))
     )
     thinker = result.scalar_one()
+
+    # Load associated sources via junction
+    sources_result = await session.execute(
+        select(Source.name, Source.source_type, Source.url)
+        .join(SourceThinker, SourceThinker.source_id == Source.id)
+        .where(SourceThinker.thinker_id == thinker_id)
+    )
+    source_rows = sources_result.all()
 
     # Corpus stats
     total_approved = await session.scalar(
@@ -77,8 +84,8 @@ async def build_thinker_approval_context(
         "bio": thinker.bio,
         "approval_status": thinker.approval_status,
         "sources": [
-            {"name": s.name, "source_type": s.source_type, "url": s.url}
-            for s in thinker.sources
+            {"name": r[0], "source_type": r[1], "url": r[2]}
+            for r in source_rows
         ],
         "categories": [
             {"slug": getattr(c, "slug", str(c))}
@@ -109,11 +116,11 @@ async def build_source_approval_context(
     Returns:
         Dict with source info, thinker details, and sample episodes.
     """
-    # Use selectinload for thinker relationship to avoid lazy load in async
+    # Load source with junction relationships
     result = await session.execute(
         select(Source)
         .where(Source.id == source_id)
-        .options(selectinload(Source.thinker))
+        .options(selectinload(Source.source_thinkers))
     )
     source = result.scalar_one()
 
@@ -136,10 +143,21 @@ async def build_source_approval_context(
         "error_count": source.error_count,
     }
 
-    thinker_info = {
-        "name": source.thinker.name,
-        "slug": source.thinker.slug,
-    }
+    # Load associated thinkers via junction
+    thinker_stmt = (
+        select(Thinker.name, Thinker.slug, SourceThinker.relationship_type)
+        .join(SourceThinker, SourceThinker.thinker_id == Thinker.id)
+        .where(SourceThinker.source_id == source.id)
+    )
+    thinker_result = await session.execute(thinker_stmt)
+    thinker_rows = thinker_result.all()
+
+    # Use first thinker for backward compat, or empty dict
+    thinker_info = (
+        {"name": thinker_rows[0][0], "slug": thinker_rows[0][1]}
+        if thinker_rows
+        else {"name": "Unknown", "slug": "unknown"}
+    )
 
     episode_samples = [
         {"title": e.title, "url": e.url, "status": e.status}
@@ -352,10 +370,11 @@ async def build_daily_digest_context(session: AsyncSession) -> dict:
         )
     ) or 0
 
-    # Top 5 active thinkers (by content added in last 24h)
+    # Top 5 active thinkers (by content added in last 24h) via junction
     top_stmt = (
         select(Thinker.name, func.count(Content.id).label("count"))
-        .join(Source, Source.thinker_id == Thinker.id)
+        .join(SourceThinker, SourceThinker.thinker_id == Thinker.id)
+        .join(Source, Source.id == SourceThinker.source_id)
         .join(Content, Content.source_id == Source.id)
         .where(Content.discovered_at >= yesterday)
         .group_by(Thinker.name)
@@ -425,7 +444,8 @@ async def build_weekly_audit_context(session: AsyncSession) -> dict:
     # Find approved thinkers whose sources have no content discovered in last 7 days
     active_thinker_ids_stmt = (
         select(Thinker.id)
-        .join(Source, Source.thinker_id == Thinker.id)
+        .join(SourceThinker, SourceThinker.thinker_id == Thinker.id)
+        .join(Source, Source.id == SourceThinker.source_id)
         .join(Content, Content.source_id == Source.id)
         .where(Content.discovered_at >= week_ago, Thinker.approval_status == "approved")
         .group_by(Thinker.id)

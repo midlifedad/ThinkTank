@@ -17,11 +17,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from scripts.seed_categories import seed_categories
 from scripts.seed_config import seed_config
+from scripts.seed_sources import seed_sources
 from scripts.seed_thinkers import seed_thinkers
 from src.thinktank.models.category import Category
 from src.thinktank.models.config_table import SystemConfig
 from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
+from src.thinktank.models.source import Source, SourceThinker
 from src.thinktank.models.thinker import Thinker
 
 logger = structlog.get_logger(__name__)
@@ -76,6 +77,11 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
     thinker_count = await seed_thinkers(session)
     await logger.ainfo("bootstrap.seed_thinkers.done", count=thinker_count)
 
+    # Step 5b: Seed sources (independent of thinkers)
+    await logger.ainfo("bootstrap.seed_sources", step="5b")
+    source_count = await seed_sources(session)
+    await logger.ainfo("bootstrap.seed_sources.done", count=source_count)
+
     # Step 6: Create initial pipeline jobs for seeded thinkers
     await logger.ainfo("bootstrap.create_pipeline_jobs", step=6)
     pipeline_jobs = 0
@@ -110,10 +116,12 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
             session.add(discover_job)
             pipeline_jobs += 1
 
-        # Create fetch jobs for approved, never-fetched sources
+        # Create fetch jobs for approved, never-fetched sources via junction
         source_result = await session.execute(
-            select(Source).where(
-                Source.thinker_id == thinker.id,
+            select(Source)
+            .join(SourceThinker)
+            .where(
+                SourceThinker.thinker_id == thinker.id,
                 Source.approval_status == "approved",
                 Source.active == True,  # noqa: E712
                 Source.last_fetched == None,  # noqa: E711
@@ -132,9 +140,15 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
                 continue
 
             fetch_payload = {"source_id": str(source.id)}
-            # Add guest filtering if this is a guest discovery source
-            is_guest = source.config.get("is_guest_source", False) if source.config else False
-            if is_guest:
+            # Add guest filtering via junction relationship type
+            st_result = await session.execute(
+                select(SourceThinker.relationship_type).where(
+                    SourceThinker.source_id == source.id,
+                    SourceThinker.thinker_id == thinker.id,
+                )
+            )
+            rel_type = st_result.scalar_one_or_none()
+            if rel_type == "guest_appearance":
                 fetch_payload["guest_filter_thinker_id"] = str(thinker.id)
 
             fetch_job = Job(
@@ -164,6 +178,7 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
         "categories": cat_count,
         "config": config_count,
         "thinkers": thinker_count,
+        "sources": source_count,
         "pipeline_jobs": pipeline_jobs,
     }
     await logger.ainfo("bootstrap.complete", results=results)
@@ -182,6 +197,7 @@ if __name__ == "__main__":
             print(f"  Categories: {results['categories']}")
             print(f"  Config entries: {results['config']}")
             print(f"  Thinkers: {results['thinkers']}")
+            print(f"  Sources: {results['sources']}")
             print(f"  Pipeline jobs: {results['pipeline_jobs']}")
             print("  Workers: ACTIVE")
 

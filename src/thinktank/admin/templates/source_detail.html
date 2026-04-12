@@ -8,7 +8,14 @@
 <div style="margin-bottom: 1rem;">
     <h2 style="margin: 0 0 0.25rem 0;">{{ source.name }}</h2>
     <p style="color: #666; margin: 0;">
-        Owned by <a href="/admin/thinkers/{{ source.thinker_id }}" style="color: #1a1a2e;">{{ thinker_name }}</a>
+        {% if associated_thinkers %}
+        Associated with:
+        {% for t in associated_thinkers %}
+        <span style="background: #e2e3e5; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.85rem; margin-right: 0.25rem;">{{ t.name }} ({{ t.relationship_type }})</span>
+        {% endfor %}
+        {% else %}
+        Independent source
+        {% endif %}
     </p>
 </div>
 

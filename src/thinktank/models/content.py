@@ -24,7 +24,9 @@ class Content(Base):
 
     id: Mapped[uuid_pk]
     source_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("sources.id"))
-    source_owner_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("thinkers.id"))
+    source_owner_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        sa.ForeignKey("thinkers.id"), nullable=True
+    )  # DEPRECATED — use content_thinkers junction
     content_type: Mapped[str] = mapped_column(sa.Text)
     url: Mapped[str] = mapped_column(sa.Text)
     canonical_url: Mapped[str] = mapped_column(sa.Text, unique=True)
@@ -49,7 +51,7 @@ class Content(Base):
 
     # Relationships
     source: Mapped["Source"] = relationship(back_populates="content")
-    source_owner: Mapped["Thinker"] = relationship()
+    source_owner: Mapped[Optional["Thinker"]] = relationship()  # DEPRECATED
     content_thinkers: Mapped[list["ContentThinker"]] = relationship(
         back_populates="content",
         lazy="selectin",

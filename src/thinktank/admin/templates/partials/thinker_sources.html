@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th>Name</th>
+            <th>Relationship</th>
             <th>Type</th>
             <th>Status</th>
             <th>Active</th>
@@ -14,29 +15,30 @@
     <tbody>
         {% for s in sources %}
         <tr>
-            <td><a href="/admin/sources/{{ s.id }}">{{ s.name }}</a></td>
-            <td>{{ s.source_type }}</td>
+            <td><a href="/admin/sources/{{ s.source.id }}">{{ s.source.name }}</a></td>
+            <td><span style="background: #e2e3e5; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.85rem;">{{ s.relationship_type }}</span></td>
+            <td>{{ s.source.source_type }}</td>
             <td>
-                {% if s.approval_status == 'approved' %}
-                <span class="healthy">{{ s.approval_status }}</span>
-                {% elif s.approval_status == 'pending_llm' or s.approval_status == 'awaiting_llm' %}
-                <span class="warning">{{ s.approval_status }}</span>
-                {% elif s.approval_status == 'rejected' %}
-                <span class="error">{{ s.approval_status }}</span>
+                {% if s.source.approval_status == 'approved' %}
+                <span class="healthy">{{ s.source.approval_status }}</span>
+                {% elif s.source.approval_status == 'pending_llm' or s.source.approval_status == 'awaiting_llm' %}
+                <span class="warning">{{ s.source.approval_status }}</span>
+                {% elif s.source.approval_status == 'rejected' %}
+                <span class="error">{{ s.source.approval_status }}</span>
                 {% else %}
-                <span>{{ s.approval_status }}</span>
+                <span>{{ s.source.approval_status }}</span>
                 {% endif %}
             </td>
             <td>
-                {% if s.active %}
+                {% if s.source.active %}
                 <span class="healthy">Yes</span>
                 {% else %}
                 <span class="error">No</span>
                 {% endif %}
             </td>
-            <td>{% if s.error_count > 0 %}<span class="error">{{ s.error_count }}</span>{% else %}0{% endif %}</td>
-            <td>{{ s.last_fetched.strftime('%Y-%m-%d %H:%M') if s.last_fetched else '—' }}</td>
-            <td>{{ s.item_count }}</td>
+            <td>{% if s.source.error_count > 0 %}<span class="error">{{ s.source.error_count }}</span>{% else %}0{% endif %}</td>
+            <td>{{ s.source.last_fetched.strftime('%Y-%m-%d %H:%M') if s.source.last_fetched else '—' }}</td>
+            <td>{{ s.source.item_count }}</td>
         </tr>
         {% endfor %}
     </tbody>

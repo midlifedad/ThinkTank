@@ -17,7 +17,7 @@
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Thinker</th>
+                <th>Associated Thinkers</th>
                 <th>Type</th>
                 <th>Status</th>
                 <th>Errors</th>
@@ -30,7 +30,7 @@
             {% for s in sources %}
             <tr>
                 <td><a href="/admin/sources/{{ s.id }}">{{ s.name }}</a></td>
-                <td><a href="/admin/thinkers/{{ s.thinker_id }}">{{ s.thinker_name }}</a></td>
+                <td>{{ s.thinker_names }}</td>
                 <td>{{ s.source_type }}</td>
                 <td>
                     {% if s.approval_status == 'approved' %}
