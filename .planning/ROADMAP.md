@@ -241,7 +241,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13
 
 Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 could theoretically run in parallel after Phase 8.
 
@@ -259,3 +259,24 @@ Note: Phase 11 depends on Phase 8 (not Phase 10), so Phases 9-10 and Phase 11 co
 | 10. Source Management | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
 | 11. Pipeline Control | v1.1 | Complete    | 2026-03-10 | 2026-03-10 |
 | 12. Agent Chat | 2/2 | Complete    | 2026-03-10 | 2026-03-10 |
+| 13. Episode Cataloging & Guest Detection | v1.2 | 0/3 | Planning Complete | — |
+
+### Phase 13: Efficient episode cataloging and thinker guest detection
+
+**Goal:** Restructure the content ingestion pipeline so episodes are first cataloged (metadata only) with status='cataloged', then selectively promoted to status='pending' for transcription based on thinker guest detection. Add YouTube channel support alongside the existing RSS pipeline. Save 85-95% of transcription costs by only transcribing episodes featuring tracked thinkers.
+**Requirements**: CATALOG-01, CATALOG-02, CATALOG-03, CATALOG-04, CATALOG-05, CATALOG-06, CATALOG-07, CATALOG-08, YOUTUBE-01, YOUTUBE-02, YOUTUBE-03, YOUTUBE-04, INTEGRATION-01
+**Depends on:** Phase 12
+**Success Criteria** (what must be TRUE):
+  1. fetch_podcast_feed creates Content rows with status='cataloged' instead of 'pending', and enqueues scan_episodes_for_thinkers instead of tag_content_thinkers
+  2. scan_episodes_for_thinkers promotes episodes with thinker name matches from 'cataloged' to 'pending', and leaves non-matching episodes as 'cataloged' permanently
+  3. Host-owned sources (where the source owner IS a tracked thinker) have ALL episodes promoted to 'pending' regardless of title matching
+  4. podcast:person XML tags are parsed as a high-confidence bonus signal for guest detection
+  5. YouTube channels can be added as sources, and fetch_youtube_channel creates cataloged Content rows using quota-efficient YouTube Data API calls
+  6. When a new thinker is approved, rescan_cataloged_for_thinker retroactively promotes matching cataloged episodes
+  7. End-to-end integration test proves 80%+ cost savings for guest-appearance sources
+**Plans:** 3 plans
+
+Plans:
+- [ ] 13-01-PLAN.md -- Core scan modules: podcast_person_parser, scan_episodes_for_thinkers handler, rescan_cataloged_for_thinker handler, unit + contract tests
+- [ ] 13-02-PLAN.md -- YouTube support: YouTube Data API client, fetch_youtube_channel handler, google-api-python-client dependency, unit + contract tests
+- [ ] 13-03-PLAN.md -- Pipeline wiring: modify fetch_podcast_feed, register handlers, LLM rescan trigger, admin YouTube source support, Alembic migration, integration tests

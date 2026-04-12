@@ -3,6 +3,32 @@
 **Defined:** 2026-03-08
 **Core Value:** Total capture of expert knowledge from every source where they've published, starting with long-form audio where thinkers are least polished and most revealing.
 
+## v1.2 Requirements
+
+Requirements for Episode Cataloging & Guest Detection. Phase 13.
+
+### Episode Cataloging
+
+- [ ] **CATALOG-01**: fetch_podcast_feed creates Content rows with status='cataloged' instead of 'pending', preventing automatic transcription of all episodes
+- [ ] **CATALOG-02**: scan_episodes_for_thinkers promotes cataloged episodes with thinker name matches to status='pending' for transcription
+- [ ] **CATALOG-03**: scan_episodes_for_thinkers leaves non-matching cataloged episodes permanently as 'cataloged' (preventing re-discovery while avoiding transcription cost)
+- [ ] **CATALOG-04**: Host-owned sources (where source owner IS a tracked thinker) have ALL episodes promoted to 'pending' regardless of title/description matching
+- [ ] **CATALOG-05**: podcast:person XML tags from Podcast 2.0 namespace are parsed as a high-confidence bonus signal (confidence=10) for guest detection
+- [ ] **CATALOG-06**: rescan_cataloged_for_thinker retroactively promotes cataloged episodes matching a newly-approved thinker's name in title
+- [ ] **CATALOG-07**: fetch_podcast_feed chains to scan_episodes_for_thinkers (replacing tag_content_thinkers) and passes raw RSS XML for podcast:person extraction
+- [ ] **CATALOG-08**: Thinker approval in LLM decisions triggers rescan_cataloged_for_thinker job automatically
+
+### YouTube Channel Support
+
+- [ ] **YOUTUBE-01**: YouTube Data API v3 client uses playlistItems.list (1 quota unit/page) NOT search.list (100 units/call) for quota efficiency
+- [ ] **YOUTUBE-02**: fetch_youtube_channel handler creates Content rows with status='cataloged' and applies duration, title pattern, and YouTube category filtering
+- [ ] **YOUTUBE-03**: YouTube channel videos are deduplicated via canonical URL normalization and content fingerprinting
+- [ ] **YOUTUBE-04**: Admin source form accepts source_type='youtube_channel' and force-refresh dispatches fetch_youtube_channel job
+
+### Integration
+
+- [ ] **INTEGRATION-01**: End-to-end pipeline proves 80%+ cost savings for guest-appearance sources (cataloged episodes not promoted unless thinker match found)
+
 ## v1.1 Requirements
 
 Requirements for Admin Control Panel milestone. Phases 8-12.
@@ -194,6 +220,9 @@ Explicitly excluded. Documented to prevent scope creep.
 | Agent chat: auto-healing/self-repair | Fail-safe principle; agent proposes, human executes |
 | Cron-style scheduling | Over-engineered for single-owner; frequency + toggle is sufficient |
 | Separate content management page | Too rare an action; content accessed via source/thinker detail pages |
+| Spotify show support | No structured guest credits; same signal as RSS title matching. Phase 14+ |
+| YouTube comment analysis | Too noisy, extra API quota cost. Title + description matching sufficient |
+| Auto-discovery of YouTube channels | Risk of fan/tribute channels. Manual addition safer |
 
 ## Traceability
 
@@ -295,6 +324,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHAT-03 | Phase 12 | Complete |
 | CHAT-04 | Phase 12 | Complete |
 | CHAT-05 | Phase 12 | Complete |
+| CATALOG-01 | Phase 13 | Pending |
+| CATALOG-02 | Phase 13 | Pending |
+| CATALOG-03 | Phase 13 | Pending |
+| CATALOG-04 | Phase 13 | Pending |
+| CATALOG-05 | Phase 13 | Pending |
+| CATALOG-06 | Phase 13 | Pending |
+| CATALOG-07 | Phase 13 | Pending |
+| CATALOG-08 | Phase 13 | Pending |
+| YOUTUBE-01 | Phase 13 | Pending |
+| YOUTUBE-02 | Phase 13 | Pending |
+| YOUTUBE-03 | Phase 13 | Pending |
+| YOUTUBE-04 | Phase 13 | Pending |
+| INTEGRATION-01 | Phase 13 | Pending |
 
 **v1.0 Coverage:**
 - v1.0 requirements: 64 total
@@ -306,6 +348,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Mapped to phases: 30
 - Unmapped: 0
 
+**v1.2 Coverage:**
+- v1.2 requirements: 13 total
+- Mapped to phases: 13
+- Unmapped: 0
+
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-09 after v1.1 roadmap creation (Phases 8-12)*
+*Last updated: 2026-04-12 after Phase 13 planning (v1.2 requirements added)*
