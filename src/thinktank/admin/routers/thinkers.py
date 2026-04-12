@@ -661,3 +661,40 @@ async def toggle_thinker_active(
         "partials/thinker_list.html",
         {"thinkers": thinkers, "success": f"Thinker '{thinker.name}' {status}."},
     )
+
+
+@router.post("/{thinker_id}/resubmit-approval")
+async def resubmit_approval(
+    request: Request,
+    thinker_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+):
+    """Re-submit a thinker for LLM approval (for stuck awaiting_llm thinkers)."""
+    result = await session.execute(select(Thinker).where(Thinker.id == thinker_id))
+    thinker = result.scalar_one_or_none()
+    if thinker is None:
+        thinkers = await _build_thinker_list(session)
+        return templates.TemplateResponse(
+            request,
+            "partials/thinker_list.html",
+            {"thinkers": thinkers, "error": "Thinker not found."},
+        )
+
+    # Reset status and create a fresh approval job
+    thinker.approval_status = "awaiting_llm"
+    job = Job(
+        id=uuid.uuid4(),
+        job_type="llm_approval_check",
+        payload={"entity_type": "thinker", "target_id": str(thinker.id), "review_type": "thinker_approval"},
+        status="pending",
+        priority=5,
+    )
+    session.add(job)
+    await session.commit()
+
+    thinkers = await _build_thinker_list(session)
+    return templates.TemplateResponse(
+        request,
+        "partials/thinker_list.html",
+        {"thinkers": thinkers, "success": f"LLM approval re-submitted for '{thinker.name}'."},
+    )
