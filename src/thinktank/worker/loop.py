@@ -149,7 +149,7 @@ async def worker_loop(
                 # No work available, back off
                 idle_count += 1
                 wait = min(
-                    settings.poll_interval * (settings.idle_backoff_multiplier ** idle_count),
+                    settings.poll_interval * (settings.idle_backoff_multiplier ** min(idle_count, 50)),
                     settings.max_idle_backoff,
                 )
                 await _interruptible_sleep(wait, shutdown_event)
