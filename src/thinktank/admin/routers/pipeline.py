@@ -189,7 +189,7 @@ async def job_detail(
     # Look up linked LLM review for llm_approval_check jobs
     llm_review = None
     if job.job_type == "llm_approval_check" and job.payload:
-        entity_id = job.payload.get("entity_id")
+        entity_id = job.payload.get("target_id") or job.payload.get("entity_id")
         review_type = job.payload.get("review_type")
         if entity_id and review_type:
             review_result = await session.execute(
