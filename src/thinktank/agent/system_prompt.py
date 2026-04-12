@@ -23,11 +23,17 @@ DATABASE SCHEMA SUMMARY:
    content_type, url, canonical_url (unique), content_fingerprint (unique), title,
    body_text (nullable), word_count, published_at, duration_seconds, show_name, host_name,
    thumbnail_url, transcription_method, status, error_message, discovered_at, processed_at
+   Status values: 'cataloged' (metadata only, awaiting thinker scan), 'pending' (approved for transcription),
+   'skipped' (filtered out), 'transcribing', 'done', 'error'
 
 4. jobs - Job queue entries for all pipeline work
    Columns: id (UUID PK), job_type, payload (JSONB), status, priority, attempts,
    max_attempts, error, error_category, last_error_at, worker_id, llm_review_id (FK->llm_reviews),
    scheduled_at, started_at, completed_at, created_at
+   Job types: fetch_podcast_feed, fetch_youtube_channel, scan_episodes_for_thinkers,
+   rescan_cataloged_for_thinker, tag_content_thinkers, process_content, discover_thinker,
+   scan_for_candidates, discover_guests_podcastindex, llm_approval_check,
+   refresh_due_sources, rollup_api_usage
 
 5. candidate_thinkers - Potential thinkers surfaced by cascade discovery
    Columns: id (UUID PK), name, normalized_name, appearance_count, first_seen_at,

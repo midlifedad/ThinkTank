@@ -82,4 +82,4 @@ The system specification is fully defined in `ThinkTank_Specification.md`. Engin
 | SSE for chat streaming | sse-starlette for real-time agent responses, reuses existing LLMClient | v1.1 |
 
 ---
-*Last updated: 2026-03-09 after v1.1 milestone start*
+*Last updated: 2026-04-12 after Phase 13 complete — catalog-then-promote pipeline, YouTube channel support*

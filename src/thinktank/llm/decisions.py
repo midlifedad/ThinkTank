@@ -133,6 +133,19 @@ async def apply_thinker_decision(
         )
         session.add(discover_job)
 
+        # Trigger retroactive scan of cataloged episodes for newly approved thinker
+        rescan_job = Job(
+            id=uuid.uuid4(),
+            job_type="rescan_cataloged_for_thinker",
+            payload={
+                "thinker_id": str(thinker_id),
+                "thinker_name": thinker.name,
+            },
+            priority=4,
+            status="pending",
+        )
+        session.add(rescan_job)
+
     await session.flush()
 
 
@@ -275,5 +288,18 @@ async def promote_candidate_to_thinker(
         status="pending",
     )
     session.add(discover_job)
+
+    # Trigger retroactive scan for promoted thinker
+    rescan_job = Job(
+        id=uuid.uuid4(),
+        job_type="rescan_cataloged_for_thinker",
+        payload={
+            "thinker_id": str(thinker.id),
+            "thinker_name": thinker.name,
+        },
+        priority=4,
+        status="pending",
+    )
+    session.add(rescan_job)
 
     return thinker

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:podcast="https://podcastindex.org/namespace/1.0">
+  <channel>
+    <title>Test Podcast with Person Tags</title>
+    <link>https://example.com/podcast</link>
+    <description>A test podcast for validating podcast:person parsing.</description>
+
+    <item>
+      <title>Episode 1: Deep Dive with Sam Harris</title>
+      <guid>ep-001</guid>
+      <description>A deep conversation with Sam Harris about consciousness.</description>
+      <podcast:person role="host" group="cast" href="https://example.com/host">Joe Rogan</podcast:person>
+      <podcast:person role="guest" group="cast" href="https://example.com/guest">Sam Harris</podcast:person>
+    </item>
+
+    <item>
+      <title>Episode 2: The Future of AI</title>
+      <guid>ep-002</guid>
+      <description>Exploring artificial intelligence with a special guest.</description>
+      <podcast:person role="guest" group="cast">Yuval Noah Harari</podcast:person>
+    </item>
+
+    <item>
+      <title>Episode 3: Solo Thoughts</title>
+      <guid>ep-003</guid>
+      <description>Solo episode with no guests tagged.</description>
+    </item>
+  </channel>
+</rss>
