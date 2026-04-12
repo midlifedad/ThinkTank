@@ -181,7 +181,7 @@ async def add_thinker(
     job = Job(
         id=uuid.uuid4(),
         job_type="llm_approval_check",
-        payload={"entity_type": "thinker", "entity_id": str(thinker.id), "review_type": "thinker_approval"},
+        payload={"entity_type": "thinker", "target_id": str(thinker.id), "review_type": "thinker_approval"},
         status="pending",
         priority=5,
     )
@@ -275,7 +275,7 @@ async def bulk_import_thinkers(
         job = Job(
             id=uuid.uuid4(),
             job_type="llm_approval_check",
-            payload={"entity_type": "thinker", "entity_id": str(thinker.id), "review_type": "thinker_approval"},
+            payload={"entity_type": "thinker", "target_id": str(thinker.id), "review_type": "thinker_approval"},
             status="pending",
             priority=5,
         )
@@ -350,7 +350,7 @@ async def promote_candidate(
     job = Job(
         id=uuid.uuid4(),
         job_type="llm_approval_check",
-        payload={"entity_type": "thinker", "entity_id": str(thinker.id), "review_type": "thinker_approval"},
+        payload={"entity_type": "thinker", "target_id": str(thinker.id), "review_type": "thinker_approval"},
         status="pending",
         priority=5,
     )
