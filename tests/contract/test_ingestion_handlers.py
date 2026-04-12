@@ -29,6 +29,7 @@ from tests.factories import (
     create_content,
     create_job,
     create_source,
+    create_source_thinker,
     create_thinker,
 )
 
@@ -100,9 +101,9 @@ class TestFetchPodcastFeedContract:
         assert source.last_fetched is not None
         assert source.item_count == 3
 
-        # Contract 3: tag_content_thinkers job enqueued with descriptions
+        # Contract 3: scan_episodes_for_thinkers job enqueued with descriptions
         result = await session.execute(
-            select(Job).where(Job.job_type == "tag_content_thinkers")
+            select(Job).where(Job.job_type == "scan_episodes_for_thinkers")
         )
         tag_jobs = result.scalars().all()
         assert len(tag_jobs) == 1
@@ -183,6 +184,9 @@ class TestTagContentThinkersContract:
         owner = await create_thinker(session, name="Contract Owner")
         guest = await create_thinker(session, name="Contract Guest")
         source = await create_source(session, thinker_id=owner.id)
+        await create_source_thinker(
+            session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
+        )
         content = await create_content(
             session,
             source_id=source.id,

@@ -84,9 +84,9 @@ async def test_basic_feed_poll(mock_client_cls: MagicMock, session: AsyncSession
     assert "The Future of Energy" in titles
     assert "Crypto Markets Q4 Review" in titles
 
-    # All should have correct source_owner_id
+    # Phase 13: source_owner_id is no longer set by fetch_podcast_feed
     for c in content_rows:
-        assert c.source_owner_id == thinker.id
+        assert c.source_owner_id is None
         assert c.content_type == "episode"
         assert c.show_name == "ThinkTank Test Podcast"
 
@@ -247,8 +247,8 @@ async def test_short_episodes_skipped(
     assert by_title["Quick Update"].status == "skipped"
     assert by_title["Short Bonus"].status == "skipped"
 
-    # 3600s episode should be pending
-    assert by_title["Full Episode"].status == "pending"
+    # 3600s episode should be cataloged (Phase 13: catalog-then-promote)
+    assert by_title["Full Episode"].status == "cataloged"
 
 
 @patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
@@ -287,7 +287,7 @@ async def test_skip_title_patterns(
     assert by_title["Season 3 Trailer"].status == "skipped"
     assert by_title["Best of 2025"].status == "skipped"
     assert by_title["Announcement: New Season"].status == "skipped"
-    assert by_title["Full Interview with Expert"].status == "pending"
+    assert by_title["Full Interview with Expert"].status == "cataloged"
 
 
 @patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
@@ -398,15 +398,15 @@ async def test_tag_job_enqueued_with_descriptions(
 
     await handle_fetch_podcast_feed(session, job)
 
-    # Find tag_content_thinkers job
+    # Phase 13: fetch_podcast_feed now chains to scan_episodes_for_thinkers
     result = await session.execute(
-        select(Job).where(Job.job_type == "tag_content_thinkers")
+        select(Job).where(Job.job_type == "scan_episodes_for_thinkers")
     )
-    tag_jobs = result.scalars().all()
-    assert len(tag_jobs) == 1
+    scan_jobs = result.scalars().all()
+    assert len(scan_jobs) == 1
 
-    tag_job = tag_jobs[0]
-    payload = tag_job.payload
+    scan_job = scan_jobs[0]
+    payload = scan_job.payload
 
     assert "content_ids" in payload
     assert "source_id" in payload
@@ -462,9 +462,9 @@ async def test_per_source_duration_override(
     content_rows = result.scalars().all()
     by_title = {c.title: c for c in content_rows}
 
-    # With override of 200s, the 300s episode is NOT skipped
-    assert by_title["Short Bonus"].status == "pending"
+    # With override of 200s, the 300s episode is NOT skipped (cataloged instead)
+    assert by_title["Short Bonus"].status == "cataloged"
     # 120s is still below override
     assert by_title["Quick Update"].status == "skipped"
-    # 3600s still pending
-    assert by_title["Full Episode"].status == "pending"
+    # 3600s cataloged (Phase 13: catalog-then-promote)
+    assert by_title["Full Episode"].status == "cataloged"

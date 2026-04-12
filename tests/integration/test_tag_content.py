@@ -19,6 +19,7 @@ from tests.factories import (
     create_content,
     create_job,
     create_source,
+    create_source_thinker,
     create_thinker,
 )
 
@@ -29,6 +30,9 @@ async def test_source_owner_tagged_primary(session: AsyncSession):
     """Source owner is tagged as role='primary' with confidence=10."""
     owner = await create_thinker(session, name="Alice Owner")
     source = await create_source(session, thinker_id=owner.id)
+    await create_source_thinker(
+        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
+    )
     content = await create_content(
         session,
         source_id=source.id,
@@ -65,6 +69,9 @@ async def test_title_match_tagged_guest(session: AsyncSession):
     owner = await create_thinker(session, name="Podcast Host")
     guest = await create_thinker(session, name="John Smith")
     source = await create_source(session, thinker_id=owner.id)
+    await create_source_thinker(
+        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
+    )
     content = await create_content(
         session,
         source_id=source.id,
@@ -100,6 +107,9 @@ async def test_description_match_tagged_guest(session: AsyncSession):
     owner = await create_thinker(session, name="Podcast Host")
     guest = await create_thinker(session, name="Jane Doe")
     source = await create_source(session, thinker_id=owner.id)
+    await create_source_thinker(
+        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
+    )
     content = await create_content(
         session,
         source_id=source.id,
@@ -137,6 +147,9 @@ async def test_no_match_only_primary(session: AsyncSession):
     owner = await create_thinker(session, name="Solo Host")
     other = await create_thinker(session, name="Unrelated Thinker")
     source = await create_source(session, thinker_id=owner.id)
+    await create_source_thinker(
+        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
+    )
     content = await create_content(
         session,
         source_id=source.id,
@@ -173,6 +186,9 @@ async def test_multiple_thinkers_matched(session: AsyncSession):
     guest1 = await create_thinker(session, name="Alice Walker")
     guest2 = await create_thinker(session, name="Bob Martin")
     source = await create_source(session, thinker_id=owner.id)
+    await create_source_thinker(
+        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
+    )
     content = await create_content(
         session,
         source_id=source.id,
@@ -212,6 +228,9 @@ async def test_skipped_content_not_attributed(session: AsyncSession):
     """Content with status='skipped' -> no ContentThinker rows created."""
     owner = await create_thinker(session, name="Host Name")
     source = await create_source(session, thinker_id=owner.id)
+    await create_source_thinker(
+        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
+    )
     content = await create_content(
         session,
         source_id=source.id,
@@ -243,6 +262,9 @@ async def test_duplicate_attribution_prevented(session: AsyncSession):
     owner = await create_thinker(session, name="Repeat Host")
     guest = await create_thinker(session, name="Repeat Guest")
     source = await create_source(session, thinker_id=owner.id)
+    await create_source_thinker(
+        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
+    )
     content = await create_content(
         session,
         source_id=source.id,

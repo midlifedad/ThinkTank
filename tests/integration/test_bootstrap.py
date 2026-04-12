@@ -176,7 +176,7 @@ class TestSeedThinkers:
         thinker_ids = {str(t.id) for t in thinkers}
         for job in jobs:
             assert job.payload["review_type"] == "thinker_approval"
-            assert job.payload["thinker_id"] in thinker_ids
+            assert job.payload["target_id"] in thinker_ids
 
     async def test_seed_thinkers_idempotent(self, session: AsyncSession):
         """Running seed_thinkers twice produces no duplicate thinkers or jobs."""

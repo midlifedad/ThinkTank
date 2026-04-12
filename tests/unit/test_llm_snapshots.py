@@ -118,16 +118,16 @@ class TestSourceApprovalContext:
         source_mock.approval_status = "pending_llm"
         source_mock.item_count = 10
         source_mock.error_count = 0
-        source_mock.thinker = MagicMock()
-        source_mock.thinker.name = "Test Thinker"
-        source_mock.thinker.slug = "test-thinker"
+        source_mock.source_thinkers = []
 
-        # First execute call returns the source, second returns episodes
+        # First execute: source with selectinload, second: episodes, third: thinker junction
         source_result = _mock_execute_returning(source_mock)
         episode_result = MagicMock()
         episode_result.scalars.return_value.all.return_value = []
+        thinker_result = MagicMock()
+        thinker_result.all.return_value = []
         mock_session.execute = AsyncMock(
-            side_effect=[source_result, episode_result]
+            side_effect=[source_result, episode_result, thinker_result]
         )
 
         result = await build_source_approval_context(mock_session, source_id)

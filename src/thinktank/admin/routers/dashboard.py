@@ -330,41 +330,21 @@ async def activity_feed_partial(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ):
-    """HTML fragment: last 50 system actions from jobs and LLM reviews."""
+    """HTML fragment: last 50 recent jobs sorted by activity time."""
+    from src.thinktank.models.job import Job
+
     result = await session.execute(
-        text(
-            "(SELECT 'job_completed' AS action_type, job_type AS detail, "
-            "  completed_at AS action_time "
-            "  FROM jobs WHERE status = 'complete' AND completed_at IS NOT NULL "
-            "  ORDER BY completed_at DESC LIMIT 20) "
-            "UNION ALL "
-            "(SELECT 'job_failed' AS action_type, job_type AS detail, "
-            "  last_error_at AS action_time "
-            "  FROM jobs WHERE status = 'failed' AND last_error_at IS NOT NULL "
-            "  ORDER BY last_error_at DESC LIMIT 15) "
-            "UNION ALL "
-            "(SELECT 'llm_decision' AS action_type, "
-            "  review_type || ': ' || COALESCE(decision, 'pending') AS detail, "
-            "  created_at AS action_time "
-            "  FROM llm_reviews WHERE decision IS NOT NULL "
-            "  ORDER BY created_at DESC LIMIT 15) "
-            "ORDER BY action_time DESC LIMIT 50"
-        )
+        select(Job)
+        .where(Job.status != "pending")
+        .order_by(Job.created_at.desc())
+        .limit(50)
     )
-    rows = result.fetchall()
-    activities = [
-        {
-            "action_type": r[0],
-            "detail": r[1],
-            "action_time": r[2],
-        }
-        for r in rows
-    ]
+    jobs = result.scalars().all()
 
     return templates.TemplateResponse(
         request,
         "partials/activity_feed.html",
-        {"activities": activities},
+        {"jobs": jobs},
     )
 
 
