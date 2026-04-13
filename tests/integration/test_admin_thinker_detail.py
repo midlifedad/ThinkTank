@@ -11,8 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tests.factories import (
     create_candidate_thinker,
     create_content,
+    create_content_thinker,
     create_llm_review,
     create_source,
+    create_source_thinker,
     create_thinker,
     create_thinker_category,
     create_category,
@@ -95,17 +97,23 @@ class TestThinkerSources:
     ):
         """GET sources partial with seeded sources shows both source names."""
         thinker = await create_thinker(session, name="Sourced", slug="sourced")
-        await create_source(
+        source_a = await create_source(
             session,
             thinker_id=thinker.id,
             name="Feed Alpha",
             url="https://example.com/alpha.xml",
         )
-        await create_source(
+        await create_source_thinker(
+            session, source_id=source_a.id, thinker_id=thinker.id, relationship_type="host"
+        )
+        source_b = await create_source(
             session,
             thinker_id=thinker.id,
             name="Feed Beta",
             url="https://example.com/beta.xml",
+        )
+        await create_source_thinker(
+            session, source_id=source_b.id, thinker_id=thinker.id, relationship_type="host"
         )
         await session.commit()
 
@@ -142,17 +150,23 @@ class TestThinkerContent:
             name="Content Source",
             url="https://example.com/contentfeed.xml",
         )
-        await create_content(
+        content_a = await create_content(
             session,
             source_id=source.id,
             source_owner_id=thinker.id,
             title="Episode Alpha",
         )
-        await create_content(
+        await create_content_thinker(
+            session, content_id=content_a.id, thinker_id=thinker.id, role="primary", confidence=10
+        )
+        content_b = await create_content(
             session,
             source_id=source.id,
             source_owner_id=thinker.id,
             title="Episode Beta",
+        )
+        await create_content_thinker(
+            session, content_id=content_b.id, thinker_id=thinker.id, role="primary", confidence=10
         )
         await session.commit()
 
@@ -219,7 +233,7 @@ class TestDiscoveryTrigger:
         from src.thinktank.models.job import Job
 
         result = await session.execute(
-            select(Job).where(Job.job_type == "discover_guests_podcastindex")
+            select(Job).where(Job.job_type == "discover_thinker")
         )
         job = result.scalar_one_or_none()
         assert job is not None
@@ -362,7 +376,7 @@ class TestCandidatePromote:
         )
         job = job_result.scalar_one_or_none()
         assert job is not None
-        assert job.payload["entity_id"] == str(thinker.id)
+        assert job.payload["target_id"] == str(thinker.id)
         assert job.payload["entity_type"] == "thinker"
 
     async def test_promote_returns_updated_queue(

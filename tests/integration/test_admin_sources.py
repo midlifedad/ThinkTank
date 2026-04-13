@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.factories import (
     create_source,
+    create_source_thinker,
     create_thinker,
 )
 
@@ -125,17 +126,23 @@ class TestSourceList:
         thinker_b = await create_thinker(
             session, name="Thinker B Src", slug="thinker-b-src"
         )
-        await create_source(
+        source_a = await create_source(
             session,
             thinker_id=thinker_a.id,
             name="A Source",
             url="https://example.com/a-source.xml",
         )
-        await create_source(
+        await create_source_thinker(
+            session, source_id=source_a.id, thinker_id=thinker_a.id, relationship_type="host"
+        )
+        source_b = await create_source(
             session,
             thinker_id=thinker_b.id,
             name="B Source",
             url="https://example.com/b-source.xml",
+        )
+        await create_source_thinker(
+            session, source_id=source_b.id, thinker_id=thinker_b.id, relationship_type="host"
         )
         await session.commit()
 
@@ -178,7 +185,14 @@ class TestSourceAdd:
         source = result.scalar_one_or_none()
         assert source is not None
         assert source.approval_status == "pending_llm"
-        assert source.thinker_id == thinker.id
+        # thinker_id is no longer set on source; junction row created instead
+        from src.thinktank.models.source import SourceThinker
+        junc_result = await session.execute(
+            select(SourceThinker).where(SourceThinker.source_id == source.id)
+        )
+        junc = junc_result.scalar_one_or_none()
+        assert junc is not None
+        assert junc.thinker_id == thinker.id
 
     async def test_add_returns_success_message(
         self, admin_client, session: AsyncSession

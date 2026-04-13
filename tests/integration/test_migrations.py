@@ -1,7 +1,7 @@
 """Integration tests for Alembic migrations against real PostgreSQL.
 
 Tests verify:
-1. alembic upgrade head creates all 14 tables
+1. alembic upgrade head creates all 16 tables
 2. alembic downgrade base drops all tables cleanly
 3. Advisory lock is acquired during migration (verified via successful execution)
 
@@ -105,6 +105,8 @@ async def test_upgrade_head_creates_all_tables():
         "jobs",
         "llm_reviews",
         "rate_limit_usage",
+        "source_categories",
+        "source_thinkers",
         "sources",
         "system_config",
         "thinker_categories",
@@ -121,7 +123,7 @@ async def test_downgrade_base_drops_tables():
     run_alembic("upgrade")
 
     tables = await get_table_names(TEST_DATABASE_URL)
-    assert len(tables) == 14
+    assert len(tables) == 16
 
     run_alembic("downgrade")
 
@@ -140,7 +142,7 @@ async def test_advisory_lock_in_migration():
     run_alembic("upgrade")
 
     tables = await get_table_names(TEST_DATABASE_URL)
-    assert len(tables) == 14
+    assert len(tables) == 16
 
     run_alembic("downgrade")
 

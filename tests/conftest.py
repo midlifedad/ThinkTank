@@ -25,7 +25,11 @@ async def engine():
 
     Creates all tables at start, cleans up at end.
     """
-    eng = create_async_engine(TEST_DATABASE_URL, echo=False)
+    eng = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        connect_args={"server_settings": {"timezone": "UTC"}},
+    )
 
     # Create all tables from models (with pg_trgm extension for trigram similarity)
     async with eng.begin() as conn:

@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.thinktank.handlers.discover_guests_podcastindex import (
     handle_discover_guests_podcastindex,
 )
-from src.thinktank.models.source import Source
+from src.thinktank.models.source import Source, SourceThinker
 from tests.factories import create_job, create_source, create_thinker
 
 pytestmark = pytest.mark.anyio
@@ -63,16 +63,21 @@ async def test_podcastindex_registers_source(session: AsyncSession):
     ):
         await handle_discover_guests_podcastindex(session, job)
 
+    # Source should exist with pending_llm status (thinker_id no longer set on source)
     result = await session.execute(
-        select(Source).where(
-            Source.thinker_id == thinker.id,
-            Source.approval_status == "pending_llm",
-        )
+        select(Source).where(Source.approval_status == "pending_llm")
     )
     sources = result.scalars().all()
     assert len(sources) == 1
     assert sources[0].name == "Science Talk"
     assert sources[0].approval_status == "pending_llm"
+
+    # Verify junction row links source to thinker
+    junc_result = await session.execute(
+        select(SourceThinker).where(SourceThinker.source_id == sources[0].id)
+    )
+    junc = junc_result.scalar_one()
+    assert junc.thinker_id == thinker.id
 
 
 async def test_podcastindex_skips_existing(session: AsyncSession):

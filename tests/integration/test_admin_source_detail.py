@@ -11,6 +11,7 @@ from tests.factories import (
     create_content,
     create_job,
     create_source,
+    create_source_thinker,
     create_thinker,
 )
 
@@ -51,6 +52,9 @@ class TestSourceDetail:
             thinker_id=thinker.id,
             name="Detail Source Feed",
             url="https://example.com/detail-feed.xml",
+        )
+        await create_source_thinker(
+            session, source_id=source.id, thinker_id=thinker.id, relationship_type="host"
         )
         await session.commit()
 

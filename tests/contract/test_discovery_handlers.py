@@ -18,7 +18,7 @@ from src.thinktank.handlers.discover_guests_podcastindex import (
 )
 from src.thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
 from src.thinktank.models.candidate import CandidateThinker
-from src.thinktank.models.source import Source
+from src.thinktank.models.source import Source, SourceThinker
 from tests.factories import (
     create_content,
     create_job,
@@ -110,11 +110,18 @@ class TestDiscoverGuestsPodcastindexContract:
         )
         assert source_count == 1
 
-        # Contract: Source has correct approval_status and thinker link
+        # Contract: Source has correct approval_status and junction link
         result = await session.execute(
             select(Source).where(Source.approval_status == "pending_llm")
         )
         source = result.scalar_one()
         assert source.approval_status == "pending_llm"
-        assert source.thinker_id == thinker.id
+        assert source.thinker_id is None  # thinker_id deprecated; use junction
         assert source.name == "Tech Insights Podcast"
+
+        # Verify junction row links source to thinker
+        junc_result = await session.execute(
+            select(SourceThinker).where(SourceThinker.source_id == source.id)
+        )
+        junc = junc_result.scalar_one()
+        assert junc.thinker_id == thinker.id
