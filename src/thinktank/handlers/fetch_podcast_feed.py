@@ -125,7 +125,7 @@ async def handle_fetch_podcast_feed(
     )
 
     # g. Fetch the RSS feed
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         response = await client.get(source.url, timeout=60.0)
         response.raise_for_status()
 
