@@ -77,7 +77,23 @@ async def handle_discover_guests_podcastindex(
         existing = await session.execute(
             select(Source).where(Source.url == normalized)
         )
-        if existing.scalar_one_or_none() is not None:
+        existing_source = existing.scalar_one_or_none()
+
+        if existing_source is not None:
+            # Source exists — ensure junction row links it to this thinker
+            existing_junction = await session.execute(
+                select(SourceThinker).where(
+                    SourceThinker.source_id == existing_source.id,
+                    SourceThinker.thinker_id == thinker.id,
+                )
+            )
+            if existing_junction.scalar_one_or_none() is None:
+                junction = SourceThinker(
+                    source_id=existing_source.id,
+                    thinker_id=thinker.id,
+                    relationship_type="guest_appearance",
+                )
+                session.add(junction)
             continue
 
         source = Source(
