@@ -5,7 +5,7 @@ for queue depth, error log, source health, GPU status, rate limits, cost trackin
 health summary, kill switch, activity feed, and pending approvals.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select, text
@@ -13,6 +13,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.thinktank.models.config_table import SystemConfig
 from thinktank.admin.dependencies import get_session, get_templates
+
+
+def _utcnow() -> datetime:
+    """Timezone-naive UTC now, matching TIMESTAMP WITHOUT TIME ZONE columns.
+
+    Mirrors the helper in ``thinktank.admin.routers.pipeline``. Python 3.12
+    deprecates ``datetime.utcnow()`` in favor of an explicit timezone-aware
+    ``datetime.now(UTC)``; the database stores naive timestamps so we strip
+    the tzinfo after capturing UTC.
+    """
+    return datetime.now(UTC).replace(tzinfo=None)
 
 router = APIRouter(prefix="/admin", tags=["dashboard"])
 templates = get_templates()
@@ -298,14 +309,14 @@ async def kill_switch_toggle(
             new_val = not bool(current)
         config.value = new_val
         config.set_by = "admin"
-        config.updated_at = datetime.utcnow()
+        config.updated_at = _utcnow()
     else:
         # Create with value False (turning off)
         config = SystemConfig(
             key="workers_active",
             value=False,
             set_by="admin",
-            updated_at=datetime.utcnow(),
+            updated_at=_utcnow(),
         )
         session.add(config)
 
