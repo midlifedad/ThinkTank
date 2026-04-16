@@ -14,6 +14,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.thinktank.models.candidate import CandidateThinker
 from src.thinktank.models.category import Category, ThinkerCategory
@@ -53,9 +54,16 @@ async def _build_thinker_list(
         .subquery()
     )
 
-    # Main query
-    stmt = select(Thinker, source_count_sq.c.source_count).outerjoin(
-        source_count_sq, Thinker.id == source_count_sq.c.thinker_id
+    # Main query. Eager-load categories -> category to avoid N+1 queries when
+    # rendering the list: each thinker no longer triggers a SELECT per category.
+    # ``populate_existing=True`` refreshes any session-resident rows (e.g.
+    # ThinkerCategory objects inserted by edit_thinker() before this call) so
+    # the nested .category relationship is guaranteed loaded.
+    stmt = (
+        select(Thinker, source_count_sq.c.source_count)
+        .outerjoin(source_count_sq, Thinker.id == source_count_sq.c.thinker_id)
+        .options(selectinload(Thinker.categories).selectinload(ThinkerCategory.category))
+        .execution_options(populate_existing=True)
     )
 
     # Apply filters
@@ -75,15 +83,8 @@ async def _build_thinker_list(
 
     thinkers = []
     for thinker, source_count in rows:
-        # Build category names from the selectin-loaded relationship
-        category_names = []
-        for tc in thinker.categories:
-            cat_result = await session.execute(
-                select(Category.name).where(Category.id == tc.category_id)
-            )
-            cat_name = cat_result.scalar_one_or_none()
-            if cat_name:
-                category_names.append(cat_name)
+        # Category names are eager-loaded; no per-row SELECT required.
+        category_names = [tc.category.name for tc in thinker.categories if tc.category]
 
         thinkers.append({
             "id": str(thinker.id),

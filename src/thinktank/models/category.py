@@ -61,6 +61,9 @@ class ThinkerCategory(Base):
     relevance: Mapped[int] = mapped_column(sa.SmallInteger)
     added_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
 
+    # Relationship for eager-loading category names without N+1 queries.
+    category: Mapped["Category"] = relationship()
+
     def __repr__(self) -> str:
         return f"<ThinkerCategory(thinker={self.thinker_id}, cat={self.category_id})>"
 
