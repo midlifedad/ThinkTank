@@ -6,7 +6,7 @@
             <th>Pending</th>
             <th>Running</th>
             <th>Failed</th>
-            <th>Completed</th>
+            <th>Done</th>
         </tr>
     </thead>
     <tbody>
@@ -16,7 +16,7 @@
             <td>{{ statuses.get('pending', 0) }}</td>
             <td>{{ statuses.get('running', 0) }}</td>
             <td>{{ statuses.get('failed', 0) }}</td>
-            <td>{{ statuses.get('completed', 0) }}</td>
+            <td>{{ statuses.get('done', 0) + statuses.get('completed', 0) }}</td>
         </tr>
         {% endfor %}
     </tbody>

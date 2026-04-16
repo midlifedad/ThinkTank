@@ -13,16 +13,14 @@
         <tr>
             <td>{{ ep.title }}</td>
             <td>
-                {% if ep.status == 'completed' %}
+                {% if ep.status in HEALTHY_CONTENT_STATUSES %}
                 <span class="healthy">{{ ep.status }}</span>
-                {% elif ep.status == 'pending' %}
+                {% elif ep.status in WARNING_CONTENT_STATUSES %}
                 <span class="warning">{{ ep.status }}</span>
-                {% elif ep.status == 'failed' %}
+                {% elif ep.status in ERROR_CONTENT_STATUSES %}
                 <span class="error">{{ ep.status }}</span>
-                {% elif ep.status == 'skipped' %}
-                <span style="color: #999;">{{ ep.status }}</span>
                 {% else %}
-                {{ ep.status }}
+                <span>{{ ep.status }}</span>
                 {% endif %}
             </td>
             <td>{{ ep.published_at.strftime('%Y-%m-%d') if ep.published_at else '—' }}</td>
