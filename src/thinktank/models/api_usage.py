@@ -23,7 +23,7 @@ class ApiUsage(Base):
     id: Mapped[uuid_pk]
     api_name: Mapped[str] = mapped_column(sa.Text)
     endpoint: Mapped[str] = mapped_column(sa.Text)
-    period_start: Mapped[datetime]
+    period_start: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True))
     call_count: Mapped[int] = mapped_column(sa.Integer)
     units_consumed: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
     estimated_cost_usd: Mapped[Optional[float]] = mapped_column(

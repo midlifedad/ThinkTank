@@ -59,7 +59,9 @@ class ThinkerCategory(Base):
         primary_key=True,
     )
     relevance: Mapped[int] = mapped_column(sa.SmallInteger)
-    added_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    added_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
 
     # Relationship for eager-loading category names without N+1 queries.
     category: Mapped["Category"] = relationship()
@@ -85,7 +87,9 @@ class SourceCategory(Base):
         primary_key=True,
     )
     relevance: Mapped[int] = mapped_column(sa.SmallInteger)
-    added_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    added_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
 
     def __repr__(self) -> str:
         return f"<SourceCategory(source={self.source_id}, cat={self.category_id})>"

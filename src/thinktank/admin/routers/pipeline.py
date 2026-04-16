@@ -61,8 +61,8 @@ PAGE_SIZE = 25
 
 
 def _utcnow() -> datetime:
-    """Timezone-naive UTC now, matching TIMESTAMP WITHOUT TIME ZONE columns."""
-    return datetime.now(UTC).replace(tzinfo=None)
+    """Timezone-aware UTC now, matching TIMESTAMPTZ columns (migration 007)."""
+    return datetime.now(UTC)
 
 
 @router.get("/")

@@ -29,12 +29,16 @@ class LLMReview(Base):
     modifications: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     flagged_items: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     overridden_by: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    overridden_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    overridden_at: Mapped[Optional[datetime]] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
     override_reasoning: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
     model: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
     tokens_used: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
     duration_ms: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    created_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
 
     def __repr__(self) -> str:
         return f"<LLMReview(type={self.review_type!r}, decision={self.decision!r})>"

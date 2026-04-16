@@ -19,12 +19,11 @@ from thinktank.queue.retry import calculate_backoff, get_max_attempts
 
 
 def _now() -> datetime:
-    """Return current UTC time as timezone-naive datetime.
+    """Return current UTC time as timezone-aware datetime.
 
-    Models use TIMESTAMP WITHOUT TIME ZONE columns, so timestamps
-    must be timezone-naive to avoid asyncpg type mismatch errors.
+    DATA-REVIEW H4 / migration 007: timestamp columns are TIMESTAMPTZ.
     """
-    return datetime.now(UTC).replace(tzinfo=None)
+    return datetime.now(UTC)
 
 
 async def claim_job(

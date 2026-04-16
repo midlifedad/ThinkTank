@@ -33,12 +33,12 @@ from thinktank.models import (
 
 
 def _now() -> datetime:
-    """Return current UTC time as timezone-naive datetime.
+    """Return current UTC time as timezone-aware datetime.
 
-    Models use TIMESTAMP WITHOUT TIME ZONE columns, so factory timestamps
-    must be timezone-naive to avoid asyncpg type mismatch errors.
+    DATA-REVIEW H4: every timestamp column is TIMESTAMPTZ after
+    migration 007, so factory timestamps must be aware (tzinfo=UTC).
     """
-    return datetime.now(UTC).replace(tzinfo=None)
+    return datetime.now(UTC)
 
 
 def _hex8() -> str:

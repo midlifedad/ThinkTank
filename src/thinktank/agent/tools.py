@@ -304,7 +304,7 @@ async def _action_toggle_kill_switch(session: AsyncSession) -> dict:
     if row:
         row.value = new_value
         row.set_by = "chat_agent"
-        row.updated_at = datetime.now(UTC).replace(tzinfo=None)
+        row.updated_at = datetime.now(UTC)
     else:
         config = SystemConfig(
             key="workers_active",
@@ -333,7 +333,7 @@ async def _action_update_config(details: dict, session: AsyncSession) -> dict:
     if row:
         row.value = value
         row.set_by = "chat_agent"
-        row.updated_at = datetime.now(UTC).replace(tzinfo=None)
+        row.updated_at = datetime.now(UTC)
     else:
         config = SystemConfig(
             key=key,
