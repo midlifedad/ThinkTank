@@ -49,7 +49,7 @@ class CandidateThinker(Base):
         sa.DateTime(timezone=True), nullable=True
     )
     thinker_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        sa.ForeignKey("thinkers.id"),
+        sa.ForeignKey("thinkers.id", ondelete="SET NULL"),
         nullable=True,
     )
 

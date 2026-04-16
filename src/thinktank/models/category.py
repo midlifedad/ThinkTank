@@ -51,11 +51,11 @@ class ThinkerCategory(Base):
     __tablename__ = "thinker_categories"
 
     thinker_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("thinkers.id"),
+        sa.ForeignKey("thinkers.id", ondelete="CASCADE"),
         primary_key=True,
     )
     category_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("categories.id"),
+        sa.ForeignKey("categories.id", ondelete="CASCADE"),
         primary_key=True,
     )
     relevance: Mapped[int] = mapped_column(sa.SmallInteger)
@@ -79,11 +79,11 @@ class SourceCategory(Base):
     __tablename__ = "source_categories"
 
     source_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("sources.id"),
+        sa.ForeignKey("sources.id", ondelete="CASCADE"),
         primary_key=True,
     )
     category_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("categories.id"),
+        sa.ForeignKey("categories.id", ondelete="CASCADE"),
         primary_key=True,
     )
     relevance: Mapped[int] = mapped_column(sa.SmallInteger)

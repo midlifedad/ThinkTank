@@ -257,7 +257,7 @@ class TestActivityFeedPartial:
         await create_job(
             session,
             job_type="fetch_podcast_feed",
-            status="complete",
+            status="done",
             completed_at=datetime.now(UTC),
         )
         await session.commit()

@@ -12,6 +12,16 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from thinktank.models.base import Base, uuid_pk
+from thinktank.models.constants import ALLOWED_JOB_STATUSES
+
+
+def _job_status_check() -> sa.CheckConstraint:
+    """CHECK constraint for Job.status (DATA-REVIEW H3)."""
+    values = ", ".join(f"'{s}'" for s in ALLOWED_JOB_STATUSES)
+    return sa.CheckConstraint(
+        f"status IN ({values})",
+        name="ck_job_status",
+    )
 
 
 class Job(Base):
@@ -20,6 +30,7 @@ class Job(Base):
     __tablename__ = "jobs"
     __table_args__ = (
         sa.Index("ix_jobs_claim", "status", "priority", "scheduled_at"),
+        _job_status_check(),
     )
 
     id: Mapped[uuid_pk]

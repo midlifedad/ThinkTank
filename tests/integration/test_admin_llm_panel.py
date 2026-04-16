@@ -201,9 +201,11 @@ class TestOverride:
         )
         assert response.status_code == 200
 
-        # Verify thinker was updated
+        # Verify thinker was updated. Form value "approve" maps to canonical
+        # "approved" (see override route; raw form values were writing invalid
+        # status pre-Phase-4).
         await session.refresh(thinker)
-        assert thinker.approval_status == "approve"
+        assert thinker.approval_status == "approved"
 
     async def test_override_applies_to_source(self, admin_client, session: AsyncSession):
         thinker = await create_thinker(session)
@@ -229,7 +231,7 @@ class TestOverride:
         assert response.status_code == 200
 
         await session.refresh(source)
-        assert source.approval_status == "approve"
+        assert source.approval_status == "approved"
 
     async def test_override_nonexistent_review(self, admin_client):
         fake_id = uuid.uuid4()
