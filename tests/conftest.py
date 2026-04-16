@@ -115,3 +115,39 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 
     # Restore cache
     get_settings.cache_clear()
+
+
+# Shared admin-auth test fixtures.
+#
+# ADMIN-REVIEW CR-01 gates every non-public admin route behind
+# ``require_admin``, and ADMIN-REVIEW CR-02 follow-up gates the
+# ``PUT /api/config/{key}`` write endpoint behind the same dependency.
+# Tests that exercise those gated routes need a real admin token seeded
+# in system_config and a convenience header dict to send. These live at
+# the top level so both integration and contract suites can use them.
+_ADMIN_TEST_TOKEN = "test-admin-token-abc123"
+
+
+@pytest.fixture
+async def seeded_admin_token(session) -> str:
+    """Seed ``secret_admin_api_token`` into system_config and return the raw value.
+
+    Tests that need to authenticate against real admin dependencies
+    request this fixture plus (for API calls) ``authed_admin_headers``.
+    """
+    from tests.factories import create_system_config
+
+    await create_system_config(
+        session,
+        key="secret_admin_api_token",
+        value=_ADMIN_TEST_TOKEN,
+        set_by="test",
+    )
+    await session.commit()
+    return _ADMIN_TEST_TOKEN
+
+
+@pytest.fixture
+async def authed_admin_headers(seeded_admin_token) -> dict[str, str]:
+    """Return an ``Authorization: Bearer <token>`` header for admin-gated routes."""
+    return {"Authorization": f"Bearer {seeded_admin_token}"}
