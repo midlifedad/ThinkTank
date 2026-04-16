@@ -1,14 +1,14 @@
 """RSS/Atom feed parsing wrapper around feedparser.
 
 Pure function (no async, no DB). Calls parse_duration() for itunes_duration.
-Converts published_parsed to timezone-naive datetime.
+Converts published_parsed to timezone-aware UTC datetime.
 Extracts URL from enclosure href if present, falls back to entry.link.
 Raises ValueError for truly broken feeds (SAXParseException bozo).
 Ignores benign bozo exceptions (CharacterEncodingOverride).
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from xml.sax import SAXParseException
 
 import feedparser
@@ -61,11 +61,13 @@ def parse_feed(xml_content: str) -> list[FeedEntry]:
         if enclosures:
             url = enclosures[0].get("href", url)
 
-        # Published date: convert time.struct_time to timezone-naive datetime
+        # Published date: feedparser's published_parsed is UTC time.struct_time
+        # (normalized from whatever timezone the feed declared). We attach
+        # tzinfo=UTC so downstream TIMESTAMPTZ columns receive aware datetimes.
         published_at: datetime | None = None
         if entry.get("published_parsed"):
             try:
-                published_at = datetime(*entry.published_parsed[:6])
+                published_at = datetime(*entry.published_parsed[:6], tzinfo=UTC)
             except (TypeError, ValueError):
                 published_at = None
 

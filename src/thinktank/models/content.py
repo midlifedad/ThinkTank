@@ -38,7 +38,9 @@ class Content(Base):
     title: Mapped[str] = mapped_column(sa.Text)
     body_text: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
     word_count: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
-    published_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    published_at: Mapped[Optional[datetime]] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
     duration_seconds: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
     show_name: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
     host_name: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
@@ -46,8 +48,12 @@ class Content(Base):
     transcription_method: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
     status: Mapped[str] = mapped_column(sa.Text, server_default="pending")
     error_message: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    discovered_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
-    processed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    discovered_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
+    processed_at: Mapped[Optional[datetime]] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
 
     # Relationships
     source: Mapped["Source"] = relationship(back_populates="content")
@@ -79,7 +85,9 @@ class ContentThinker(Base):
     )
     role: Mapped[str] = mapped_column(sa.Text)
     confidence: Mapped[int] = mapped_column(sa.SmallInteger)
-    added_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    added_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
 
     # Relationships
     content: Mapped["Content"] = relationship(back_populates="content_thinkers")

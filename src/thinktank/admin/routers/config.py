@@ -99,7 +99,7 @@ async def save_rate_limits(
         "anthropic": max(1, limit_anthropic),
     }
 
-    now = datetime.now(UTC).replace(tzinfo=None)
+    now = datetime.now(UTC)
 
     # Upsert rate_limits row
     result = await session.execute(
@@ -166,7 +166,7 @@ async def save_system_settings(
         "max_candidates_per_day": max(1, max_candidates_per_day),
     }
 
-    now = datetime.now(UTC).replace(tzinfo=None)
+    now = datetime.now(UTC)
 
     for key, val in values.items():
         result = await session.execute(

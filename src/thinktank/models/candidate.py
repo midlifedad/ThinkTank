@@ -23,8 +23,12 @@ class CandidateThinker(Base):
     name: Mapped[str] = mapped_column(sa.Text)
     normalized_name: Mapped[str] = mapped_column(sa.Text)
     appearance_count: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("1"))
-    first_seen_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
-    last_seen_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    first_seen_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
     sample_urls: Mapped[Optional[list[str]]] = mapped_column(
         ARRAY(sa.Text),
         nullable=True,
@@ -41,7 +45,9 @@ class CandidateThinker(Base):
         nullable=True,
     )
     reviewed_by: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    reviewed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
     thinker_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         sa.ForeignKey("thinkers.id"),
         nullable=True,

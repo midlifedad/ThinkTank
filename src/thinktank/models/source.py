@@ -45,11 +45,15 @@ class Source(Base):
     approved_backfill_days: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
     backfill_complete: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.text("false"))
     refresh_interval_hours: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
-    last_fetched: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    last_fetched: Mapped[Optional[datetime]] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
     item_count: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("0"))
     active: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.text("true"))
     error_count: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("0"))
-    created_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    created_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
 
     # Relationships
     thinker: Mapped[Optional["Thinker"]] = relationship(
@@ -85,7 +89,9 @@ class SourceThinker(Base):
         primary_key=True,
     )
     relationship_type: Mapped[str] = mapped_column(sa.Text)
-    added_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    added_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
 
     # Relationships
     source: Mapped["Source"] = relationship(back_populates="source_thinkers")

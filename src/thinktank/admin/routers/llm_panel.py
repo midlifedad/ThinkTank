@@ -19,7 +19,7 @@ templates = get_templates()
 
 def _now() -> datetime:
     """Return current UTC time as timezone-naive datetime."""
-    return datetime.now(UTC).replace(tzinfo=None)
+    return datetime.now(UTC)
 
 
 @router.get("/")

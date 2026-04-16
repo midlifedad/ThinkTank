@@ -21,8 +21,8 @@ TEST_DATABASE_URL = os.getenv(
 
 
 def _now() -> datetime:
-    """Timezone-naive UTC now."""
-    return datetime.now(UTC).replace(tzinfo=None)
+    """Timezone-aware UTC now (TIMESTAMPTZ)."""
+    return datetime.now(UTC)
 
 
 @pytest.fixture

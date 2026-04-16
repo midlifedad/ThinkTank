@@ -194,7 +194,7 @@ async def approve_source(
 
     source.approval_status = "approved"
 
-    now = datetime.now(UTC).replace(tzinfo=None)
+    now = datetime.now(UTC)
     review = LLMReview(
         id=uuid.uuid4(),
         review_type="source_approval",
@@ -231,7 +231,7 @@ async def reject_source(
 
     source.approval_status = "rejected"
 
-    now = datetime.now(UTC).replace(tzinfo=None)
+    now = datetime.now(UTC)
     review = LLMReview(
         id=uuid.uuid4(),
         review_type="source_approval",

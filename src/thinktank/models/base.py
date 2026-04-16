@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
+import sqlalchemy as sa
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -14,10 +15,12 @@ uuid_pk = Annotated[
     mapped_column(primary_key=True, default=uuid.uuid4),
 ]
 
-# Reusable annotated type for created_at timestamps
+# Reusable annotated type for created_at timestamps.
+# DATA-REVIEW H4 / HANDLERS-REVIEW LO-06: every timestamp column is
+# TIMESTAMPTZ so stored values always include explicit UTC offset.
 created_at_col = Annotated[
     datetime,
-    mapped_column(server_default=text("NOW()")),
+    mapped_column(sa.DateTime(timezone=True), server_default=text("NOW()")),
 ]
 
 

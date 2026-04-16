@@ -15,8 +15,8 @@ from tests.factories import create_job, create_system_config
 
 
 def _now() -> datetime:
-    """Return current UTC time as timezone-naive datetime."""
-    return datetime.now(UTC).replace(tzinfo=None)
+    """Return current UTC time as timezone-aware datetime (TIMESTAMPTZ)."""
+    return datetime.now(UTC)
 
 
 @pytest.mark.asyncio

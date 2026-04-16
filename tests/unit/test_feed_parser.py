@@ -102,8 +102,9 @@ class TestBasicParsing:
         entries = parse_feed(BASIC_RSS)
         entry = entries[0]
         assert isinstance(entry.published_at, datetime)
-        # Should be timezone-naive
-        assert entry.published_at.tzinfo is None
+        # After DATA-REVIEW H4 / migration 007 the parser returns aware UTC.
+        assert entry.published_at.tzinfo is not None
+        assert entry.published_at.utcoffset().total_seconds() == 0
         assert entry.published_at.year == 2025
         assert entry.published_at.month == 1
         assert entry.published_at.day == 15

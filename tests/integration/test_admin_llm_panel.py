@@ -25,7 +25,7 @@ TEST_DATABASE_URL = os.getenv(
 
 
 def _now():
-    return datetime.now(UTC).replace(tzinfo=None)
+    return datetime.now(UTC)
 
 
 @pytest.fixture

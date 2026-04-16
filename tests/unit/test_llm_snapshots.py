@@ -70,8 +70,8 @@ class TestThinkerApprovalContext:
         assert "corpus_stats" in result
 
     @pytest.mark.asyncio
-    async def test_uses_timezone_naive_datetimes(self, mock_session):
-        """Any datetime values in the context should be timezone-naive."""
+    async def test_uses_timezone_aware_datetimes(self, mock_session):
+        """Any datetime values in the context should be timezone-aware UTC."""
         thinker_id = uuid.uuid4()
         thinker_mock = MagicMock()
         thinker_mock.id = thinker_id
@@ -92,18 +92,22 @@ class TestThinkerApprovalContext:
 
         result = await build_thinker_approval_context(mock_session, thinker_id)
 
-        # Check any datetime values are timezone-naive
-        def check_naive(obj):
+        # After migration 007 every timestamp is TIMESTAMPTZ, so any datetime
+        # appearing in a snapshot must be timezone-aware UTC.
+        def check_aware_utc(obj):
             if isinstance(obj, datetime):
-                assert obj.tzinfo is None, f"Found timezone-aware datetime: {obj}"
+                assert obj.tzinfo is not None, f"Found naive datetime: {obj}"
+                assert obj.utcoffset().total_seconds() == 0, (
+                    f"Expected UTC offset 0, got {obj.utcoffset()}"
+                )
             elif isinstance(obj, dict):
                 for v in obj.values():
-                    check_naive(v)
+                    check_aware_utc(v)
             elif isinstance(obj, list):
                 for v in obj:
-                    check_naive(v)
+                    check_aware_utc(v)
 
-        check_naive(result)
+        check_aware_utc(result)
 
 
 class TestSourceApprovalContext:

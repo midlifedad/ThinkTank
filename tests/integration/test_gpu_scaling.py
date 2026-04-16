@@ -63,7 +63,7 @@ async def test_scale_down_after_idle_timeout(
     """Queue depth=0, idle_since older than timeout -> scale_gpu_service(0) called."""
     # No jobs in queue -- depth is 0
     # gpu_idle_since is older than timeout (default 30 min)
-    old_idle = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=35)
+    old_idle = datetime.now(UTC) - timedelta(minutes=35)
 
     mock_get_replicas.return_value = 1
     mock_scale.return_value = True
@@ -82,7 +82,7 @@ async def test_no_scale_down_when_idle_under_timeout(
 ):
     """Queue depth=0, idle_since within timeout -> scale NOT called, idle_since preserved."""
     # gpu_idle_since is within the timeout window (only 5 min ago)
-    recent_idle = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=5)
+    recent_idle = datetime.now(UTC) - timedelta(minutes=5)
 
     mock_get_replicas.return_value = 1
 
@@ -119,7 +119,7 @@ async def test_idle_timer_resets_when_queue_has_jobs(
         await create_job(session, job_type="process_content", status="pending")
     await session.commit()
 
-    old_idle = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=10)
+    old_idle = datetime.now(UTC) - timedelta(minutes=10)
     mock_get_replicas.return_value = 1
 
     scaled, idle_since = await manage_gpu_scaling(session, gpu_idle_since=old_idle)

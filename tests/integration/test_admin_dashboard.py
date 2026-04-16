@@ -252,13 +252,13 @@ class TestActivityFeedPartial:
         assert "No recent activity" in response.text
 
     async def test_shows_completed_jobs(self, admin_client, session: AsyncSession):
-        from datetime import datetime
+        from datetime import UTC, datetime
 
         await create_job(
             session,
             job_type="fetch_podcast_feed",
             status="complete",
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(UTC),
         )
         await session.commit()
 

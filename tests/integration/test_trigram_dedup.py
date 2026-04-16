@@ -75,7 +75,7 @@ async def test_candidate_appearance_incremented(session: AsyncSession):
     await session.refresh(candidate)
     candidate.appearance_count += 1
     from datetime import UTC, datetime
-    candidate.last_seen_at = datetime.now(UTC).replace(tzinfo=None)
+    candidate.last_seen_at = datetime.now(UTC)
     await session.commit()
 
     await session.refresh(candidate)
