@@ -20,9 +20,6 @@ import os
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from tests.factories import create_system_config
 
 pytestmark = pytest.mark.anyio
 
@@ -31,7 +28,12 @@ TEST_DATABASE_URL = os.getenv(
     "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
 )
 
-ADMIN_TOKEN = "test-admin-token-abc123"
+
+# ``seeded_admin_token`` is defined in the top-level ``tests/conftest.py``
+# and shared with the contract suite. This file intentionally does NOT
+# redefine it -- keeping the seeded token value in one place prevents
+# drift between the admin-auth integration tests and the config PUT
+# contract tests.
 
 
 @pytest.fixture
@@ -50,19 +52,6 @@ async def admin_client() -> AsyncClient:
         yield ac
 
     get_settings.cache_clear()
-
-
-@pytest.fixture
-async def seeded_admin_token(session: AsyncSession) -> str:
-    """Seed secret_admin_api_token into system_config and return the raw value."""
-    await create_system_config(
-        session,
-        key="secret_admin_api_token",
-        value=ADMIN_TOKEN,
-        set_by="test",
-    )
-    await session.commit()
-    return ADMIN_TOKEN
 
 
 class TestAdminAuthRequired:

@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.admin.auth import require_admin
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import ConfigResponse, ConfigUpdate
 
@@ -67,8 +68,15 @@ async def upsert_config(
     key: str,
     body: ConfigUpdate,
     session: AsyncSession = Depends(get_session),
+    _admin: str = Depends(require_admin),
 ) -> ConfigResponse:
-    """Create or update a config entry."""
+    """Create or update a config entry.
+
+    Writes are gated by :func:`thinktank.admin.auth.require_admin` so an
+    unauthenticated caller cannot silently rotate credentials, write
+    ``secret_*`` keys, or brick the stack via the config surface.
+    See ADMIN-REVIEW CR-02 follow-up.
+    """
     now = datetime.now()  # noqa: DTZ005 -- timezone-naive per project convention
     stmt = insert(SystemConfig).values(
         key=key,
