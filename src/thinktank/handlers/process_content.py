@@ -53,8 +53,16 @@ async def handle_process_content(session: AsyncSession, job: "Job") -> None:  # 
     if content is None:
         raise ValueError(f"Content {content_id} not found")
 
-    # Load source
+    # Load source. If the Source row was deleted between content
+    # insertion and transcription, raise ValueError -- this maps to
+    # ErrorCategory.PAYLOAD_INVALID (terminal) in categorize_error,
+    # so the job fails permanently instead of looping through retries
+    # with an opaque AttributeError.
     source = await session.get(Source, content.source_id)
+    if source is None:
+        raise ValueError(
+            f"Source {content.source_id} missing for content {content_id}"
+        )
 
     transcript: str | None = None
     method: str | None = None
@@ -69,7 +77,8 @@ async def handle_process_content(session: AsyncSession, job: "Job") -> None:  # 
 
     # Pass 2: Existing transcript (if source has transcript_url_pattern)
     if transcript is None:
-        pattern = source.config.get("transcript_url_pattern")
+        config = source.config or {}
+        pattern = config.get("transcript_url_pattern")
         if pattern:
             transcript = await fetch_existing_transcript(content.url, pattern)
             if transcript:

@@ -203,3 +203,31 @@ async def test_content_not_found_raises(mock_session, job):
 
     with pytest.raises(ValueError, match="Content .* not found"):
         await handle_process_content(mock_session, job)
+
+
+async def test_source_missing_raises_valueerror(content, job):
+    """If the Source referenced by content was deleted, handler must raise
+    a ValueError (which categorize_error maps to PAYLOAD_INVALID -> terminal)
+    instead of dereferencing None and throwing AttributeError on an opaque
+    retry loop.
+
+    Source: HANDLERS-REVIEW CR-03.
+    """
+    from src.thinktank.handlers.process_content import handle_process_content
+    from src.thinktank.models.content import Content
+    from src.thinktank.models.source import Source
+
+    session = AsyncMock()
+
+    async def mock_get(model_cls, _model_id):
+        if model_cls is Content:
+            return content
+        if model_cls is Source:
+            return None
+        return None
+
+    session.get = AsyncMock(side_effect=mock_get)
+    session.commit = AsyncMock()
+
+    with pytest.raises(ValueError, match="Source .* missing"):
+        await handle_process_content(session, job)
