@@ -51,7 +51,10 @@ ALLOWED_SOURCE_APPROVAL_STATUSES: tuple[str, ...] = (
     "pending_human",
 )
 
-# Job.status -- matches both queue/claim.py transitions and the plan.
+# Job.status -- matches queue/claim.py transitions, plan, plus the LLM
+# escalation pipeline. `awaiting_llm` is written by admin/routers/thinkers.py
+# and agent/tools.py when a job is parked waiting for LLM review, and queried
+# by llm/escalation.py. Omitting it would break escalation on any upgrade.
 ALLOWED_JOB_STATUSES: tuple[str, ...] = (
     "pending",
     "running",
@@ -59,4 +62,5 @@ ALLOWED_JOB_STATUSES: tuple[str, ...] = (
     "done",
     "failed",
     "cancelled",
+    "awaiting_llm",
 )
