@@ -13,6 +13,7 @@ Spec reference: Section 5.3 (scan_for_candidates), DISC-01.
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 
 import structlog
@@ -84,7 +85,21 @@ async def handle_scan_for_candidates(
     candidates_updated = 0
 
     for content_id_str in content_ids:
-        content = await session.get(Content, content_id_str)
+        # Coerce payload strings to UUID. A malformed id (e.g. whitespace,
+        # empty string, accidental interpolation) used to raise asyncpg
+        # DataError inside session.get() and fail the whole job. Skip and
+        # log instead so a single bad payload entry does not poison the
+        # batch.
+        try:
+            content_id = uuid.UUID(content_id_str)
+        except (ValueError, TypeError, AttributeError):
+            log.warning(
+                "scan_for_candidates_invalid_content_id",
+                content_id=content_id_str,
+            )
+            continue
+
+        content = await session.get(Content, content_id)
         if content is None:
             log.warning("scan_for_candidates_content_not_found", content_id=content_id_str)
             continue
