@@ -192,6 +192,50 @@ class TestCategorizeErrorHttpx:
         assert ErrorCategory.PODCASTINDEX_ERROR == "podcastindex_error"
 
 
+class TestCategorizeErrorDatabase:
+    """categorize_error handles SQLAlchemy + asyncpg integrity/connection errors.
+
+    DATA-REVIEW finding: when an ingestion job raced another job and tripped
+    the ``canonical_url`` or ``content_fingerprint`` unique constraints, the
+    resulting IntegrityError bubbled up as ``ErrorCategory.UNKNOWN``, which
+    triggered the fallback "something is broken, alert humans" retry path.
+    Unique-constraint violations are expected at the dedupe layer -- they
+    should classify as ``DATABASE_ERROR`` so the ingest pipeline retries
+    idempotently instead of paging.
+    """
+
+    def test_sqlalchemy_integrity_error_maps_to_database_error(self):
+        """SQLAlchemy IntegrityError (unique violation) -> DATABASE_ERROR."""
+        from sqlalchemy.exc import IntegrityError
+
+        # The statement/params are irrelevant for classification; orig=None
+        # is valid per the SQLAlchemy API for synthetic errors.
+        exc = IntegrityError(
+            statement="INSERT INTO content ...",
+            params=None,
+            orig=Exception("duplicate key value violates unique constraint"),
+        )
+        assert categorize_error(exc) == ErrorCategory.DATABASE_ERROR
+
+    def test_asyncpg_unique_violation_maps_to_database_error(self):
+        """Raw asyncpg.UniqueViolationError -> DATABASE_ERROR."""
+        from asyncpg.exceptions import UniqueViolationError
+
+        exc = UniqueViolationError("duplicate key value violates unique constraint")
+        assert categorize_error(exc) == ErrorCategory.DATABASE_ERROR
+
+    def test_sqlalchemy_operational_error_maps_to_database_error(self):
+        """SQLAlchemy OperationalError (connection drop, etc.) -> DATABASE_ERROR."""
+        from sqlalchemy.exc import OperationalError
+
+        exc = OperationalError(
+            statement="SELECT 1",
+            params=None,
+            orig=Exception("server closed the connection unexpectedly"),
+        )
+        assert categorize_error(exc) == ErrorCategory.DATABASE_ERROR
+
+
 def _mock_httpx_response(status_code: int):
     """Create a minimal mock httpx response for anthropic exceptions."""
     import httpx

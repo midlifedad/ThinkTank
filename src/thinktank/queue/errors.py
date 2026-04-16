@@ -7,8 +7,10 @@ STANDARDS.md: "Categories are a closed set, defined upfront, extended deliberate
 from enum import StrEnum
 
 import anthropic
+import asyncpg
 import httpx
 import pydantic
+import sqlalchemy.exc
 
 
 class ErrorCategory(StrEnum):
@@ -67,6 +69,18 @@ def categorize_error(exc: Exception) -> ErrorCategory:
         if exc.response.status_code == 429:
             return ErrorCategory.RATE_LIMITED
         return ErrorCategory.HTTP_ERROR
+
+    # Database errors. Check BEFORE the generic OSError/ConnectionError
+    # branch below: sqlalchemy errors never inherit from those, but raw
+    # asyncpg PostgresError does not inherit from them either, so order
+    # matters only for clarity. Unique-constraint violations are expected
+    # during race-y dedup inserts -- classify them as DATABASE_ERROR so
+    # the retry policy treats them as transient rather than bubbling up
+    # as UNKNOWN and alerting humans.
+    if isinstance(exc, sqlalchemy.exc.SQLAlchemyError):
+        return ErrorCategory.DATABASE_ERROR
+    if isinstance(exc, asyncpg.PostgresError):
+        return ErrorCategory.DATABASE_ERROR
 
     # Standard Python exceptions
     if isinstance(exc, TimeoutError):
