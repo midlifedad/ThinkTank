@@ -75,7 +75,7 @@ class PodcastIndexClient:
 
         headers = _podcastindex_headers(self._api_key, self._api_secret)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(
                 f"{self.BASE_URL}/search/byperson",
                 params={"q": person_name},

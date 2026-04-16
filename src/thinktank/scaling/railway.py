@@ -68,7 +68,7 @@ async def scale_gpu_service(replicas: int, session: AsyncSession | None = None) 
     }
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             resp = await client.post(
                 RAILWAY_API_URL,
                 json={"query": mutation, "variables": variables},
@@ -140,7 +140,7 @@ async def get_gpu_replica_count(session: AsyncSession | None = None) -> int | No
     }
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             resp = await client.post(
                 RAILWAY_API_URL,
                 json={"query": query, "variables": variables},

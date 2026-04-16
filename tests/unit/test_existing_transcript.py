@@ -99,3 +99,43 @@ class TestFetchExistingTranscript:
         )
 
         assert result is None
+
+    @pytest.mark.asyncio
+    async def test_fetch_existing_follows_redirects(self):
+        """Client follows 302 redirects to the final transcript URL.
+
+        Regression: httpx.AsyncClient defaults to follow_redirects=False, which
+        caused redirect responses (common for CDN-backed transcripts) to be
+        treated as failures. Verify via httpx.MockTransport that a 302 is
+        transparently followed and the final body is returned.
+        """
+        from src.thinktank.transcription import existing as existing_mod
+
+        def _handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path.endswith("/ep-42"):
+                return httpx.Response(
+                    302,
+                    headers={"Location": "https://cdn.show.com/transcripts/ep-42-final"},
+                )
+            return httpx.Response(
+                200,
+                text="<html><body><p>Redirected body.</p></body></html>",
+            )
+
+        transport = httpx.MockTransport(_handler)
+        real_async_client = httpx.AsyncClient
+
+        def _client_with_transport(*args, **kwargs):
+            # Preserve the follow_redirects arg under test; inject our transport
+            kwargs.setdefault("transport", transport)
+            kwargs["transport"] = transport
+            return real_async_client(*args, **kwargs)
+
+        with patch.object(existing_mod.httpx, "AsyncClient", side_effect=_client_with_transport):
+            result = await existing_mod.fetch_existing_transcript(
+                content_url="https://show.com/episodes/ep-42",
+                transcript_url_pattern="https://show.com/transcripts/{slug}",
+            )
+
+        assert result is not None
+        assert "Redirected body." in result
