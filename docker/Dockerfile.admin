@@ -18,4 +18,4 @@ COPY src/ src/
 # Now install the project itself (hatchling needs src/)
 RUN uv sync --frozen --no-dev
 
-CMD ["uv", "run", "uvicorn", "src.thinktank.admin.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uv", "run", "uvicorn", "thinktank.admin.main:app", "--host", "0.0.0.0", "--port", "8001"]

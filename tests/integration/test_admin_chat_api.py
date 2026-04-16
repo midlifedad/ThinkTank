@@ -16,8 +16,8 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.job import Job
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.job import Job
+from thinktank.models.thinker import Thinker
 from thinktank.agent.session import ChatMessage, ChatSession, ChatSessionStore, chat_sessions
 from thinktank.agent.tools import execute_confirmed_action, execute_tool
 from tests.factories import create_job, create_thinker

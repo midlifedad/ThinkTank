@@ -5,7 +5,7 @@ Tests content attribution logic per spec Section 6.6.
 
 import uuid
 
-from src.thinktank.ingestion.name_matcher import match_thinkers_in_text
+from thinktank.ingestion.name_matcher import match_thinkers_in_text
 
 
 def _thinker(name: str) -> dict:

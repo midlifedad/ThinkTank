@@ -5,7 +5,7 @@ strip tracking params, YouTube canonicalization, trailing slash removal,
 lowercase netloc, deterministic query param ordering.
 """
 
-from src.thinktank.ingestion.url_normalizer import normalize_url
+from thinktank.ingestion.url_normalizer import normalize_url
 
 
 class TestForceHttps:

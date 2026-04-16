@@ -4,7 +4,7 @@ Tests end-to-end thinker/source/candidate approval with mocked LLM client.
 Verifies database state changes, audit trail creation, and decision application.
 
 All tests mock the LLM client at the handler module level:
-  src.thinktank.handlers.llm_approval_check._llm_client.review
+  thinktank.handlers.llm_approval_check._llm_client.review
 """
 
 from unittest.mock import AsyncMock, patch
@@ -13,14 +13,14 @@ import anthropic
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
-from src.thinktank.llm.schemas import (
+from thinktank.handlers.llm_approval_check import handle_llm_approval_check
+from thinktank.llm.schemas import (
     CandidateReviewResponse,
     SourceApprovalResponse,
     ThinkerApprovalResponse,
 )
-from src.thinktank.models.review import LLMReview
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.review import LLMReview
+from thinktank.models.thinker import Thinker
 
 from tests.factories import (
     create_candidate_thinker,
@@ -58,7 +58,7 @@ class TestThinkerApprovalFlows:
         )
 
         with patch(
-            "src.thinktank.handlers.llm_approval_check._llm_client"
+            "thinktank.handlers.llm_approval_check._llm_client"
         ) as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
@@ -96,7 +96,7 @@ class TestThinkerApprovalFlows:
         )
 
         with patch(
-            "src.thinktank.handlers.llm_approval_check._llm_client"
+            "thinktank.handlers.llm_approval_check._llm_client"
         ) as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
@@ -126,7 +126,7 @@ class TestThinkerApprovalFlows:
         )
 
         with patch(
-            "src.thinktank.handlers.llm_approval_check._llm_client"
+            "thinktank.handlers.llm_approval_check._llm_client"
         ) as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
@@ -165,7 +165,7 @@ class TestSourceApprovalFlows:
         )
 
         with patch(
-            "src.thinktank.handlers.llm_approval_check._llm_client"
+            "thinktank.handlers.llm_approval_check._llm_client"
         ) as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
@@ -209,7 +209,7 @@ class TestCandidateReviewFlows:
         )
 
         with patch(
-            "src.thinktank.handlers.llm_approval_check._llm_client"
+            "thinktank.handlers.llm_approval_check._llm_client"
         ) as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
@@ -254,7 +254,7 @@ class TestAuditTrail:
         )
 
         with patch(
-            "src.thinktank.handlers.llm_approval_check._llm_client"
+            "thinktank.handlers.llm_approval_check._llm_client"
         ) as mock_client:
             mock_client.review = _mock_llm_review(mock_result, tokens=750, duration=2100)
             mock_client.model = "claude-sonnet-4-20250514"
@@ -307,7 +307,7 @@ class TestAuditTrail:
         )
 
         with patch(
-            "src.thinktank.handlers.llm_approval_check._llm_client"
+            "thinktank.handlers.llm_approval_check._llm_client"
         ) as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
@@ -344,7 +344,7 @@ class TestAPIUnavailability:
         )
 
         with patch(
-            "src.thinktank.handlers.llm_approval_check._llm_client"
+            "thinktank.handlers.llm_approval_check._llm_client"
         ) as mock_client:
             mock_client.review = AsyncMock(side_effect=api_error)
 

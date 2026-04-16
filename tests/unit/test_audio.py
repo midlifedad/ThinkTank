@@ -16,10 +16,10 @@ import pytest
 class TestDownloadAudio:
     """Tests for download_audio function."""
 
-    @patch("src.thinktank.transcription.audio.YoutubeDL")
+    @patch("thinktank.transcription.audio.YoutubeDL")
     def test_download_audio_success(self, mock_ydl_cls, tmp_path):
         """Successful download returns a path to the audio file."""
-        from src.thinktank.transcription.audio import download_audio
+        from thinktank.transcription.audio import download_audio
 
         tmp_dir = str(tmp_path)
 
@@ -62,10 +62,10 @@ class TestDownloadAudio:
         assert os.path.exists(result)
         assert result.endswith(".wav")
 
-    @patch("src.thinktank.transcription.audio.YoutubeDL")
+    @patch("thinktank.transcription.audio.YoutubeDL")
     def test_download_audio_failure(self, mock_ydl_cls, tmp_path):
         """Raises RuntimeError when yt-dlp raises DownloadError."""
-        from src.thinktank.transcription.audio import download_audio
+        from thinktank.transcription.audio import download_audio
 
         def failing_init(opts):
             inst = MagicMock()
@@ -86,10 +86,10 @@ class TestConvertToWav:
     """Tests for convert_to_wav async function."""
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.audio.asyncio.create_subprocess_exec")
+    @patch("thinktank.transcription.audio.asyncio.create_subprocess_exec")
     async def test_convert_to_wav_success(self, mock_create_proc, tmp_path):
         """Successful conversion returns path to .wav file."""
-        from src.thinktank.transcription.audio import convert_to_wav
+        from thinktank.transcription.audio import convert_to_wav
 
         # Create a fake input file
         input_path = str(tmp_path / "input.m4a")
@@ -113,10 +113,10 @@ class TestConvertToWav:
         assert "1" in args
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.audio.asyncio.create_subprocess_exec")
+    @patch("thinktank.transcription.audio.asyncio.create_subprocess_exec")
     async def test_convert_to_wav_failure(self, mock_create_proc, tmp_path):
         """Raises RuntimeError on non-zero ffmpeg return code."""
-        from src.thinktank.transcription.audio import convert_to_wav
+        from thinktank.transcription.audio import convert_to_wav
 
         input_path = str(tmp_path / "bad.m4a")
         open(input_path, "w").close()
@@ -130,10 +130,10 @@ class TestConvertToWav:
             await convert_to_wav(input_path, str(tmp_path))
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.audio.asyncio.create_subprocess_exec")
+    @patch("thinktank.transcription.audio.asyncio.create_subprocess_exec")
     async def test_convert_to_wav_timeout(self, mock_create_proc, tmp_path):
         """Raises RuntimeError on ffmpeg timeout."""
-        from src.thinktank.transcription.audio import convert_to_wav
+        from thinktank.transcription.audio import convert_to_wav
 
         input_path = str(tmp_path / "slow.m4a")
         open(input_path, "w").close()
@@ -153,7 +153,7 @@ class TestTempFileCleanup:
     @pytest.mark.asyncio
     async def test_cleanup_on_success(self, tmp_path):
         """Temp files are deleted after successful transcription."""
-        from src.thinktank.transcription.audio import transcribe_via_gpu
+        from thinktank.transcription.audio import transcribe_via_gpu
 
         tmp_dir = str(tmp_path)
 
@@ -168,11 +168,11 @@ class TestTempFileCleanup:
 
         with (
             patch(
-                "src.thinktank.transcription.audio.download_audio",
+                "thinktank.transcription.audio.download_audio",
                 return_value=str(audio_file),
             ),
             patch(
-                "src.thinktank.transcription.audio.convert_to_wav",
+                "thinktank.transcription.audio.convert_to_wav",
                 new_callable=AsyncMock,
                 return_value=str(wav_file),
             ),
@@ -187,7 +187,7 @@ class TestTempFileCleanup:
     @pytest.mark.asyncio
     async def test_cleanup_on_failure(self, tmp_path):
         """Temp files are deleted even when GPU transcription fails."""
-        from src.thinktank.transcription.audio import transcribe_via_gpu
+        from thinktank.transcription.audio import transcribe_via_gpu
 
         tmp_dir = str(tmp_path)
 
@@ -201,11 +201,11 @@ class TestTempFileCleanup:
 
         with (
             patch(
-                "src.thinktank.transcription.audio.download_audio",
+                "thinktank.transcription.audio.download_audio",
                 return_value=str(audio_file),
             ),
             patch(
-                "src.thinktank.transcription.audio.convert_to_wav",
+                "thinktank.transcription.audio.convert_to_wav",
                 new_callable=AsyncMock,
                 return_value=str(wav_file),
             ),

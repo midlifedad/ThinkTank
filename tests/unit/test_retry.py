@@ -7,7 +7,7 @@ from datetime import timedelta
 
 import pytest
 
-from src.thinktank.queue.retry import (
+from thinktank.queue.retry import (
     MAX_ATTEMPTS_BY_TYPE,
     calculate_backoff,
     get_max_attempts,

@@ -10,7 +10,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.job import Job
+from thinktank.models.job import Job
 from tests.factories import create_job
 
 pytestmark = pytest.mark.anyio

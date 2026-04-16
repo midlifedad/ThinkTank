@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import ContentResponse, PaginatedResponse
 
-from src.thinktank.models.content import Content
+from thinktank.models.content import Content
 
 router = APIRouter(prefix="/api/content", tags=["content"])
 

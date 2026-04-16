@@ -10,7 +10,7 @@ from __future__ import annotations
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
+from thinktank.models.config_table import SystemConfig
 
 # Default stale timeout when system_config is missing
 _DEFAULT_STALE_TIMEOUT_MINUTES = 30

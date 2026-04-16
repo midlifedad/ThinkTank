@@ -8,8 +8,8 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.thinktank.llm.escalation import escalate_timed_out_reviews
-from src.thinktank.models.review import LLMReview
+from thinktank.llm.escalation import escalate_timed_out_reviews
+from thinktank.models.review import LLMReview
 
 from tests.factories import create_job, create_system_config
 

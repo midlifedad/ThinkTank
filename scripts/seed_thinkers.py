@@ -21,8 +21,8 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.job import Job
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.job import Job
+from thinktank.models.thinker import Thinker
 
 INITIAL_THINKERS = [
     # Tier 1 — Most influential voices in AI/tech
@@ -180,7 +180,7 @@ async def seed_thinkers(session: AsyncSession) -> int:
 if __name__ == "__main__":
 
     async def _main() -> None:
-        from src.thinktank.database import async_session_factory
+        from thinktank.database import async_session_factory
 
         async with async_session_factory() as session:
             count = await seed_thinkers(session)

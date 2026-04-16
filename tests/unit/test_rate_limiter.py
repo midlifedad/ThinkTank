@@ -16,7 +16,7 @@ class TestGetRateLimitConfig:
 
     async def test_returns_none_when_no_config_found(self):
         """When no system_config row exists, should return None."""
-        from src.thinktank.queue.rate_limiter import get_rate_limit_config
+        from thinktank.queue.rate_limiter import get_rate_limit_config
 
         mock_session = AsyncMock()
         mock_result = MagicMock()
@@ -28,7 +28,7 @@ class TestGetRateLimitConfig:
 
     async def test_extracts_int_from_jsonb_dict(self):
         """When JSONB value is {"value": 100}, should extract 100."""
-        from src.thinktank.queue.rate_limiter import get_rate_limit_config
+        from thinktank.queue.rate_limiter import get_rate_limit_config
 
         mock_session = AsyncMock()
         mock_result = MagicMock()
@@ -40,7 +40,7 @@ class TestGetRateLimitConfig:
 
     async def test_extracts_int_from_raw_int(self):
         """When JSONB value is stored as a raw integer, should return it directly."""
-        from src.thinktank.queue.rate_limiter import get_rate_limit_config
+        from thinktank.queue.rate_limiter import get_rate_limit_config
 
         mock_session = AsyncMock()
         mock_result = MagicMock()
@@ -52,7 +52,7 @@ class TestGetRateLimitConfig:
 
     async def test_constructs_correct_config_key(self):
         """Should query system_config with key '{api_name}_calls_per_hour'."""
-        from src.thinktank.queue.rate_limiter import get_rate_limit_config
+        from thinktank.queue.rate_limiter import get_rate_limit_config
 
         mock_session = AsyncMock()
         mock_result = MagicMock()
@@ -70,7 +70,7 @@ class TestCheckAndAcquireRateLimit:
 
     async def test_returns_true_when_no_config_exists(self):
         """Fail-open: no config = no limit, should return True."""
-        from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         mock_session = AsyncMock()
         # First call: COUNT returns 0
@@ -89,7 +89,7 @@ class TestCheckAndAcquireRateLimit:
 
     async def test_returns_false_when_at_limit(self):
         """When count >= configured limit, should return False."""
-        from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         mock_session = AsyncMock()
         # First call: COUNT returns 100 (at limit)
@@ -108,7 +108,7 @@ class TestCheckAndAcquireRateLimit:
 
     async def test_returns_true_and_records_when_under_limit(self):
         """When count < configured limit, should insert a row and return True."""
-        from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         mock_session = AsyncMock()
         # First call: COUNT returns 5 (under limit)

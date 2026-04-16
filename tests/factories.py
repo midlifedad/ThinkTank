@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.thinktank.models import (
+from thinktank.models import (
     ApiUsage,
     CandidateThinker,
     Category,

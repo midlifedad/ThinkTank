@@ -15,12 +15,12 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.discovery.podcastindex_client import PodcastIndexClient
-from src.thinktank.ingestion.url_normalizer import normalize_url
-from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source, SourceThinker
-from src.thinktank.models.thinker import Thinker
-from src.thinktank.secrets import get_secret
+from thinktank.discovery.podcastindex_client import PodcastIndexClient
+from thinktank.ingestion.url_normalizer import normalize_url
+from thinktank.models.job import Job
+from thinktank.models.source import Source, SourceThinker
+from thinktank.models.thinker import Thinker
+from thinktank.secrets import get_secret
 
 logger = structlog.get_logger(__name__)
 

@@ -12,7 +12,7 @@ import time
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
 
 def _podcastindex_headers(api_key: str, api_secret: str) -> dict[str, str]:

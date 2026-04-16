@@ -11,12 +11,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.thinktank.scaling.railway import manage_gpu_scaling
+from thinktank.scaling.railway import manage_gpu_scaling
 from tests.factories import create_job
 
 
-@patch("src.thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
-@patch("src.thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
 async def test_scale_up_when_queue_exceeds_threshold(
     mock_get_replicas, mock_scale, session
 ):
@@ -36,8 +36,8 @@ async def test_scale_up_when_queue_exceeds_threshold(
     assert mock_scale.call_args[0][0] == 1  # replicas=1
 
 
-@patch("src.thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
-@patch("src.thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
 async def test_no_scale_when_queue_below_threshold(
     mock_get_replicas, mock_scale, session
 ):
@@ -55,8 +55,8 @@ async def test_no_scale_when_queue_below_threshold(
     mock_scale.assert_not_called()
 
 
-@patch("src.thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
-@patch("src.thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
 async def test_scale_down_after_idle_timeout(
     mock_get_replicas, mock_scale, session
 ):
@@ -75,8 +75,8 @@ async def test_scale_down_after_idle_timeout(
     assert mock_scale.call_args[0][0] == 0  # replicas=0
 
 
-@patch("src.thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
-@patch("src.thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
 async def test_no_scale_down_when_idle_under_timeout(
     mock_get_replicas, mock_scale, session
 ):
@@ -93,8 +93,8 @@ async def test_no_scale_down_when_idle_under_timeout(
     assert idle_since == recent_idle
 
 
-@patch("src.thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
-@patch("src.thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
 async def test_idle_timer_starts_when_queue_empty(
     mock_get_replicas, mock_scale, session
 ):
@@ -108,8 +108,8 @@ async def test_idle_timer_starts_when_queue_empty(
     assert isinstance(idle_since, datetime)
 
 
-@patch("src.thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
-@patch("src.thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.scale_gpu_service", new_callable=AsyncMock)
+@patch("thinktank.scaling.railway.get_gpu_replica_count", new_callable=AsyncMock)
 async def test_idle_timer_resets_when_queue_has_jobs(
     mock_get_replicas, mock_scale, session
 ):

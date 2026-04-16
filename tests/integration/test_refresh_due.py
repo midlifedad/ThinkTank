@@ -9,8 +9,8 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
-from src.thinktank.models.job import Job
+from thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
+from thinktank.models.job import Job
 from tests.factories import create_job, create_source, create_thinker
 
 pytestmark = pytest.mark.anyio

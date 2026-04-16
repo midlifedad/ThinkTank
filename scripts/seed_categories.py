@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.category import Category
+from thinktank.models.category import Category
 
 # Category taxonomy: top-level -> subcategories
 # Each entry: slug -> (name, description, [children])
@@ -109,7 +109,7 @@ async def seed_categories(session: AsyncSession) -> int:
 if __name__ == "__main__":
 
     async def _main() -> None:
-        from src.thinktank.database import async_session_factory
+        from thinktank.database import async_session_factory
 
         async with async_session_factory() as session:
             count = await seed_categories(session)

@@ -10,7 +10,7 @@ from typing import Optional
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.thinktank.models.base import Base, TimestampMixin, uuid_pk
+from thinktank.models.base import Base, TimestampMixin, uuid_pk
 
 
 class Category(TimestampMixin, Base):

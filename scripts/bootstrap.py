@@ -19,11 +19,11 @@ from scripts.seed_categories import seed_categories
 from scripts.seed_config import seed_config
 from scripts.seed_sources import seed_sources
 from scripts.seed_thinkers import seed_thinkers
-from src.thinktank.models.category import Category
-from src.thinktank.models.config_table import SystemConfig
-from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source, SourceThinker
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.category import Category
+from thinktank.models.config_table import SystemConfig
+from thinktank.models.job import Job
+from thinktank.models.source import Source, SourceThinker
+from thinktank.models.thinker import Thinker
 
 logger = structlog.get_logger(__name__)
 
@@ -188,7 +188,7 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
 if __name__ == "__main__":
 
     async def _main() -> None:
-        from src.thinktank.database import async_session_factory
+        from thinktank.database import async_session_factory
 
         async with async_session_factory() as session:
             results = await bootstrap(session)

@@ -4,19 +4,19 @@ Registry is populated at import time. The worker loop looks up
 handlers here via get_handler().
 """
 
-from src.thinktank.handlers.base import JobHandler
-from src.thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
-from src.thinktank.handlers.discover_thinker import handle_discover_thinker
-from src.thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
-from src.thinktank.handlers.fetch_youtube_channel import handle_fetch_youtube_channel
-from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
-from src.thinktank.handlers.process_content import handle_process_content
-from src.thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
-from src.thinktank.handlers.rescan_cataloged_for_thinker import handle_rescan_cataloged_for_thinker
-from src.thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
-from src.thinktank.handlers.scan_episodes_for_thinkers import handle_scan_episodes_for_thinkers
-from src.thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
-from src.thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
+from thinktank.handlers.base import JobHandler
+from thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
+from thinktank.handlers.discover_thinker import handle_discover_thinker
+from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
+from thinktank.handlers.fetch_youtube_channel import handle_fetch_youtube_channel
+from thinktank.handlers.llm_approval_check import handle_llm_approval_check
+from thinktank.handlers.process_content import handle_process_content
+from thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
+from thinktank.handlers.rescan_cataloged_for_thinker import handle_rescan_cataloged_for_thinker
+from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
+from thinktank.handlers.scan_episodes_for_thinkers import handle_scan_episodes_for_thinkers
+from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
+from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
 
 # Key: job_type string, Value: callable matching JobHandler protocol.
 JOB_HANDLERS: dict[str, JobHandler] = {}

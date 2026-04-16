@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.ingestion.trigram import find_similar_candidates, find_similar_thinkers
+from thinktank.ingestion.trigram import find_similar_candidates, find_similar_thinkers
 from tests.factories import create_candidate_thinker, create_thinker
 
 pytestmark = pytest.mark.anyio

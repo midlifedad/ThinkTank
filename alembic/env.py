@@ -16,7 +16,7 @@ from sqlalchemy import pool, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 # Import all models so autogenerate can discover them via Base.metadata
-from src.thinktank.models import Base  # noqa: F401
+from thinktank.models import Base  # noqa: F401
 
 # This is the Alembic Config object
 config = context.config

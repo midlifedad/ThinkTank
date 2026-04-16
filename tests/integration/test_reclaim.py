@@ -42,7 +42,7 @@ class TestReclaimStaleJobs:
 
     async def test_reclaims_stale_job(self, session: AsyncSession):
         """A running job past the timeout should be reclaimed."""
-        from src.thinktank.queue.reclaim import reclaim_stale_jobs
+        from thinktank.queue.reclaim import reclaim_stale_jobs
 
         # Set timeout to 30 minutes
         await create_system_config(
@@ -63,7 +63,7 @@ class TestReclaimStaleJobs:
 
     async def test_does_not_reclaim_fresh_job(self, session: AsyncSession):
         """A running job within the timeout should NOT be reclaimed."""
-        from src.thinktank.queue.reclaim import reclaim_stale_jobs
+        from thinktank.queue.reclaim import reclaim_stale_jobs
 
         await create_system_config(
             session,
@@ -81,7 +81,7 @@ class TestReclaimStaleJobs:
 
     async def test_reclaimed_job_gets_retrying_status(self, session: AsyncSession):
         """Reclaimed job with attempts < max_attempts should get status='retrying'."""
-        from src.thinktank.queue.reclaim import reclaim_stale_jobs
+        from thinktank.queue.reclaim import reclaim_stale_jobs
 
         await create_system_config(
             session,
@@ -110,7 +110,7 @@ class TestReclaimStaleJobs:
 
     async def test_reclaimed_job_at_max_attempts_gets_failed(self, session: AsyncSession):
         """Reclaimed job at max_attempts should get status='failed' and completed_at."""
-        from src.thinktank.queue.reclaim import reclaim_stale_jobs
+        from thinktank.queue.reclaim import reclaim_stale_jobs
 
         await create_system_config(
             session,
@@ -136,7 +136,7 @@ class TestReclaimStaleJobs:
 
     async def test_returns_empty_when_no_stale_jobs(self, session: AsyncSession):
         """Should return empty list when no stale jobs exist."""
-        from src.thinktank.queue.reclaim import reclaim_stale_jobs
+        from thinktank.queue.reclaim import reclaim_stale_jobs
 
         await create_system_config(
             session,
@@ -149,7 +149,7 @@ class TestReclaimStaleJobs:
 
     async def test_non_running_jobs_never_reclaimed(self, session: AsyncSession):
         """Jobs in pending, done, or failed status should never be reclaimed."""
-        from src.thinktank.queue.reclaim import reclaim_stale_jobs
+        from thinktank.queue.reclaim import reclaim_stale_jobs
 
         await create_system_config(
             session,
@@ -175,7 +175,7 @@ class TestReclaimStaleJobs:
 
     async def test_mixed_stale_and_fresh_jobs(self, session: AsyncSession):
         """Only stale running jobs should be reclaimed, not fresh ones."""
-        from src.thinktank.queue.reclaim import reclaim_stale_jobs
+        from thinktank.queue.reclaim import reclaim_stale_jobs
 
         await create_system_config(
             session,
@@ -199,7 +199,7 @@ class TestReclaimStaleJobs:
 
     async def test_uses_default_timeout_when_no_config(self, session: AsyncSession):
         """When stale_job_timeout_minutes not in config, defaults to 30."""
-        from src.thinktank.queue.reclaim import reclaim_stale_jobs
+        from thinktank.queue.reclaim import reclaim_stale_jobs
 
         # No stale_job_timeout_minutes config -- should default to 30
 

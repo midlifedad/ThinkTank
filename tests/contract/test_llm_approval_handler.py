@@ -9,14 +9,14 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
-from src.thinktank.llm.schemas import (
+from thinktank.handlers.llm_approval_check import handle_llm_approval_check
+from thinktank.llm.schemas import (
     CandidateReviewResponse,
     SourceApprovalResponse,
     ThinkerApprovalResponse,
 )
-from src.thinktank.models.review import LLMReview
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.review import LLMReview
+from thinktank.models.thinker import Thinker
 
 from tests.factories import (
     create_candidate_thinker,
@@ -32,7 +32,7 @@ def _mock_llm(result, tokens=500, duration=1200):
     mock_client.review = AsyncMock(return_value=(result, tokens, duration))
     mock_client.model = "claude-sonnet-4-20250514"
     return patch(
-        "src.thinktank.handlers.llm_approval_check._llm_client",
+        "thinktank.handlers.llm_approval_check._llm_client",
         mock_client,
     )
 

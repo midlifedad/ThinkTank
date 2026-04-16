@@ -12,7 +12,7 @@ Covers all behavior cases from PLAN 06-01 Task 1:
 
 import pytest
 
-from src.thinktank.discovery.name_extractor import extract_names
+from thinktank.discovery.name_extractor import extract_names
 
 
 class TestExtractNamesPatterns:

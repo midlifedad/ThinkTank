@@ -12,8 +12,8 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.ingestion.config_reader import get_config_value
-from src.thinktank.models.candidate import CandidateThinker
+from thinktank.ingestion.config_reader import get_config_value
+from thinktank.models.candidate import CandidateThinker
 
 
 async def check_daily_quota(session: AsyncSession) -> tuple[bool, int, int]:

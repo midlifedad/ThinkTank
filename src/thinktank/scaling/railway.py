@@ -11,9 +11,9 @@ import httpx
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.ingestion.config_reader import get_config_value
-from src.thinktank.queue.backpressure import get_queue_depth
-from src.thinktank.secrets import get_secret
+from thinktank.ingestion.config_reader import get_config_value
+from thinktank.queue.backpressure import get_queue_depth
+from thinktank.secrets import get_secret
 
 logger = structlog.get_logger(__name__)
 

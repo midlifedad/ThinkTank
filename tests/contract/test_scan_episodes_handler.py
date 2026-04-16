@@ -17,13 +17,13 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.rescan_cataloged_for_thinker import (
+from thinktank.handlers.rescan_cataloged_for_thinker import (
     handle_rescan_cataloged_for_thinker,
 )
-from src.thinktank.handlers.scan_episodes_for_thinkers import (
+from thinktank.handlers.scan_episodes_for_thinkers import (
     handle_scan_episodes_for_thinkers,
 )
-from src.thinktank.models.content import Content, ContentThinker
+from thinktank.models.content import Content, ContentThinker
 from tests.factories import (
     create_content,
     create_content_thinker,

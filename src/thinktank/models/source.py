@@ -11,11 +11,11 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.thinktank.models.base import Base, uuid_pk
+from thinktank.models.base import Base, uuid_pk
 
 if TYPE_CHECKING:
-    from src.thinktank.models.content import Content
-    from src.thinktank.models.thinker import Thinker
+    from thinktank.models.content import Content
+    from thinktank.models.thinker import Thinker
 
 
 class Source(Base):

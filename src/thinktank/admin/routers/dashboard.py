@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
+from thinktank.models.config_table import SystemConfig
 from thinktank.admin.dependencies import get_session, get_templates
 
 
@@ -342,7 +342,7 @@ async def activity_feed_partial(
     session: AsyncSession = Depends(get_session),
 ):
     """HTML fragment: last 50 recent jobs sorted by activity time."""
-    from src.thinktank.models.job import Job
+    from thinktank.models.job import Job
 
     result = await session.execute(
         select(Job)

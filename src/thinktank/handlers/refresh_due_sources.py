@@ -25,7 +25,7 @@ import structlog
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.job import Job
+from thinktank.models.job import Job
 
 logger = structlog.get_logger(__name__)
 

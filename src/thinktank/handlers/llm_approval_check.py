@@ -13,25 +13,25 @@ import uuid
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.thinktank.llm.client import LLMClient
-from src.thinktank.llm.decisions import apply_decision
-from src.thinktank.llm.prompts import (
+from thinktank.llm.client import LLMClient
+from thinktank.llm.decisions import apply_decision
+from thinktank.llm.prompts import (
     build_candidate_review_prompt,  # noqa: F401 -- resolved dynamically
     build_source_approval_prompt,  # noqa: F401 -- resolved dynamically
     build_thinker_approval_prompt,  # noqa: F401 -- resolved dynamically
 )
-from src.thinktank.llm.schemas import (
+from thinktank.llm.schemas import (
     CandidateReviewResponse,
     SourceApprovalResponse,
     ThinkerApprovalResponse,
 )
-from src.thinktank.llm.snapshots import (
+from thinktank.llm.snapshots import (
     build_candidate_review_context,  # noqa: F401 -- resolved dynamically
     build_source_approval_context,  # noqa: F401 -- resolved dynamically
     build_thinker_approval_context,  # noqa: F401 -- resolved dynamically
 )
-from src.thinktank.models.job import Job
-from src.thinktank.models.review import LLMReview
+from thinktank.models.job import Job
+from thinktank.models.review import LLMReview
 
 logger = structlog.get_logger(__name__)
 

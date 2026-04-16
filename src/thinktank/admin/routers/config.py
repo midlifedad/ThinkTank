@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
+from thinktank.models.config_table import SystemConfig
 from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin/config", tags=["config"])

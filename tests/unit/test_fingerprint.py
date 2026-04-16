@@ -5,7 +5,7 @@ Tests spec Section 5.5 Layer 2: sha256(lowercase(title) || date || duration).
 
 from datetime import datetime
 
-from src.thinktank.ingestion.fingerprint import compute_fingerprint
+from thinktank.ingestion.fingerprint import compute_fingerprint
 
 
 class TestBasicFingerprint:

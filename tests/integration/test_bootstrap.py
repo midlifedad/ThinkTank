@@ -14,10 +14,10 @@ import pytest
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.category import Category
-from src.thinktank.models.config_table import SystemConfig
-from src.thinktank.models.job import Job
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.category import Category
+from thinktank.models.config_table import SystemConfig
+from thinktank.models.job import Job
+from thinktank.models.thinker import Thinker
 
 pytestmark = pytest.mark.anyio
 

@@ -20,8 +20,8 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
+from thinktank.models.job import Job
+from thinktank.models.source import Source
 
 INITIAL_SOURCES = [
     # Tier 1 — Top-tier podcasts for AI/tech guest appearances
@@ -201,7 +201,7 @@ async def seed_sources(session: AsyncSession) -> int:
 if __name__ == "__main__":
 
     async def _main() -> None:
-        from src.thinktank.database import async_session_factory
+        from thinktank.database import async_session_factory
 
         async with async_session_factory() as session:
             count = await seed_sources(session)

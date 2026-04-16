@@ -48,8 +48,8 @@ def mock_session(content, source):
     session = AsyncMock()
 
     async def mock_get(model_cls, model_id):
-        from src.thinktank.models.content import Content
-        from src.thinktank.models.source import Source
+        from thinktank.models.content import Content
+        from thinktank.models.source import Source
 
         if model_cls is Content:
             return content
@@ -65,12 +65,12 @@ def mock_session(content, source):
 LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(200))
 
 
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_pass1_youtube_captions(mock_captions, mock_session, job, content, source):
     """Pass 1: YouTube captions succeed -> method='youtube_captions'."""
     mock_captions.return_value = LONG_TRANSCRIPT
 
-    from src.thinktank.handlers.process_content import handle_process_content
+    from thinktank.handlers.process_content import handle_process_content
 
     await handle_process_content(mock_session, job)
 
@@ -82,8 +82,8 @@ async def test_pass1_youtube_captions(mock_captions, mock_session, job, content,
     mock_session.commit.assert_awaited_once()
 
 
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_pass2_existing_transcript(
     mock_captions, mock_existing, mock_session, job, content, source
 ):
@@ -92,7 +92,7 @@ async def test_pass2_existing_transcript(
     source.config = {"transcript_url_pattern": "https://example.com/transcripts/{slug}"}
     mock_existing.return_value = LONG_TRANSCRIPT
 
-    from src.thinktank.handlers.process_content import handle_process_content
+    from thinktank.handlers.process_content import handle_process_content
 
     await handle_process_content(mock_session, job)
 
@@ -101,9 +101,9 @@ async def test_pass2_existing_transcript(
     assert content.body_text == LONG_TRANSCRIPT
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_pass3_parakeet_gpu(
     mock_captions, mock_existing, mock_gpu, mock_session, job, content, source
 ):
@@ -112,7 +112,7 @@ async def test_pass3_parakeet_gpu(
     mock_existing.return_value = None
     mock_gpu.return_value = LONG_TRANSCRIPT
 
-    from src.thinktank.handlers.process_content import handle_process_content
+    from thinktank.handlers.process_content import handle_process_content
 
     await handle_process_content(mock_session, job)
 
@@ -121,9 +121,9 @@ async def test_pass3_parakeet_gpu(
     assert content.body_text == LONG_TRANSCRIPT
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_all_passes_fail(
     mock_captions, mock_existing, mock_gpu, mock_session, job, content, source
 ):
@@ -132,15 +132,15 @@ async def test_all_passes_fail(
     mock_existing.return_value = None
     mock_gpu.return_value = None
 
-    from src.thinktank.handlers.process_content import handle_process_content
+    from thinktank.handlers.process_content import handle_process_content
 
     with pytest.raises(RuntimeError, match="All transcription passes failed"):
         await handle_process_content(mock_session, job)
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_pass1_skipped_for_non_youtube(
     mock_captions, mock_existing, mock_gpu, mock_session, job, content, source
 ):
@@ -149,7 +149,7 @@ async def test_pass1_skipped_for_non_youtube(
     mock_existing.return_value = None
     mock_gpu.return_value = LONG_TRANSCRIPT
 
-    from src.thinktank.handlers.process_content import handle_process_content
+    from thinktank.handlers.process_content import handle_process_content
 
     await handle_process_content(mock_session, job)
 
@@ -158,9 +158,9 @@ async def test_pass1_skipped_for_non_youtube(
     assert content.transcription_method == "parakeet"
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_pass2_skipped_no_pattern(
     mock_captions, mock_existing, mock_gpu, mock_session, job, content, source
 ):
@@ -169,7 +169,7 @@ async def test_pass2_skipped_no_pattern(
     source.config = {}  # No transcript_url_pattern
     mock_gpu.return_value = LONG_TRANSCRIPT
 
-    from src.thinktank.handlers.process_content import handle_process_content
+    from thinktank.handlers.process_content import handle_process_content
 
     await handle_process_content(mock_session, job)
 
@@ -178,12 +178,12 @@ async def test_pass2_skipped_no_pattern(
     assert content.transcription_method == "parakeet"
 
 
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_content_fields_updated(mock_captions, mock_session, job, content, source):
     """After successful transcription, verify all content fields are set."""
     mock_captions.return_value = LONG_TRANSCRIPT
 
-    from src.thinktank.handlers.process_content import handle_process_content
+    from thinktank.handlers.process_content import handle_process_content
 
     await handle_process_content(mock_session, job)
 
@@ -199,7 +199,7 @@ async def test_content_not_found_raises(mock_session, job):
     # Override session.get to return None for Content
     mock_session.get = AsyncMock(return_value=None)
 
-    from src.thinktank.handlers.process_content import handle_process_content
+    from thinktank.handlers.process_content import handle_process_content
 
     with pytest.raises(ValueError, match="Content .* not found"):
         await handle_process_content(mock_session, job)

@@ -10,8 +10,8 @@ Spec reference: Section 8.6 (fallback and escalation).
 import structlog
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.thinktank.ingestion.config_reader import get_config_value
-from src.thinktank.models.review import LLMReview
+from thinktank.ingestion.config_reader import get_config_value
+from thinktank.models.review import LLMReview
 
 logger = structlog.get_logger(__name__)
 

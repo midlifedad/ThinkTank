@@ -16,14 +16,14 @@ from sqlalchemy import delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.thinktank.models.candidate import CandidateThinker
-from src.thinktank.models.category import Category, ThinkerCategory
-from src.thinktank.models.content import Content
-from src.thinktank.models.job import Job
-from src.thinktank.models.review import LLMReview
-from src.thinktank.models.content import ContentThinker
-from src.thinktank.models.source import Source, SourceThinker
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.candidate import CandidateThinker
+from thinktank.models.category import Category, ThinkerCategory
+from thinktank.models.content import Content
+from thinktank.models.job import Job
+from thinktank.models.review import LLMReview
+from thinktank.models.content import ContentThinker
+from thinktank.models.source import Source, SourceThinker
+from thinktank.models.thinker import Thinker
 from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin/thinkers", tags=["thinkers"])

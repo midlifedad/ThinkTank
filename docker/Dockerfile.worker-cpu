@@ -18,4 +18,4 @@ COPY src/ src/
 # Now install the project itself (hatchling needs src/)
 RUN uv sync --frozen --no-dev
 
-CMD ["uv", "run", "python", "-m", "src.thinktank.worker"]
+CMD ["uv", "run", "python", "-m", "thinktank.worker"]

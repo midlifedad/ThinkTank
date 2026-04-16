@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import ConfigResponse, ConfigUpdate
 
-from src.thinktank.models.config_table import SystemConfig
+from thinktank.models.config_table import SystemConfig
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 

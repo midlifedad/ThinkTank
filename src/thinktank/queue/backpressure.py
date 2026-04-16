@@ -9,8 +9,8 @@ Restores at 80% threshold (hysteresis band prevents oscillation).
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
-from src.thinktank.models.job import Job
+from thinktank.models.config_table import SystemConfig
+from thinktank.models.job import Job
 
 # All 10 discovery/fetch job types from spec Section 6.
 # These are the types subject to backpressure demotion.

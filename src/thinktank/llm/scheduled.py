@@ -9,23 +9,23 @@ Spec reference: Section 8.2 (scheduled check track).
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.thinktank.llm.client import LLMClient
-from src.thinktank.llm.prompts import (
+from thinktank.llm.client import LLMClient
+from thinktank.llm.prompts import (
     build_daily_digest_prompt,
     build_health_check_prompt,
     build_weekly_audit_prompt,
 )
-from src.thinktank.llm.schemas import (
+from thinktank.llm.schemas import (
     DailyDigestResponse,
     HealthCheckResponse,
     WeeklyAuditResponse,
 )
-from src.thinktank.llm.snapshots import (
+from thinktank.llm.snapshots import (
     build_daily_digest_context,
     build_health_check_context,
     build_weekly_audit_context,
 )
-from src.thinktank.models.review import LLMReview
+from thinktank.models.review import LLMReview
 
 logger = structlog.get_logger(__name__)
 

@@ -62,7 +62,7 @@ class TestBuildThinkerListQueryCount:
     async def test_thinker_list_is_bounded_regardless_of_count(
         self, session: AsyncSession
     ) -> None:
-        from src.thinktank.admin.routers.thinkers import _build_thinker_list
+        from thinktank.admin.routers.thinkers import _build_thinker_list
 
         from tests.factories import (
             create_category,
@@ -106,7 +106,7 @@ class TestBuildThinkerListQueryCount:
         self, session: AsyncSession
     ) -> None:
         """Query count with 5 thinkers must equal query count with 15 thinkers."""
-        from src.thinktank.admin.routers.thinkers import _build_thinker_list
+        from thinktank.admin.routers.thinkers import _build_thinker_list
 
         from tests.factories import (
             create_category,
@@ -148,7 +148,7 @@ class TestBuildSourceListQueryCount:
     async def test_source_list_is_bounded_regardless_of_count(
         self, session: AsyncSession
     ) -> None:
-        from src.thinktank.admin.routers.sources import _build_source_list
+        from thinktank.admin.routers.sources import _build_source_list
 
         from tests.factories import (
             create_source,
@@ -198,7 +198,7 @@ class TestBuildSourceListQueryCount:
     async def test_source_list_query_count_independent_of_n(
         self, session: AsyncSession
     ) -> None:
-        from src.thinktank.admin.routers.sources import _build_source_list
+        from thinktank.admin.routers.sources import _build_source_list
 
         from tests.factories import (
             create_source,

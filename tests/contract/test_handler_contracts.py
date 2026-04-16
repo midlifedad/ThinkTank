@@ -13,9 +13,9 @@ from unittest.mock import AsyncMock
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.base import JobHandler
-from src.thinktank.handlers.registry import JOB_HANDLERS, get_handler, register_handler
-from src.thinktank.models.job import Job
+from thinktank.handlers.base import JobHandler
+from thinktank.handlers.registry import JOB_HANDLERS, get_handler, register_handler
+from thinktank.models.job import Job
 from tests.factories import make_job
 
 

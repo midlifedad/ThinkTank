@@ -54,11 +54,11 @@ def _vtt_with_duplicates() -> str:
 class TestExtractYoutubeCaptions:
     """Test suite for extract_youtube_captions."""
 
-    @patch("src.thinktank.transcription.captions.httpx")
-    @patch("src.thinktank.transcription.captions.YoutubeDL")
+    @patch("thinktank.transcription.captions.httpx")
+    @patch("thinktank.transcription.captions.YoutubeDL")
     def test_extract_captions_success(self, mock_ydl_cls, mock_httpx):
         """Successful caption extraction returns plain text >= 100 words."""
-        from src.thinktank.transcription.captions import extract_youtube_captions
+        from thinktank.transcription.captions import extract_youtube_captions
 
         # Mock yt-dlp
         mock_ydl = MagicMock()
@@ -82,10 +82,10 @@ class TestExtractYoutubeCaptions:
         assert result is not None
         assert len(result.split()) >= 100
 
-    @patch("src.thinktank.transcription.captions.YoutubeDL")
+    @patch("thinktank.transcription.captions.YoutubeDL")
     def test_extract_captions_no_subs(self, mock_ydl_cls):
         """Returns None when no subtitles are available."""
-        from src.thinktank.transcription.captions import extract_youtube_captions
+        from thinktank.transcription.captions import extract_youtube_captions
 
         mock_ydl = MagicMock()
         mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
@@ -96,11 +96,11 @@ class TestExtractYoutubeCaptions:
 
         assert result is None
 
-    @patch("src.thinktank.transcription.captions.httpx")
-    @patch("src.thinktank.transcription.captions.YoutubeDL")
+    @patch("thinktank.transcription.captions.httpx")
+    @patch("thinktank.transcription.captions.YoutubeDL")
     def test_extract_captions_too_short(self, mock_ydl_cls, mock_httpx):
         """Returns None when captions have fewer than 100 words."""
-        from src.thinktank.transcription.captions import extract_youtube_captions
+        from thinktank.transcription.captions import extract_youtube_captions
 
         mock_ydl = MagicMock()
         mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
@@ -121,10 +121,10 @@ class TestExtractYoutubeCaptions:
 
         assert result is None
 
-    @patch("src.thinktank.transcription.captions.YoutubeDL")
+    @patch("thinktank.transcription.captions.YoutubeDL")
     def test_extract_captions_exception_returns_none(self, mock_ydl_cls):
         """Returns None on any exception (fail-safe per spec 7.1)."""
-        from src.thinktank.transcription.captions import extract_youtube_captions
+        from thinktank.transcription.captions import extract_youtube_captions
 
         mock_ydl = MagicMock()
         mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
@@ -135,11 +135,11 @@ class TestExtractYoutubeCaptions:
 
         assert result is None
 
-    @patch("src.thinktank.transcription.captions.httpx")
-    @patch("src.thinktank.transcription.captions.YoutubeDL")
+    @patch("thinktank.transcription.captions.httpx")
+    @patch("thinktank.transcription.captions.YoutubeDL")
     def test_vtt_parsing_strips_timing_and_deduplicates(self, mock_ydl_cls, mock_httpx):
         """VTT content with timestamps and duplicate lines yields clean text."""
-        from src.thinktank.transcription.captions import extract_youtube_captions
+        from thinktank.transcription.captions import extract_youtube_captions
 
         mock_ydl = MagicMock()
         mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
@@ -160,7 +160,7 @@ class TestExtractYoutubeCaptions:
 
         # Since < 100 words, extract_youtube_captions returns None
         # But we verify the internal VTT parsing via a direct call
-        from src.thinktank.transcription.captions import _parse_vtt_text
+        from thinktank.transcription.captions import _parse_vtt_text
 
         parsed = _parse_vtt_text(vtt)
         lines = parsed.split("\n")

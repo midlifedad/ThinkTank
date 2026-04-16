@@ -13,12 +13,12 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.discover_guests_podcastindex import (
+from thinktank.handlers.discover_guests_podcastindex import (
     handle_discover_guests_podcastindex,
 )
-from src.thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
-from src.thinktank.models.candidate import CandidateThinker
-from src.thinktank.models.source import Source, SourceThinker
+from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
+from thinktank.models.candidate import CandidateThinker
+from thinktank.models.source import Source, SourceThinker
 from tests.factories import (
     create_content,
     create_job,
@@ -92,7 +92,7 @@ class TestDiscoverGuestsPodcastindexContract:
 
         with (
             patch(
-                "src.thinktank.handlers.discover_guests_podcastindex.PodcastIndexClient",
+                "thinktank.handlers.discover_guests_podcastindex.PodcastIndexClient",
                 lambda api_key, api_secret: mock_instance,
             ),
             patch.dict(

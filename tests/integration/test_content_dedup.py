@@ -12,10 +12,10 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
-from src.thinktank.ingestion.fingerprint import compute_fingerprint
-from src.thinktank.ingestion.url_normalizer import normalize_url
-from src.thinktank.models.content import Content
+from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
+from thinktank.ingestion.fingerprint import compute_fingerprint
+from thinktank.ingestion.url_normalizer import normalize_url
+from thinktank.models.content import Content
 from tests.factories import create_content, create_job, create_source, create_thinker
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "rss"
@@ -41,7 +41,7 @@ def _make_httpx_mock(fixture_name: str):
     return mock_cm
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_url_normalization_dedup(
     mock_client_cls: MagicMock, session: AsyncSession
 ):
@@ -102,7 +102,7 @@ async def test_url_normalization_dedup(
     assert "Understanding Quantum Computing" in titles
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_fingerprint_dedup(
     mock_client_cls: MagicMock, session: AsyncSession
 ):

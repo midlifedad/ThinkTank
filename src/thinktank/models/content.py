@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING, Optional
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.thinktank.models.base import Base, uuid_pk
+from thinktank.models.base import Base, uuid_pk
 
 if TYPE_CHECKING:
-    from src.thinktank.models.source import Source
-    from src.thinktank.models.thinker import Thinker
+    from thinktank.models.source import Source
+    from thinktank.models.thinker import Thinker
 
 
 class Content(Base):

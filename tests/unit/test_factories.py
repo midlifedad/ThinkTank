@@ -10,7 +10,7 @@ Tests verify:
 import uuid
 from datetime import datetime, timezone
 
-from src.thinktank.models import (
+from thinktank.models import (
     ApiUsage,
     CandidateThinker,
     Category,

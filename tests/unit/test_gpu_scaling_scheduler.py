@@ -24,10 +24,10 @@ def _make_session_factory():
     return factory, mock_session
 
 
-@patch("src.thinktank.worker.loop.manage_gpu_scaling", new_callable=AsyncMock)
+@patch("thinktank.worker.loop.manage_gpu_scaling", new_callable=AsyncMock)
 async def test_scheduler_calls_manage_gpu_scaling(mock_manage):
     """Mock session_factory + manage_gpu_scaling, run one iteration -> manage_gpu_scaling called."""
-    from src.thinktank.worker.loop import _gpu_scaling_scheduler
+    from thinktank.worker.loop import _gpu_scaling_scheduler
 
     session_factory, _ = _make_session_factory()
     shutdown_event = asyncio.Event()
@@ -44,10 +44,10 @@ async def test_scheduler_calls_manage_gpu_scaling(mock_manage):
     mock_manage.assert_awaited_once()
 
 
-@patch("src.thinktank.worker.loop.manage_gpu_scaling", new_callable=AsyncMock)
+@patch("thinktank.worker.loop.manage_gpu_scaling", new_callable=AsyncMock)
 async def test_scheduler_respects_shutdown(mock_manage):
     """Set shutdown_event immediately -> scheduler exits without calling manage_gpu_scaling."""
-    from src.thinktank.worker.loop import _gpu_scaling_scheduler
+    from thinktank.worker.loop import _gpu_scaling_scheduler
 
     session_factory, _ = _make_session_factory()
     shutdown_event = asyncio.Event()
@@ -58,10 +58,10 @@ async def test_scheduler_respects_shutdown(mock_manage):
     mock_manage.assert_not_awaited()
 
 
-@patch("src.thinktank.worker.loop.manage_gpu_scaling", new_callable=AsyncMock)
+@patch("thinktank.worker.loop.manage_gpu_scaling", new_callable=AsyncMock)
 async def test_scheduler_passes_idle_since(mock_manage):
     """After first call returns idle_since, second call passes it through."""
-    from src.thinktank.worker.loop import _gpu_scaling_scheduler
+    from thinktank.worker.loop import _gpu_scaling_scheduler
 
     idle_time = datetime.now(UTC)
     call_count = 0

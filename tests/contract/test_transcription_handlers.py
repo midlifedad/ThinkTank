@@ -10,15 +10,15 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.thinktank.handlers.process_content import handle_process_content
+from thinktank.handlers.process_content import handle_process_content
 from tests.factories import create_content, create_job, create_source, create_thinker
 
 LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(250))
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_process_content_contract(
     mock_captions, mock_existing, mock_gpu, session
 ):

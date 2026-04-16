@@ -7,7 +7,7 @@ a single cohesive worker process.
 Spec reference: Sections 6.1, 6.2, 6.3.
 
 Usage:
-    from src.thinktank.worker.loop import worker_loop
+    from thinktank.worker.loop import worker_loop
     await worker_loop(session_factory)
 """
 
@@ -21,19 +21,19 @@ from datetime import datetime
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from src.thinktank.handlers.registry import get_handler
-from src.thinktank.llm.escalation import escalate_timed_out_reviews
-from src.thinktank.llm.scheduled import run_daily_digest, run_health_check, run_weekly_audit
-from src.thinktank.llm.time_utils import seconds_until_next_monday_utc, seconds_until_next_utc_hour
-from src.thinktank.models.job import Job
-from src.thinktank.queue.backpressure import get_effective_priority
-from src.thinktank.queue.claim import claim_job, complete_job, fail_job
-from src.thinktank.queue.errors import ErrorCategory, categorize_error
-from src.thinktank.queue.kill_switch import is_workers_active
-from src.thinktank.queue.reclaim import reclaim_stale_jobs
-from src.thinktank.queue.retry import get_max_attempts
-from src.thinktank.scaling.railway import manage_gpu_scaling
-from src.thinktank.worker.config import WorkerSettings, get_worker_settings
+from thinktank.handlers.registry import get_handler
+from thinktank.llm.escalation import escalate_timed_out_reviews
+from thinktank.llm.scheduled import run_daily_digest, run_health_check, run_weekly_audit
+from thinktank.llm.time_utils import seconds_until_next_monday_utc, seconds_until_next_utc_hour
+from thinktank.models.job import Job
+from thinktank.queue.backpressure import get_effective_priority
+from thinktank.queue.claim import claim_job, complete_job, fail_job
+from thinktank.queue.errors import ErrorCategory, categorize_error
+from thinktank.queue.kill_switch import is_workers_active
+from thinktank.queue.reclaim import reclaim_stale_jobs
+from thinktank.queue.retry import get_max_attempts
+from thinktank.scaling.railway import manage_gpu_scaling
+from thinktank.worker.config import WorkerSettings, get_worker_settings
 
 logger = structlog.get_logger(__name__)
 

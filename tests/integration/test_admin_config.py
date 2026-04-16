@@ -96,7 +96,7 @@ class TestRateLimitsEditor:
         # Verify DB
         from sqlalchemy import select
 
-        from src.thinktank.models.config_table import SystemConfig
+        from thinktank.models.config_table import SystemConfig
 
         result = await session.execute(
             select(SystemConfig.value).where(SystemConfig.key == "rate_limits")
@@ -135,7 +135,7 @@ class TestRateLimitsEditor:
         # Verify second values are in DB
         from sqlalchemy import select
 
-        from src.thinktank.models.config_table import SystemConfig
+        from thinktank.models.config_table import SystemConfig
 
         result = await session.execute(
             select(SystemConfig.value).where(SystemConfig.key == "rate_limits")
@@ -202,7 +202,7 @@ class TestSystemSettingsEditor:
         # Verify DB
         from sqlalchemy import select
 
-        from src.thinktank.models.config_table import SystemConfig
+        from thinktank.models.config_table import SystemConfig
 
         for key, expected in [
             ("llm_timeout_hours", 4),
@@ -246,7 +246,7 @@ class TestSystemSettingsEditor:
         # Verify all 4 values
         from sqlalchemy import select
 
-        from src.thinktank.models.config_table import SystemConfig
+        from thinktank.models.config_table import SystemConfig
 
         for key, expected in [
             ("llm_timeout_hours", 8),

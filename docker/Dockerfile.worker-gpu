@@ -18,4 +18,4 @@ RUN uv sync --frozen --no-dev
 # Parakeet model cache directory (Railway persistent volume)
 ENV NEMO_CACHE_DIR=/app/.nemo_cache
 
-CMD ["uv", "run", "python", "-m", "src.thinktank.worker"]
+CMD ["uv", "run", "python", "-m", "thinktank.worker"]

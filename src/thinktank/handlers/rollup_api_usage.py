@@ -16,7 +16,7 @@ import structlog
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.job import Job
+from thinktank.models.job import Job
 
 logger = structlog.get_logger(__name__)
 
@@ -82,7 +82,7 @@ async def handle_rollup_api_usage(session: AsyncSession, job: Job) -> None:
     # We do this in Python by querying and updating, since cost map is in-app.
     from sqlalchemy import select as sa_select
 
-    from src.thinktank.models.api_usage import ApiUsage
+    from thinktank.models.api_usage import ApiUsage
 
     uncost_result = await session.execute(
         sa_select(ApiUsage).where(

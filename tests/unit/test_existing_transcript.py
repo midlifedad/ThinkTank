@@ -14,10 +14,10 @@ class TestFetchExistingTranscript:
     """Test suite for fetch_existing_transcript."""
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.existing.httpx.AsyncClient")
+    @patch("thinktank.transcription.existing.httpx.AsyncClient")
     async def test_fetch_existing_success(self, mock_client_cls):
         """Successful fetch returns extracted plain text from HTML response."""
-        from src.thinktank.transcription.existing import fetch_existing_transcript
+        from thinktank.transcription.existing import fetch_existing_transcript
 
         html_body = "<html><body><p>This is the transcript text.</p></body></html>"
         mock_response = MagicMock()
@@ -45,7 +45,7 @@ class TestFetchExistingTranscript:
     @pytest.mark.asyncio
     async def test_fetch_existing_no_pattern(self):
         """Returns None immediately when no transcript_url_pattern is provided."""
-        from src.thinktank.transcription.existing import fetch_existing_transcript
+        from thinktank.transcription.existing import fetch_existing_transcript
 
         result = await fetch_existing_transcript(
             content_url="https://show.com/episodes/ep-42",
@@ -55,10 +55,10 @@ class TestFetchExistingTranscript:
         assert result is None
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.existing.httpx.AsyncClient")
+    @patch("thinktank.transcription.existing.httpx.AsyncClient")
     async def test_fetch_existing_404(self, mock_client_cls):
         """Returns None on 404 response (transcript doesn't exist)."""
-        from src.thinktank.transcription.existing import fetch_existing_transcript
+        from thinktank.transcription.existing import fetch_existing_transcript
 
         mock_response = MagicMock()
         mock_response.status_code = 404
@@ -82,10 +82,10 @@ class TestFetchExistingTranscript:
         assert result is None
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.existing.httpx.AsyncClient")
+    @patch("thinktank.transcription.existing.httpx.AsyncClient")
     async def test_fetch_existing_timeout(self, mock_client_cls):
         """Returns None on timeout."""
-        from src.thinktank.transcription.existing import fetch_existing_transcript
+        from thinktank.transcription.existing import fetch_existing_transcript
 
         mock_client = AsyncMock()
         mock_client.get = AsyncMock(side_effect=httpx.TimeoutException("timed out"))
@@ -109,7 +109,7 @@ class TestFetchExistingTranscript:
         treated as failures. Verify via httpx.MockTransport that a 302 is
         transparently followed and the final body is returned.
         """
-        from src.thinktank.transcription import existing as existing_mod
+        from thinktank.transcription import existing as existing_mod
 
         def _handler(request: httpx.Request) -> httpx.Response:
             if request.url.path.endswith("/ep-42"):

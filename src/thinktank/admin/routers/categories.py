@@ -19,7 +19,7 @@ templates = get_templates()
 
 async def _get_category_tree(session: AsyncSession) -> list:
     """Load all root categories with children eagerly loaded."""
-    from src.thinktank.models.category import Category
+    from thinktank.models.category import Category
 
     result = await session.execute(
         select(Category)
@@ -58,7 +58,7 @@ async def create_category(
     parent_id: str = Form(""),
 ):
     """Create a new category via form submission."""
-    from src.thinktank.models.category import Category
+    from thinktank.models.category import Category
 
     cat = Category(
         name=name,
@@ -85,7 +85,7 @@ async def update_category(
     description: str = Form(""),
 ):
     """Update a category's name and description."""
-    from src.thinktank.models.category import Category
+    from thinktank.models.category import Category
 
     cat = await session.get(Category, category_id)
     if not cat:
@@ -113,7 +113,7 @@ async def delete_category(
     session: AsyncSession = Depends(get_session),
 ):
     """Delete a category if it has no children and no thinker associations."""
-    from src.thinktank.models.category import Category
+    from thinktank.models.category import Category
 
     cat = await session.get(Category, category_id)
     if not cat:

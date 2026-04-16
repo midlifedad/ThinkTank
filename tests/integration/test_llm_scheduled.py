@@ -9,17 +9,17 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.thinktank.llm.scheduled import (
+from thinktank.llm.scheduled import (
     run_daily_digest,
     run_health_check,
     run_weekly_audit,
 )
-from src.thinktank.llm.schemas import (
+from thinktank.llm.schemas import (
     DailyDigestResponse,
     HealthCheckResponse,
     WeeklyAuditResponse,
 )
-from src.thinktank.models.review import LLMReview
+from thinktank.models.review import LLMReview
 
 
 @pytest.mark.asyncio
@@ -31,7 +31,7 @@ async def test_health_check_creates_review(session: AsyncSession):
     )
     mock_review = AsyncMock(return_value=(mock_response, 150, 1200))
 
-    with patch("src.thinktank.llm.scheduled._llm_client") as mock_client:
+    with patch("thinktank.llm.scheduled._llm_client") as mock_client:
         mock_client.review = mock_review
         mock_client.model = "claude-sonnet-4-20250514"
         result = await run_health_check(session)
@@ -61,7 +61,7 @@ async def test_daily_digest_creates_review(session: AsyncSession):
     )
     mock_review = AsyncMock(return_value=(mock_response, 200, 1500))
 
-    with patch("src.thinktank.llm.scheduled._llm_client") as mock_client:
+    with patch("thinktank.llm.scheduled._llm_client") as mock_client:
         mock_client.review = mock_review
         mock_client.model = "claude-sonnet-4-20250514"
         result = await run_daily_digest(session)
@@ -89,7 +89,7 @@ async def test_weekly_audit_creates_review(session: AsyncSession):
     )
     mock_review = AsyncMock(return_value=(mock_response, 300, 2000))
 
-    with patch("src.thinktank.llm.scheduled._llm_client") as mock_client:
+    with patch("thinktank.llm.scheduled._llm_client") as mock_client:
         mock_client.review = mock_review
         mock_client.model = "claude-sonnet-4-20250514"
         result = await run_weekly_audit(session)
@@ -114,7 +114,7 @@ async def test_scheduled_task_handles_api_error(session: AsyncSession):
     """Scheduled task returns None and does NOT crash on LLM failure."""
     mock_review = AsyncMock(side_effect=Exception("Anthropic API down"))
 
-    with patch("src.thinktank.llm.scheduled._llm_client") as mock_client:
+    with patch("thinktank.llm.scheduled._llm_client") as mock_client:
         mock_client.review = mock_review
         mock_client.model = "claude-sonnet-4-20250514"
         result = await run_health_check(session)
@@ -141,7 +141,7 @@ async def test_health_check_with_config_adjustments(session: AsyncSession):
     )
     mock_review = AsyncMock(return_value=(mock_response, 180, 1300))
 
-    with patch("src.thinktank.llm.scheduled._llm_client") as mock_client:
+    with patch("thinktank.llm.scheduled._llm_client") as mock_client:
         mock_client.review = mock_review
         mock_client.model = "claude-sonnet-4-20250514"
         result = await run_health_check(session)
