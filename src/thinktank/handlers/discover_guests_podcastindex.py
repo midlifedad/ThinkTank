@@ -47,7 +47,18 @@ async def handle_discover_guests_podcastindex(
         log.warning("discover_guests_podcastindex_no_thinker_id")
         return
 
-    thinker = await session.get(Thinker, thinker_id)
+    # Coerce payload thinker_id to UUID. A malformed string would raise
+    # asyncpg DataError inside session.get() and fail the job with an
+    # opaque error. Early-return cleanly instead.
+    try:
+        thinker_uuid = (
+            uuid.UUID(thinker_id) if isinstance(thinker_id, str) else thinker_id
+        )
+    except (ValueError, TypeError, AttributeError):
+        log.error("discover_guests_podcastindex_invalid_thinker_id")
+        return
+
+    thinker = await session.get(Thinker, thinker_uuid)
     if thinker is None:
         log.warning("discover_guests_podcastindex_thinker_not_found")
         return

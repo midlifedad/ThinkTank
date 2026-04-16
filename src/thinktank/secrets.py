@@ -35,9 +35,21 @@ async def get_secret(session: AsyncSession, name: str) -> str | None:
         select(SystemConfig.value).where(SystemConfig.key == db_key)
     )
     row = result.scalar_one_or_none()
-    if row is not None and row:
-        # JSONB stores the value — could be a string directly
-        return str(row) if not isinstance(row, str) else row
+    if row is not None:
+        # JSONB can hold either a plain string ("sk-ant-...") or a dict
+        # wrapper ({"value": "sk-ant-..."}) depending on how the row was
+        # written. str(row) on a dict produces a literal Python repr like
+        # "{'value': 'sk-...'}" which is garbage when passed as an API key.
+        if isinstance(row, dict):
+            raw = row.get("value")
+        elif isinstance(row, str):
+            raw = row
+        else:
+            raw = None
+        if raw:
+            return raw
 
-    # Fallback to environment variable
+    # Fallback to environment variable. Also reached when the DB row
+    # exists but holds an empty string / empty dict -- we don't want a
+    # placeholder config row to shadow a real env var.
     return os.environ.get(name.upper()) or None

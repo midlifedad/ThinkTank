@@ -104,3 +104,9 @@ async def handle_rollup_api_usage(session: AsyncSession, job: Job) -> None:
     """)
     purge_result = await session.execute(purge_sql)
     logger.info("rollup_api_usage: purged old rows", count=purge_result.rowcount)
+
+    # Persist all writes. The worker loop wraps us in `async with
+    # session_factory() as session:` without auto-commit, so we MUST
+    # commit here or every rollup insert + purge silently rolls back
+    # on session close.
+    await session.commit()

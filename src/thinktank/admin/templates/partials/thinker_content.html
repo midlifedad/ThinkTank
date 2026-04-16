@@ -13,11 +13,11 @@
         <tr>
             <td>{{ c.title }}</td>
             <td>
-                {% if c.status == 'transcribed' or c.status == 'complete' %}
+                {% if c.status in HEALTHY_CONTENT_STATUSES %}
                 <span class="healthy">{{ c.status }}</span>
-                {% elif c.status == 'pending' %}
+                {% elif c.status in WARNING_CONTENT_STATUSES %}
                 <span class="warning">{{ c.status }}</span>
-                {% elif c.status == 'failed' or c.status == 'skipped' %}
+                {% elif c.status in ERROR_CONTENT_STATUSES %}
                 <span class="error">{{ c.status }}</span>
                 {% else %}
                 <span>{{ c.status }}</span>

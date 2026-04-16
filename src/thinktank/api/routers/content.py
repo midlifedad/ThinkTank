@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import ContentResponse, PaginatedResponse
 
-from thinktank.models.content import Content
+from thinktank.models.content import Content, ContentThinker
 
 router = APIRouter(prefix="/api/content", tags=["content"])
 
@@ -30,7 +30,12 @@ async def list_content(
     if source_id is not None:
         query = query.where(Content.source_id == source_id)
     if thinker_id is not None:
-        query = query.where(Content.source_owner_id == thinker_id)
+        # Filter via the content_thinkers junction, not the deprecated
+        # Content.source_owner_id FK (which is None on all new content
+        # since Phase 13 / PR #17).
+        query = query.join(
+            ContentThinker, ContentThinker.content_id == Content.id
+        ).where(ContentThinker.thinker_id == thinker_id)
     if status is not None:
         query = query.where(Content.status == status)
 

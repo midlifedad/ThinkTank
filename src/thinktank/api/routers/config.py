@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.admin.auth import require_admin
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import ConfigResponse, ConfigUpdate
 
@@ -15,14 +16,28 @@ from thinktank.models.config_table import SystemConfig
 router = APIRouter(prefix="/api/config", tags=["config"])
 
 
+# Keys with this prefix store credentials (API keys, tokens) and must never
+# be returned by this public endpoint. See ADMIN-REVIEW CR-02.
+_SECRET_KEY_PREFIX = "secret_"
+
+
 @router.get("", response_model=list[ConfigResponse])
 async def list_config(
     session: AsyncSession = Depends(get_session),
 ) -> list[ConfigResponse]:
-    """List all system config entries."""
+    """List all system config entries, excluding credential rows.
+
+    Rows whose key starts with ``secret_`` are filtered out so API keys
+    stored via the admin dashboard (Anthropic, Railway, PodcastIndex, ...)
+    are not exfiltrated in plaintext.
+    """
     result = await session.execute(select(SystemConfig))
     configs = result.scalars().all()
-    return [ConfigResponse.model_validate(c) for c in configs]
+    return [
+        ConfigResponse.model_validate(c)
+        for c in configs
+        if not c.key.startswith(_SECRET_KEY_PREFIX)
+    ]
 
 
 @router.get("/{key}", response_model=ConfigResponse)
@@ -30,7 +45,17 @@ async def get_config(
     key: str,
     session: AsyncSession = Depends(get_session),
 ) -> ConfigResponse:
-    """Get a specific config entry by key."""
+    """Get a specific config entry by key.
+
+    Rejects any key prefixed with ``secret_`` with 403, regardless of
+    whether the row exists (prevents using 404 vs 403 as an oracle for
+    which secrets are populated).
+    """
+    if key.startswith(_SECRET_KEY_PREFIX):
+        raise HTTPException(
+            status_code=403,
+            detail="secret keys are not exposed via this endpoint",
+        )
     result = await session.execute(select(SystemConfig).where(SystemConfig.key == key))
     config = result.scalars().first()
     if config is None:
@@ -43,8 +68,15 @@ async def upsert_config(
     key: str,
     body: ConfigUpdate,
     session: AsyncSession = Depends(get_session),
+    _admin: str = Depends(require_admin),
 ) -> ConfigResponse:
-    """Create or update a config entry."""
+    """Create or update a config entry.
+
+    Writes are gated by :func:`thinktank.admin.auth.require_admin` so an
+    unauthenticated caller cannot silently rotate credentials, write
+    ``secret_*`` keys, or brick the stack via the config surface.
+    See ADMIN-REVIEW CR-02 follow-up.
+    """
     now = datetime.now()  # noqa: DTZ005 -- timezone-naive per project convention
     stmt = insert(SystemConfig).values(
         key=key,
