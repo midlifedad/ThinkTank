@@ -19,7 +19,7 @@ class TestJobsEndpointContract:
     async def test_job_status_returns_correct_shape(self, client: AsyncClient, session):
         """GET /api/jobs/status returns 200 with by_type, by_status, recent_errors."""
         await create_job(session, job_type="discover_thinker", status="pending")
-        await create_job(session, job_type="discover_thinker", status="completed")
+        await create_job(session, job_type="discover_thinker", status="done")
         await create_job(session, job_type="fetch_podcast_feed", status="failed", error="Timeout", error_category="network")
         await session.commit()
 
@@ -37,13 +37,13 @@ class TestJobsEndpointContract:
         """Job counts are grouped correctly."""
         await create_job(session, job_type="discover_thinker", status="pending")
         await create_job(session, job_type="discover_thinker", status="pending")
-        await create_job(session, job_type="fetch_podcast_feed", status="completed")
+        await create_job(session, job_type="fetch_podcast_feed", status="done")
         await session.commit()
 
         resp = await client.get("/api/jobs/status")
         body = resp.json()
         assert body["by_status"].get("pending", 0) >= 2
-        assert body["by_status"].get("completed", 0) >= 1
+        assert body["by_status"].get("done", 0) >= 1
 
     async def test_job_status_recent_errors_shape(self, client: AsyncClient, session):
         """Recent errors include error, error_category, and job_type."""

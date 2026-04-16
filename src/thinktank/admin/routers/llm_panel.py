@@ -186,20 +186,27 @@ async def override_decision(
     review.overridden_at = _now()
     review.override_reasoning = override_reasoning
 
+    # Map form values (the select offers approve/reject) to the canonical
+    # status values each entity uses. Writing the raw form value silently
+    # poisoned rows with invalid approval_status pre-Phase-4; the CHECK
+    # constraint now surfaces it.
+    _APPROVAL_MAP = {"approve": "approved", "reject": "rejected"}
+    _CANDIDATE_MAP = {"approve": "promoted", "reject": "rejected"}
+
     # Apply override to the target entity
     snapshot = review.context_snapshot or {}
     if review.review_type == "thinker_approval" and "thinker_id" in snapshot:
         thinker = await session.get(Thinker, UUID(snapshot["thinker_id"]))
         if thinker:
-            thinker.approval_status = override_decision
+            thinker.approval_status = _APPROVAL_MAP.get(override_decision, override_decision)
     elif review.review_type == "source_approval" and "source_id" in snapshot:
         source = await session.get(Source, UUID(snapshot["source_id"]))
         if source:
-            source.approval_status = override_decision
+            source.approval_status = _APPROVAL_MAP.get(override_decision, override_decision)
     elif review.review_type == "candidate_review" and "candidate_id" in snapshot:
         candidate = await session.get(CandidateThinker, UUID(snapshot["candidate_id"]))
         if candidate:
-            candidate.status = override_decision
+            candidate.status = _CANDIDATE_MAP.get(override_decision, override_decision)
 
     await session.commit()
 

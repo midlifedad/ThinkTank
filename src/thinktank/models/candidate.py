@@ -43,7 +43,7 @@ class CandidateThinker(Base):
     reviewed_by: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
     thinker_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        sa.ForeignKey("thinkers.id"),
+        sa.ForeignKey("thinkers.id", ondelete="SET NULL"),
         nullable=True,
     )
 

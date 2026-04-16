@@ -12,10 +12,20 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from thinktank.models.base import Base, uuid_pk
+from thinktank.models.constants import ALLOWED_SOURCE_APPROVAL_STATUSES
 
 if TYPE_CHECKING:
     from thinktank.models.content import Content
     from thinktank.models.thinker import Thinker
+
+
+def _source_approval_status_check() -> sa.CheckConstraint:
+    """CHECK constraint for Source.approval_status (DATA-REVIEW H3)."""
+    values = ", ".join(f"'{s}'" for s in ALLOWED_SOURCE_APPROVAL_STATUSES)
+    return sa.CheckConstraint(
+        f"approval_status IN ({values})",
+        name="ck_source_approval_status",
+    )
 
 
 class Source(Base):
@@ -27,6 +37,7 @@ class Source(Base):
     """
 
     __tablename__ = "sources"
+    __table_args__ = (_source_approval_status_check(),)
 
     id: Mapped[uuid_pk]
     thinker_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -58,6 +69,7 @@ class Source(Base):
     source_thinkers: Mapped[list["SourceThinker"]] = relationship(
         back_populates="source",
         lazy="selectin",
+        passive_deletes=True,
     )
     content: Mapped[list["Content"]] = relationship(
         back_populates="source",
@@ -77,11 +89,11 @@ class SourceThinker(Base):
     __tablename__ = "source_thinkers"
 
     source_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("sources.id"),
+        sa.ForeignKey("sources.id", ondelete="CASCADE"),
         primary_key=True,
     )
     thinker_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("thinkers.id"),
+        sa.ForeignKey("thinkers.id", ondelete="CASCADE"),
         primary_key=True,
     )
     relationship_type: Mapped[str] = mapped_column(sa.Text)
