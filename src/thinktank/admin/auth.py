@@ -35,7 +35,7 @@ import hmac
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.secrets import get_secret
+from thinktank.secrets import get_secret
 from thinktank.admin.dependencies import get_session
 
 # Cookie name used by the admin login endpoint to set a browser session

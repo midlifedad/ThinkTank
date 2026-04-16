@@ -5,7 +5,7 @@ import os
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.thinktank.models.config_table import SystemConfig
+from thinktank.models.config_table import SystemConfig
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",

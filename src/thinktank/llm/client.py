@@ -16,7 +16,7 @@ from anthropic import AsyncAnthropic
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.secrets import get_secret
+from thinktank.secrets import get_secret
 
 
 class LLMClient:

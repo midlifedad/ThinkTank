@@ -230,7 +230,7 @@ class TestDiscoveryTrigger:
         )
         assert response.status_code == 200
 
-        from src.thinktank.models.job import Job
+        from thinktank.models.job import Job
 
         result = await session.execute(
             select(Job).where(Job.job_type == "discover_thinker")
@@ -322,8 +322,8 @@ class TestCandidatePromote:
         )
         assert response.status_code == 200
 
-        from src.thinktank.models.thinker import Thinker
-        from src.thinktank.models.candidate import CandidateThinker
+        from thinktank.models.thinker import Thinker
+        from thinktank.models.candidate import CandidateThinker
 
         # Verify thinker created
         thinker_result = await session.execute(
@@ -361,8 +361,8 @@ class TestCandidatePromote:
             data={"reason": "Needs review"},
         )
 
-        from src.thinktank.models.job import Job
-        from src.thinktank.models.thinker import Thinker
+        from thinktank.models.job import Job
+        from thinktank.models.thinker import Thinker
 
         # Find the new thinker
         thinker_result = await session.execute(
@@ -420,7 +420,7 @@ class TestCandidateReject:
         )
         assert response.status_code == 200
 
-        from src.thinktank.models.candidate import CandidateThinker
+        from thinktank.models.candidate import CandidateThinker
 
         result = await session.execute(
             select(CandidateThinker)
@@ -450,7 +450,7 @@ class TestCandidateReject:
             data={"reason": "Not a good fit"},
         )
 
-        from src.thinktank.models.candidate import CandidateThinker
+        from thinktank.models.candidate import CandidateThinker
 
         result = await session.execute(
             select(CandidateThinker)

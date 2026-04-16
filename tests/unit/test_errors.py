@@ -9,7 +9,7 @@ from enum import StrEnum
 import anthropic
 import pydantic
 import pytest
-from src.thinktank.queue.errors import ErrorCategory, categorize_error
+from thinktank.queue.errors import ErrorCategory, categorize_error
 
 
 class TestErrorCategoryEnum:
@@ -117,7 +117,7 @@ class TestCategorizeErrorAnthropic:
 
     def test_pydantic_validation_error_returns_llm_parse_error(self):
         """pydantic.ValidationError maps to LLM_PARSE_ERROR."""
-        from src.thinktank.llm.schemas import ThinkerApprovalResponse
+        from thinktank.llm.schemas import ThinkerApprovalResponse
 
         try:
             ThinkerApprovalResponse.model_validate({"bad_field": 123})

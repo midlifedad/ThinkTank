@@ -20,11 +20,11 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
-from src.thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
-from src.thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
-from src.thinktank.models.content import Content, ContentThinker
-from src.thinktank.models.job import Job
+from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
+from thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
+from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
+from thinktank.models.content import Content, ContentThinker
+from thinktank.models.job import Job
 from tests.factories import (
     create_content,
     create_job,
@@ -64,7 +64,7 @@ class TestFetchPodcastFeedContract:
           job with descriptions in payload
     """
 
-    @patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+    @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
     async def test_fetch_podcast_feed_contract(
         self, mock_client_cls: MagicMock, session: AsyncSession
     ):

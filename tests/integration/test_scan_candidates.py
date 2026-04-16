@@ -14,9 +14,9 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
-from src.thinktank.models.candidate import CandidateThinker
-from src.thinktank.models.job import Job
+from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
+from thinktank.models.candidate import CandidateThinker
+from thinktank.models.job import Job
 from tests.factories import (
     create_candidate_thinker,
     create_content,
@@ -165,7 +165,7 @@ async def test_quota_pause(session: AsyncSession):
 
     # Mock check_daily_quota to return exhausted
     with patch(
-        "src.thinktank.handlers.scan_for_candidates.check_daily_quota",
+        "thinktank.handlers.scan_for_candidates.check_daily_quota",
         new_callable=AsyncMock,
         return_value=(False, 20, 20),
     ):
@@ -196,7 +196,7 @@ async def test_quota_triggers_review(session: AsyncSession):
 
     # Mock should_trigger_llm_review to always return True
     with patch(
-        "src.thinktank.handlers.scan_for_candidates.should_trigger_llm_review",
+        "thinktank.handlers.scan_for_candidates.should_trigger_llm_review",
         return_value=True,
     ):
         await handle_scan_for_candidates(session, job)
@@ -232,7 +232,7 @@ async def test_cascade_pause_pending_queue(session: AsyncSession):
 
     # Mock pending count > 40
     with patch(
-        "src.thinktank.handlers.scan_for_candidates.get_pending_candidate_count",
+        "thinktank.handlers.scan_for_candidates.get_pending_candidate_count",
         new_callable=AsyncMock,
         return_value=41,
     ):

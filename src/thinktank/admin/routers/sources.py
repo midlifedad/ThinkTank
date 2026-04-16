@@ -13,12 +13,13 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from src.thinktank.models.content import Content
-from src.thinktank.models.job import Job
-from src.thinktank.models.review import LLMReview
-from src.thinktank.models.source import Source, SourceThinker
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.content import Content
+from thinktank.models.job import Job
+from thinktank.models.review import LLMReview
+from thinktank.models.source import Source, SourceThinker
+from thinktank.models.thinker import Thinker
 from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin/sources", tags=["sources"])
@@ -32,7 +33,11 @@ async def _build_source_list(
     source_type: Optional[str] = None,
 ) -> list[dict]:
     """Build source list with associated thinker names via junction, applying filters."""
-    stmt = select(Source)
+    # Eager-load source_thinkers.thinker so thinker names are available on each
+    # Source row without triggering a per-row SELECT.
+    stmt = select(Source).options(
+        selectinload(Source.source_thinkers).selectinload(SourceThinker.thinker)
+    )
 
     if thinker_id and thinker_id != "all":
         try:
@@ -53,13 +58,10 @@ async def _build_source_list(
 
     sources = []
     for source in source_rows:
-        # Get associated thinker names via junction
-        thinker_result = await session.execute(
-            select(Thinker.name)
-            .join(SourceThinker, SourceThinker.thinker_id == Thinker.id)
-            .where(SourceThinker.source_id == source.id)
-        )
-        thinker_names = [r[0] for r in thinker_result.all()]
+        # Thinker names are eager-loaded via source_thinkers -> thinker.
+        thinker_names = [
+            st.thinker.name for st in source.source_thinkers if st.thinker is not None
+        ]
 
         sources.append({
             "id": str(source.id),

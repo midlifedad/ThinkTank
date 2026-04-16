@@ -175,7 +175,7 @@ class TestSourceAdd:
         )
         assert response.status_code == 200
 
-        from src.thinktank.models.source import Source
+        from thinktank.models.source import Source
 
         result = await session.execute(
             select(Source)
@@ -186,7 +186,7 @@ class TestSourceAdd:
         assert source is not None
         assert source.approval_status == "pending_llm"
         # thinker_id is no longer set on source; junction row created instead
-        from src.thinktank.models.source import SourceThinker
+        from thinktank.models.source import SourceThinker
         junc_result = await session.execute(
             select(SourceThinker).where(SourceThinker.source_id == source.id)
         )
@@ -238,7 +238,7 @@ class TestSourceApprove:
         )
         assert response.status_code == 200
 
-        from src.thinktank.models.source import Source
+        from thinktank.models.source import Source
 
         result = await session.execute(
             select(Source)
@@ -269,7 +269,7 @@ class TestSourceApprove:
             data={"reason": "Verified feed"},
         )
 
-        from src.thinktank.models.review import LLMReview
+        from thinktank.models.review import LLMReview
 
         result = await session.execute(
             select(LLMReview).where(
@@ -329,7 +329,7 @@ class TestSourceReject:
         )
         assert response.status_code == 200
 
-        from src.thinktank.models.source import Source
+        from thinktank.models.source import Source
 
         result = await session.execute(
             select(Source)
@@ -360,7 +360,7 @@ class TestSourceReject:
             data={"reason": "Not relevant"},
         )
 
-        from src.thinktank.models.review import LLMReview
+        from thinktank.models.review import LLMReview
 
         result = await session.execute(
             select(LLMReview).where(
@@ -398,7 +398,7 @@ class TestSourceForceRefresh:
         )
         assert response.status_code == 200
 
-        from src.thinktank.models.job import Job
+        from thinktank.models.job import Job
 
         result = await session.execute(
             select(Job).where(Job.job_type == "fetch_podcast_feed")

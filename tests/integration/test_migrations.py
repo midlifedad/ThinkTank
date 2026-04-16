@@ -16,7 +16,7 @@ import sys
 import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
-from src.thinktank.models import Base
+from thinktank.models import Base
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",

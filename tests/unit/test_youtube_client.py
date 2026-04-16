@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.thinktank.ingestion.youtube_client import (
+from thinktank.ingestion.youtube_client import (
     SKIP_CATEGORY_IDS,
     YouTubeClient,
     _parse_iso_duration,

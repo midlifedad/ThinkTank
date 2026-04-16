@@ -8,7 +8,7 @@ from datetime import datetime
 
 import pytest
 
-from src.thinktank.ingestion.feed_parser import FeedEntry, parse_feed
+from thinktank.ingestion.feed_parser import FeedEntry, parse_feed
 
 # Minimal valid RSS feed with one episode
 BASIC_RSS = """<?xml version="1.0" encoding="UTF-8"?>

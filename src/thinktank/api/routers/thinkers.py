@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import PaginatedResponse, ThinkerCreate, ThinkerResponse, ThinkerUpdate
 
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.thinker import Thinker
 
 router = APIRouter(prefix="/api/thinkers", tags=["thinkers"])
 
@@ -32,7 +32,7 @@ async def list_thinkers(
     if status is not None:
         query = query.where(Thinker.approval_status == status)
     if category_id is not None:
-        from src.thinktank.models.category import ThinkerCategory
+        from thinktank.models.category import ThinkerCategory
 
         query = query.join(ThinkerCategory).where(ThinkerCategory.category_id == category_id)
 

@@ -168,10 +168,10 @@ async def override_decision(
     Updates the LLM review and applies the override to the target entity
     (thinker, source, or candidate) in the same transaction.
     """
-    from src.thinktank.models.candidate import CandidateThinker
-    from src.thinktank.models.review import LLMReview
-    from src.thinktank.models.source import Source
-    from src.thinktank.models.thinker import Thinker
+    from thinktank.models.candidate import CandidateThinker
+    from thinktank.models.review import LLMReview
+    from thinktank.models.source import Source
+    from thinktank.models.thinker import Thinker
 
     review = await session.get(LLMReview, review_id)
     if not review:

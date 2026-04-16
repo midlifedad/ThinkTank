@@ -13,7 +13,7 @@ from tests.factories import create_category, create_source, create_thinker, crea
 
 async def _verify_thinker(session: AsyncSession, thinker_id):
     """Load a thinker from DB bypassing identity map cache."""
-    from src.thinktank.models.thinker import Thinker
+    from thinktank.models.thinker import Thinker
 
     # Bypass identity map by using a fresh connection
     result = await session.execute(
@@ -164,7 +164,7 @@ class TestThinkerAdd:
         assert "added" in response.text.lower()
 
         # Verify in DB
-        from src.thinktank.models.thinker import Thinker
+        from thinktank.models.thinker import Thinker
 
         result = await session.execute(
             select(Thinker).where(Thinker.slug == "nassim-taleb")
@@ -182,7 +182,7 @@ class TestThinkerAdd:
             data={"name": "Tyler Cowen", "tier": "2", "bio": "Economist"},
         )
 
-        from src.thinktank.models.job import Job
+        from thinktank.models.job import Job
 
         result = await session.execute(
             select(Job).where(Job.job_type == "llm_approval_check")
@@ -207,8 +207,8 @@ class TestThinkerAdd:
             },
         )
 
-        from src.thinktank.models.category import ThinkerCategory
-        from src.thinktank.models.thinker import Thinker
+        from thinktank.models.category import ThinkerCategory
+        from thinktank.models.thinker import Thinker
 
         thinker_result = await session.execute(
             select(Thinker).where(Thinker.slug == "richard-dawkins")
@@ -287,7 +287,7 @@ class TestThinkerEdit:
         )
         assert response.status_code == 200
 
-        from src.thinktank.models.category import ThinkerCategory
+        from thinktank.models.category import ThinkerCategory
 
         tc_result = await session.execute(
             select(ThinkerCategory).where(ThinkerCategory.thinker_id == thinker.id)
@@ -345,7 +345,7 @@ class TestThinkerToggle:
         # Toggle to deactivate
         await admin_client.post(f"/admin/thinkers/{thinker.id}/toggle-active")
 
-        from src.thinktank.models.source import Source
+        from thinktank.models.source import Source
 
         updated = await _verify_thinker(session, thinker.id)
         assert updated.active is False

@@ -18,7 +18,7 @@ pytestmark = pytest.mark.anyio
 async def test_invalid_thinker_id_is_logged_and_returns_cleanly(caplog):
     """A malformed thinker_id in the payload must log an error and
     early-return, not raise."""
-    from src.thinktank.handlers.discover_guests_podcastindex import (
+    from thinktank.handlers.discover_guests_podcastindex import (
         handle_discover_guests_podcastindex,
     )
 

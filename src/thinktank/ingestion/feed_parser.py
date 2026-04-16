@@ -13,7 +13,7 @@ from xml.sax import SAXParseException
 
 import feedparser
 
-from src.thinktank.ingestion.duration import parse_duration
+from thinktank.ingestion.duration import parse_duration
 
 
 @dataclass

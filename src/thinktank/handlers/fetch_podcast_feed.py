@@ -23,21 +23,21 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.ingestion.config_reader import (
+from thinktank.ingestion.config_reader import (
     get_config_value,
     get_source_filter_config,
 )
-from src.thinktank.ingestion.content_filter import (
+from thinktank.ingestion.content_filter import (
     should_skip_by_duration,
     should_skip_by_title,
 )
-from src.thinktank.ingestion.feed_parser import parse_feed
-from src.thinktank.ingestion.fingerprint import compute_fingerprint
-from src.thinktank.ingestion.url_normalizer import normalize_url
-from src.thinktank.models.content import Content
-from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
-from src.thinktank.models.thinker import Thinker
+from thinktank.ingestion.feed_parser import parse_feed
+from thinktank.ingestion.fingerprint import compute_fingerprint
+from thinktank.ingestion.url_normalizer import normalize_url
+from thinktank.models.content import Content
+from thinktank.models.job import Job
+from thinktank.models.source import Source
+from thinktank.models.thinker import Thinker
 
 logger = structlog.get_logger(__name__)
 

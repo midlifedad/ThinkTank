@@ -16,10 +16,10 @@ class TestSendToGpu:
     """Tests for send_to_gpu function."""
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.gpu_client.httpx.AsyncClient")
+    @patch("thinktank.transcription.gpu_client.httpx.AsyncClient")
     async def test_transcribe_success(self, mock_client_cls, tmp_path):
         """Successful transcription returns text from GPU response."""
-        from src.thinktank.transcription.gpu_client import send_to_gpu
+        from thinktank.transcription.gpu_client import send_to_gpu
 
         # Create a fake WAV file
         wav_path = str(tmp_path / "test.wav")
@@ -42,10 +42,10 @@ class TestSendToGpu:
         assert result == "hello world this is a transcript"
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.gpu_client.httpx.AsyncClient")
+    @patch("thinktank.transcription.gpu_client.httpx.AsyncClient")
     async def test_transcribe_timeout(self, mock_client_cls, tmp_path):
         """Raises RuntimeError on timeout."""
-        from src.thinktank.transcription.gpu_client import send_to_gpu
+        from thinktank.transcription.gpu_client import send_to_gpu
 
         wav_path = str(tmp_path / "test.wav")
         with open(wav_path, "wb") as f:
@@ -61,10 +61,10 @@ class TestSendToGpu:
             await send_to_gpu(wav_path, gpu_url="http://gpu-worker:8000")
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.gpu_client.httpx.AsyncClient")
+    @patch("thinktank.transcription.gpu_client.httpx.AsyncClient")
     async def test_transcribe_gpu_error(self, mock_client_cls, tmp_path):
         """Raises RuntimeError on 500 server error."""
-        from src.thinktank.transcription.gpu_client import send_to_gpu
+        from thinktank.transcription.gpu_client import send_to_gpu
 
         wav_path = str(tmp_path / "test.wav")
         with open(wav_path, "wb") as f:
@@ -88,10 +88,10 @@ class TestSendToGpu:
             await send_to_gpu(wav_path, gpu_url="http://gpu-worker:8000")
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.gpu_client.httpx.AsyncClient")
+    @patch("thinktank.transcription.gpu_client.httpx.AsyncClient")
     async def test_transcribe_sends_multipart(self, mock_client_cls, tmp_path):
         """Verify the POST sends multipart file upload with WAV data."""
-        from src.thinktank.transcription.gpu_client import send_to_gpu
+        from thinktank.transcription.gpu_client import send_to_gpu
 
         wav_path = str(tmp_path / "test.wav")
         with open(wav_path, "wb") as f:
@@ -121,11 +121,11 @@ class TestTranscribeWithChunking:
     """Tests for transcribe_with_chunking (long audio > 60min)."""
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.gpu_client.send_to_gpu")
-    @patch("src.thinktank.transcription.gpu_client.asyncio.create_subprocess_exec")
+    @patch("thinktank.transcription.gpu_client.send_to_gpu")
+    @patch("thinktank.transcription.gpu_client.asyncio.create_subprocess_exec")
     async def test_long_audio_chunking(self, mock_create_proc, mock_send, tmp_path):
         """Audio > 60 min is split into 45-min segments and results concatenated."""
-        from src.thinktank.transcription.gpu_client import transcribe_with_chunking
+        from thinktank.transcription.gpu_client import transcribe_with_chunking
 
         wav_path = str(tmp_path / "long.wav")
         with open(wav_path, "wb") as f:
@@ -165,10 +165,10 @@ class TestTranscribeWithChunking:
         assert mock_send.call_count == 2
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.transcription.gpu_client.send_to_gpu")
+    @patch("thinktank.transcription.gpu_client.send_to_gpu")
     async def test_short_audio_no_chunking(self, mock_send, tmp_path):
         """Audio <= 60 min is sent directly without chunking."""
-        from src.thinktank.transcription.gpu_client import transcribe_with_chunking
+        from thinktank.transcription.gpu_client import transcribe_with_chunking
 
         wav_path = str(tmp_path / "short.wav")
         with open(wav_path, "wb") as f:

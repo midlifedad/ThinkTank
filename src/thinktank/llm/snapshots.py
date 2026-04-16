@@ -19,11 +19,11 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from src.thinktank.models.candidate import CandidateThinker
-from src.thinktank.models.content import Content
-from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source, SourceThinker
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.candidate import CandidateThinker
+from thinktank.models.content import Content
+from thinktank.models.job import Job
+from thinktank.models.source import Source, SourceThinker
+from thinktank.models.thinker import Thinker
 
 
 def _now() -> datetime:

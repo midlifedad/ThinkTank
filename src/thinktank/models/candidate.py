@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.thinktank.models.base import Base, uuid_pk
+from thinktank.models.base import Base, uuid_pk
 
 
 class CandidateThinker(Base):

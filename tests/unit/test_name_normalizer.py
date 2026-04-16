@@ -5,7 +5,7 @@ Tests per spec Section 5.5 Layer 3: lowercase, strip titles, unicode NFC, collap
 
 import unicodedata
 
-from src.thinktank.ingestion.name_normalizer import normalize_name
+from thinktank.ingestion.name_normalizer import normalize_name
 
 
 class TestBasicNormalization:

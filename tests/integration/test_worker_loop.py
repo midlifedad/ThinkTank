@@ -12,9 +12,9 @@ import asyncio
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.registry import JOB_HANDLERS, register_handler
-from src.thinktank.models.job import Job
-from src.thinktank.worker.loop import worker_loop
+from thinktank.handlers.registry import JOB_HANDLERS, register_handler
+from thinktank.models.job import Job
+from thinktank.worker.loop import worker_loop
 from tests.factories import create_job, create_system_config
 
 
@@ -60,7 +60,7 @@ class TestWorkerLoopLifecycle:
             await asyncio.sleep(0.2)
             shutdown.set()
 
-        from src.thinktank.worker.config import WorkerSettings
+        from thinktank.worker.config import WorkerSettings
 
         settings = WorkerSettings(
             poll_interval=0.1,
@@ -116,7 +116,7 @@ class TestWorkerLoopLifecycle:
             await asyncio.sleep(0.2)
             shutdown.set()
 
-        from src.thinktank.worker.config import WorkerSettings
+        from thinktank.worker.config import WorkerSettings
 
         settings = WorkerSettings(
             poll_interval=0.1,
@@ -165,7 +165,7 @@ class TestWorkerLoopLifecycle:
             await asyncio.sleep(0.5)
             shutdown.set()
 
-        from src.thinktank.worker.config import WorkerSettings
+        from thinktank.worker.config import WorkerSettings
 
         settings = WorkerSettings(
             poll_interval=0.1,
@@ -208,7 +208,7 @@ class TestWorkerLoopLifecycle:
             await asyncio.sleep(0.5)
             shutdown.set()
 
-        from src.thinktank.worker.config import WorkerSettings
+        from thinktank.worker.config import WorkerSettings
 
         settings = WorkerSettings(
             poll_interval=0.1,

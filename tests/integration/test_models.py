@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models import (
+from thinktank.models import (
     ApiUsage,
     CandidateThinker,
     Category,

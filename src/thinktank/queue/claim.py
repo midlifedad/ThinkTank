@@ -13,9 +13,9 @@ from datetime import UTC, datetime
 from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.job import Job
-from src.thinktank.queue.errors import ErrorCategory
-from src.thinktank.queue.retry import calculate_backoff, get_max_attempts
+from thinktank.models.job import Job
+from thinktank.queue.errors import ErrorCategory
+from thinktank.queue.retry import calculate_backoff, get_max_attempts
 
 
 def _now() -> datetime:

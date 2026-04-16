@@ -21,7 +21,7 @@ async def test_invalid_uuid_is_logged_and_skipped(caplog):
     """An invalid UUID string in content_ids must be logged and skipped,
     not raised. Valid UUIDs in the same batch must still be processed.
     """
-    from src.thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
+    from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
 
     valid_id = uuid.uuid4()
     job = make_job(
@@ -45,7 +45,7 @@ async def test_invalid_uuid_is_logged_and_skipped(caplog):
 
     # Patch out quota / trigram helpers to simple stubs so we exercise only
     # the UUID coercion path.
-    from src.thinktank.handlers import scan_for_candidates as mod
+    from thinktank.handlers import scan_for_candidates as mod
 
     original_check = mod.check_daily_quota
     original_pending = mod.get_pending_candidate_count

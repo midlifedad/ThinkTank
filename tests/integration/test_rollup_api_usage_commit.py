@@ -14,9 +14,9 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
-from src.thinktank.models.api_usage import ApiUsage
-from src.thinktank.models.rate_limit import RateLimitUsage
+from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
+from thinktank.models.api_usage import ApiUsage
+from thinktank.models.rate_limit import RateLimitUsage
 from tests.factories import create_job, create_rate_limit_usage
 
 pytestmark = pytest.mark.anyio

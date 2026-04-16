@@ -19,15 +19,15 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
-from src.thinktank.handlers.rescan_cataloged_for_thinker import (
+from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
+from thinktank.handlers.rescan_cataloged_for_thinker import (
     handle_rescan_cataloged_for_thinker,
 )
-from src.thinktank.handlers.scan_episodes_for_thinkers import (
+from thinktank.handlers.scan_episodes_for_thinkers import (
     handle_scan_episodes_for_thinkers,
 )
-from src.thinktank.models.content import Content, ContentThinker
-from src.thinktank.models.job import Job
+from thinktank.models.content import Content, ContentThinker
+from thinktank.models.job import Job
 from tests.factories import (
     create_content,
     create_job,
@@ -102,7 +102,7 @@ class TestFullPipelineGuestSourceEfficiency:
     80% transcription cost savings.
     """
 
-    @patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+    @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
     async def test_full_pipeline_guest_source_efficiency(
         self, mock_client_cls: MagicMock, session: AsyncSession
     ):
@@ -199,7 +199,7 @@ class TestFullPipelineGuestSourceEfficiency:
 class TestFullPipelineHostSourceAllPromoted:
     """Host source: ALL cataloged episodes promoted regardless of title content."""
 
-    @patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+    @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
     async def test_full_pipeline_host_source_all_promoted(
         self, mock_client_cls: MagicMock, session: AsyncSession
     ):

@@ -11,7 +11,7 @@ from collections.abc import AsyncGenerator
 from anthropic import AsyncAnthropic
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.secrets import get_secret
+from thinktank.secrets import get_secret
 from thinktank.agent.session import ChatMessage, chat_sessions
 from thinktank.agent.system_prompt import build_chat_system_prompt
 from thinktank.agent.tools import AGENT_TOOLS, execute_tool

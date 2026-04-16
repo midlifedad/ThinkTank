@@ -15,10 +15,10 @@ class TestScaleGpuService:
     """Tests for scale_gpu_service function."""
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.scaling.railway.httpx.AsyncClient")
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
     async def test_scale_up_calls_mutation(self, mock_client_cls, monkeypatch):
         """Scale up sends GraphQL mutation with numReplicas=1."""
-        from src.thinktank.scaling.railway import scale_gpu_service
+        from thinktank.scaling.railway import scale_gpu_service
 
         monkeypatch.setenv("RAILWAY_API_KEY", "test-key")
         monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "svc-123")
@@ -46,10 +46,10 @@ class TestScaleGpuService:
         assert body["variables"]["serviceId"] == "svc-123"
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.scaling.railway.httpx.AsyncClient")
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
     async def test_scale_down_calls_mutation(self, mock_client_cls, monkeypatch):
         """Scale down sends GraphQL mutation with numReplicas=0."""
-        from src.thinktank.scaling.railway import scale_gpu_service
+        from thinktank.scaling.railway import scale_gpu_service
 
         monkeypatch.setenv("RAILWAY_API_KEY", "test-key")
         monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "svc-123")
@@ -76,7 +76,7 @@ class TestScaleGpuService:
     @pytest.mark.asyncio
     async def test_scale_missing_config(self, monkeypatch):
         """Returns False when env vars are missing."""
-        from src.thinktank.scaling.railway import scale_gpu_service
+        from thinktank.scaling.railway import scale_gpu_service
 
         # Clear all Railway env vars
         monkeypatch.delenv("RAILWAY_API_KEY", raising=False)
@@ -88,10 +88,10 @@ class TestScaleGpuService:
         assert result is False
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.scaling.railway.httpx.AsyncClient")
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
     async def test_scale_api_error(self, mock_client_cls, monkeypatch):
         """Returns False on API error."""
-        from src.thinktank.scaling.railway import scale_gpu_service
+        from thinktank.scaling.railway import scale_gpu_service
 
         monkeypatch.setenv("RAILWAY_API_KEY", "test-key")
         monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "svc-123")
@@ -112,10 +112,10 @@ class TestGetGpuReplicaCount:
     """Tests for get_gpu_replica_count function."""
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.scaling.railway.httpx.AsyncClient")
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
     async def test_get_replica_count(self, mock_client_cls, monkeypatch):
         """Returns correct replica count from GraphQL query."""
-        from src.thinktank.scaling.railway import get_gpu_replica_count
+        from thinktank.scaling.railway import get_gpu_replica_count
 
         monkeypatch.setenv("RAILWAY_API_KEY", "test-key")
         monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "svc-123")
@@ -147,15 +147,15 @@ class TestManageGpuScaling:
     """Tests for manage_gpu_scaling orchestration function."""
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.scaling.railway.scale_gpu_service")
-    @patch("src.thinktank.scaling.railway.get_gpu_replica_count")
-    @patch("src.thinktank.scaling.railway.get_config_value")
-    @patch("src.thinktank.scaling.railway.get_queue_depth")
+    @patch("thinktank.scaling.railway.scale_gpu_service")
+    @patch("thinktank.scaling.railway.get_gpu_replica_count")
+    @patch("thinktank.scaling.railway.get_config_value")
+    @patch("thinktank.scaling.railway.get_queue_depth")
     async def test_manage_gpu_scaling_scale_up(
         self, mock_depth, mock_config, mock_replicas, mock_scale
     ):
         """Scales up when queue depth > threshold and replicas=0."""
-        from src.thinktank.scaling.railway import manage_gpu_scaling
+        from thinktank.scaling.railway import manage_gpu_scaling
 
         mock_session = AsyncMock()
         mock_depth.return_value = 10  # Above threshold
@@ -171,15 +171,15 @@ class TestManageGpuScaling:
         assert mock_scale.call_args[0][0] == 1
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.scaling.railway.scale_gpu_service")
-    @patch("src.thinktank.scaling.railway.get_gpu_replica_count")
-    @patch("src.thinktank.scaling.railway.get_config_value")
-    @patch("src.thinktank.scaling.railway.get_queue_depth")
+    @patch("thinktank.scaling.railway.scale_gpu_service")
+    @patch("thinktank.scaling.railway.get_gpu_replica_count")
+    @patch("thinktank.scaling.railway.get_config_value")
+    @patch("thinktank.scaling.railway.get_queue_depth")
     async def test_manage_gpu_scaling_scale_down(
         self, mock_depth, mock_config, mock_replicas, mock_scale
     ):
         """Scales down when queue depth=0 and idle time exceeds timeout."""
-        from src.thinktank.scaling.railway import manage_gpu_scaling
+        from thinktank.scaling.railway import manage_gpu_scaling
 
         mock_session = AsyncMock()
         mock_depth.return_value = 0
@@ -198,15 +198,15 @@ class TestManageGpuScaling:
         assert mock_scale.call_args[0][0] == 0
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.scaling.railway.scale_gpu_service")
-    @patch("src.thinktank.scaling.railway.get_gpu_replica_count")
-    @patch("src.thinktank.scaling.railway.get_config_value")
-    @patch("src.thinktank.scaling.railway.get_queue_depth")
+    @patch("thinktank.scaling.railway.scale_gpu_service")
+    @patch("thinktank.scaling.railway.get_gpu_replica_count")
+    @patch("thinktank.scaling.railway.get_config_value")
+    @patch("thinktank.scaling.railway.get_queue_depth")
     async def test_manage_gpu_scaling_no_action(
         self, mock_depth, mock_config, mock_replicas, mock_scale
     ):
         """No scaling action when queue depth=0 but idle time < timeout."""
-        from src.thinktank.scaling.railway import manage_gpu_scaling
+        from thinktank.scaling.railway import manage_gpu_scaling
 
         mock_session = AsyncMock()
         mock_depth.return_value = 0
@@ -223,15 +223,15 @@ class TestManageGpuScaling:
         mock_scale.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("src.thinktank.scaling.railway.scale_gpu_service")
-    @patch("src.thinktank.scaling.railway.get_gpu_replica_count")
-    @patch("src.thinktank.scaling.railway.get_config_value")
-    @patch("src.thinktank.scaling.railway.get_queue_depth")
+    @patch("thinktank.scaling.railway.scale_gpu_service")
+    @patch("thinktank.scaling.railway.get_gpu_replica_count")
+    @patch("thinktank.scaling.railway.get_config_value")
+    @patch("thinktank.scaling.railway.get_queue_depth")
     async def test_manage_gpu_scaling_start_idle_timer(
         self, mock_depth, mock_config, mock_replicas, mock_scale
     ):
         """Starts idle timer when queue depth first reaches 0."""
-        from src.thinktank.scaling.railway import manage_gpu_scaling
+        from thinktank.scaling.railway import manage_gpu_scaling
 
         mock_session = AsyncMock()
         mock_depth.return_value = 0

@@ -13,8 +13,8 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
-from src.thinktank.models.content import ContentThinker
+from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
+from thinktank.models.content import ContentThinker
 from tests.factories import (
     create_content,
     create_job,

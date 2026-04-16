@@ -10,8 +10,8 @@ strings as "has value", skipping env fallback.
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
-from src.thinktank.secrets import get_secret
+from thinktank.models.config_table import SystemConfig
+from thinktank.secrets import get_secret
 
 pytestmark = pytest.mark.anyio
 

@@ -15,17 +15,17 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.thinktank.llm.schemas import (
+from thinktank.llm.schemas import (
     CandidateReviewResponse,
     SourceApprovalResponse,
     ThinkerApprovalResponse,
 )
-from src.thinktank.models.candidate import CandidateThinker
-from src.thinktank.models.job import Job
+from thinktank.models.candidate import CandidateThinker
+from thinktank.models.job import Job
 from sqlalchemy import select
 
-from src.thinktank.models.source import Source, SourceThinker
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.source import Source, SourceThinker
+from thinktank.models.thinker import Thinker
 
 
 def _now() -> datetime:

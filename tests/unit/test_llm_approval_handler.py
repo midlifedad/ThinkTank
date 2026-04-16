@@ -8,13 +8,13 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from src.thinktank.llm.schemas import (
+from thinktank.llm.schemas import (
     CandidateReviewResponse,
     SourceApprovalResponse,
     ThinkerApprovalResponse,
 )
-from src.thinktank.models.job import Job
-from src.thinktank.models.review import LLMReview
+from thinktank.models.job import Job
+from thinktank.models.review import LLMReview
 
 
 def _make_job(review_type: str, target_id: str | None = None, **extra_payload) -> Job:
@@ -34,7 +34,7 @@ class TestHandlerDispatchesThinkerApproval:
 
     @pytest.mark.asyncio
     async def test_dispatches_thinker_approval(self):
-        from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
+        from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 
         target_id = uuid.uuid4()
         job = _make_job("thinker_approval", str(target_id))
@@ -51,19 +51,19 @@ class TestHandlerDispatchesThinkerApproval:
 
         with (
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_thinker_approval_context",
+                "thinktank.handlers.llm_approval_check.build_thinker_approval_context",
                 new_callable=AsyncMock,
                 return_value=mock_context,
             ) as mock_snapshot,
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
+                "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
                 return_value=("system", "user"),
             ),
             patch(
-                "src.thinktank.handlers.llm_approval_check._llm_client"
+                "thinktank.handlers.llm_approval_check._llm_client"
             ) as mock_client,
             patch(
-                "src.thinktank.handlers.llm_approval_check.apply_decision",
+                "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,
             ) as mock_apply,
         ):
@@ -83,7 +83,7 @@ class TestHandlerDispatchesSourceApproval:
 
     @pytest.mark.asyncio
     async def test_dispatches_source_approval(self):
-        from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
+        from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 
         target_id = uuid.uuid4()
         job = _make_job("source_approval", str(target_id))
@@ -99,19 +99,19 @@ class TestHandlerDispatchesSourceApproval:
 
         with (
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_source_approval_context",
+                "thinktank.handlers.llm_approval_check.build_source_approval_context",
                 new_callable=AsyncMock,
                 return_value=mock_context,
             ) as mock_snapshot,
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_source_approval_prompt",
+                "thinktank.handlers.llm_approval_check.build_source_approval_prompt",
                 return_value=("system", "user"),
             ),
             patch(
-                "src.thinktank.handlers.llm_approval_check._llm_client"
+                "thinktank.handlers.llm_approval_check._llm_client"
             ) as mock_client,
             patch(
-                "src.thinktank.handlers.llm_approval_check.apply_decision",
+                "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,
             ),
         ):
@@ -128,7 +128,7 @@ class TestHandlerDispatchesCandidateReview:
 
     @pytest.mark.asyncio
     async def test_dispatches_candidate_review(self):
-        from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
+        from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 
         target_id = uuid.uuid4()
         candidate_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
@@ -147,19 +147,19 @@ class TestHandlerDispatchesCandidateReview:
 
         with (
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_candidate_review_context",
+                "thinktank.handlers.llm_approval_check.build_candidate_review_context",
                 new_callable=AsyncMock,
                 return_value=mock_context,
             ) as mock_snapshot,
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_candidate_review_prompt",
+                "thinktank.handlers.llm_approval_check.build_candidate_review_prompt",
                 return_value=("system", "user"),
             ),
             patch(
-                "src.thinktank.handlers.llm_approval_check._llm_client"
+                "thinktank.handlers.llm_approval_check._llm_client"
             ) as mock_client,
             patch(
-                "src.thinktank.handlers.llm_approval_check.apply_decision",
+                "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,
             ),
         ):
@@ -177,7 +177,7 @@ class TestHandlerCreatesAuditTrail:
 
     @pytest.mark.asyncio
     async def test_creates_llm_review_with_all_fields(self):
-        from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
+        from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 
         target_id = uuid.uuid4()
         job = _make_job("thinker_approval", str(target_id))
@@ -198,19 +198,19 @@ class TestHandlerCreatesAuditTrail:
 
         with (
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_thinker_approval_context",
+                "thinktank.handlers.llm_approval_check.build_thinker_approval_context",
                 new_callable=AsyncMock,
                 return_value=mock_context,
             ),
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
+                "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
                 return_value=("system_prompt_text", "user_prompt_text"),
             ),
             patch(
-                "src.thinktank.handlers.llm_approval_check._llm_client"
+                "thinktank.handlers.llm_approval_check._llm_client"
             ) as mock_client,
             patch(
-                "src.thinktank.handlers.llm_approval_check.apply_decision",
+                "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,
             ),
         ):
@@ -243,7 +243,7 @@ class TestHandlerCallsApplyDecision:
 
     @pytest.mark.asyncio
     async def test_calls_apply_decision_correctly(self):
-        from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
+        from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 
         target_id = uuid.uuid4()
         pending_job_id = uuid.uuid4()
@@ -263,19 +263,19 @@ class TestHandlerCallsApplyDecision:
 
         with (
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_thinker_approval_context",
+                "thinktank.handlers.llm_approval_check.build_thinker_approval_context",
                 new_callable=AsyncMock,
                 return_value=mock_context,
             ),
             patch(
-                "src.thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
+                "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
                 return_value=("system", "user"),
             ),
             patch(
-                "src.thinktank.handlers.llm_approval_check._llm_client"
+                "thinktank.handlers.llm_approval_check._llm_client"
             ) as mock_client,
             patch(
-                "src.thinktank.handlers.llm_approval_check.apply_decision",
+                "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,
             ) as mock_apply,
         ):
@@ -300,7 +300,7 @@ class TestHandlerErrorCases:
 
     @pytest.mark.asyncio
     async def test_raises_on_unknown_review_type(self):
-        from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
+        from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 
         job = _make_job("unknown_type", str(uuid.uuid4()))
         session = AsyncMock()
@@ -310,7 +310,7 @@ class TestHandlerErrorCases:
 
     @pytest.mark.asyncio
     async def test_raises_on_missing_review_type(self):
-        from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
+        from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 
         job = MagicMock(spec=Job)
         job.payload = {"target_id": str(uuid.uuid4())}
@@ -321,7 +321,7 @@ class TestHandlerErrorCases:
 
     @pytest.mark.asyncio
     async def test_raises_on_missing_target_id_for_non_candidate(self):
-        from src.thinktank.handlers.llm_approval_check import handle_llm_approval_check
+        from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 
         job = MagicMock(spec=Job)
         job.payload = {"review_type": "thinker_approval"}

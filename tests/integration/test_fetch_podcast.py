@@ -14,10 +14,10 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
-from src.thinktank.models.content import Content
-from src.thinktank.models.job import Job
-from src.thinktank.models.source import Source
+from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
+from thinktank.models.content import Content
+from thinktank.models.job import Job
+from thinktank.models.source import Source
 from tests.factories import create_job, create_source, create_system_config, create_thinker
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "rss"
@@ -48,7 +48,7 @@ def _make_httpx_mock(fixture_name: str):
     return mock_cm
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_basic_feed_poll(mock_client_cls: MagicMock, session: AsyncSession):
     """Approved source + basic feed -> 3 content rows with correct metadata."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
@@ -91,7 +91,7 @@ async def test_basic_feed_poll(mock_client_cls: MagicMock, session: AsyncSession
         assert c.show_name == "ThinkTank Test Podcast"
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_duplicate_poll_no_new_rows(
     mock_client_cls: MagicMock, session: AsyncSession
 ):
@@ -146,7 +146,7 @@ async def test_duplicate_poll_no_new_rows(
     assert second_count == 3  # No new rows
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_unapproved_source_skipped(
     mock_client_cls: MagicMock, session: AsyncSession
 ):
@@ -180,7 +180,7 @@ async def test_unapproved_source_skipped(
     mock_client_cls.return_value.__aenter__.assert_not_awaited()
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_inactive_source_skipped(
     mock_client_cls: MagicMock, session: AsyncSession
 ):
@@ -210,7 +210,7 @@ async def test_inactive_source_skipped(
     assert len(result.scalars().all()) == 0
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_short_episodes_skipped(
     mock_client_cls: MagicMock, session: AsyncSession
 ):
@@ -251,7 +251,7 @@ async def test_short_episodes_skipped(
     assert by_title["Full Episode"].status == "cataloged"
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_skip_title_patterns(
     mock_client_cls: MagicMock, session: AsyncSession
 ):
@@ -290,7 +290,7 @@ async def test_skip_title_patterns(
     assert by_title["Full Interview with Expert"].status == "cataloged"
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_source_last_fetched_updated(
     mock_client_cls: MagicMock, session: AsyncSession
 ):
@@ -324,7 +324,7 @@ async def test_source_last_fetched_updated(
     assert source.item_count == 3
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_backfill_then_incremental(
     mock_client_cls: MagicMock, session: AsyncSession
 ):
@@ -373,7 +373,7 @@ async def test_backfill_then_incremental(
     assert len(result.scalars().all()) == 3
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_tag_job_enqueued_with_descriptions(
     mock_client_cls: MagicMock, session: AsyncSession
 ):
@@ -430,7 +430,7 @@ async def test_tag_job_enqueued_with_descriptions(
     assert "alignment research" in desc_text.lower() or "ai" in desc_text.lower()
 
 
-@patch("src.thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
+@patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_per_source_duration_override(
     mock_client_cls: MagicMock, session: AsyncSession
 ):

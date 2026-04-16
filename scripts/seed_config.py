@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
+from thinktank.models.config_table import SystemConfig
 
 CONFIG_DEFAULTS = [
     {"key": "workers_active", "value": False},
@@ -58,7 +58,7 @@ async def seed_config(session: AsyncSession) -> int:
 if __name__ == "__main__":
 
     async def _main() -> None:
-        from src.thinktank.database import async_session_factory
+        from thinktank.database import async_session_factory
 
         async with async_session_factory() as session:
             count = await seed_config(session)

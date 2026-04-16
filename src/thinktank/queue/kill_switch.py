@@ -8,7 +8,7 @@ Workers check this on every poll cycle.
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
+from thinktank.models.config_table import SystemConfig
 
 
 async def is_workers_active(session: AsyncSession) -> bool:

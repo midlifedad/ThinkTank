@@ -14,7 +14,7 @@ class TestGetQueueDepth:
 
     async def test_counts_pending_and_retrying_jobs(self, session: AsyncSession):
         """Should count jobs with status 'pending' or 'retrying'."""
-        from src.thinktank.queue.backpressure import get_queue_depth
+        from thinktank.queue.backpressure import get_queue_depth
 
         # Create mix of statuses for process_content
         for _ in range(3):
@@ -31,7 +31,7 @@ class TestGetQueueDepth:
 
     async def test_counts_only_specified_job_type(self, session: AsyncSession):
         """Should only count jobs of the specified type."""
-        from src.thinktank.queue.backpressure import get_queue_depth
+        from thinktank.queue.backpressure import get_queue_depth
 
         # Create jobs of different types
         for _ in range(3):
@@ -44,7 +44,7 @@ class TestGetQueueDepth:
 
     async def test_returns_zero_when_no_matching_jobs(self, session: AsyncSession):
         """Should return 0 when no pending/retrying jobs exist."""
-        from src.thinktank.queue.backpressure import get_queue_depth
+        from thinktank.queue.backpressure import get_queue_depth
 
         depth = await get_queue_depth(session, "process_content")
         assert depth == 0
@@ -55,7 +55,7 @@ class TestGetEffectivePriorityIntegration:
 
     async def test_demotes_when_above_threshold(self, session: AsyncSession):
         """When 501 process_content jobs pending, discovery priority should be demoted."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
 
         # Set threshold
         await create_system_config(
@@ -78,7 +78,7 @@ class TestGetEffectivePriorityIntegration:
 
     async def test_normal_priority_below_80_percent(self, session: AsyncSession):
         """When 399 jobs (below 80% of 500), should return original priority."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
 
         # Set threshold
         await create_system_config(
@@ -100,7 +100,7 @@ class TestGetEffectivePriorityIntegration:
 
     async def test_unchanged_in_hysteresis_band(self, session: AsyncSession):
         """When 450 jobs (between 80-100%), should return original priority."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
 
         # Set threshold
         await create_system_config(
@@ -122,7 +122,7 @@ class TestGetEffectivePriorityIntegration:
 
     async def test_non_discovery_type_unchanged_regardless(self, session: AsyncSession):
         """Non-discovery job type returns original priority regardless of depth."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
 
         # Set threshold
         await create_system_config(
@@ -145,7 +145,7 @@ class TestGetEffectivePriorityIntegration:
 
     async def test_priority_capped_at_10(self, session: AsyncSession):
         """Demotion should never exceed priority 10."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
 
         await create_system_config(
             session,

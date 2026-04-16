@@ -17,8 +17,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy import text as sa_text
 
-from src.thinktank.models.config_table import SystemConfig
-from src.thinktank.models.job import Job
+from thinktank.models.config_table import SystemConfig
+from thinktank.models.job import Job
 from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin/pipeline", tags=["pipeline"])

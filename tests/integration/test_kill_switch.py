@@ -14,7 +14,7 @@ class TestIsWorkersActive:
 
     async def test_returns_true_when_active(self, session: AsyncSession):
         """When workers_active = true, should return True."""
-        from src.thinktank.queue.kill_switch import is_workers_active
+        from thinktank.queue.kill_switch import is_workers_active
 
         await create_system_config(
             session,
@@ -27,7 +27,7 @@ class TestIsWorkersActive:
 
     async def test_returns_false_when_inactive(self, session: AsyncSession):
         """When workers_active = false, should return False."""
-        from src.thinktank.queue.kill_switch import is_workers_active
+        from thinktank.queue.kill_switch import is_workers_active
 
         await create_system_config(
             session,
@@ -40,7 +40,7 @@ class TestIsWorkersActive:
 
     async def test_returns_true_when_no_config(self, session: AsyncSession):
         """When no workers_active key exists, should return True (fail-open)."""
-        from src.thinktank.queue.kill_switch import is_workers_active
+        from thinktank.queue.kill_switch import is_workers_active
 
         # No system_config seeded
         result = await is_workers_active(session)
@@ -48,7 +48,7 @@ class TestIsWorkersActive:
 
     async def test_handles_jsonb_dict_value_false(self, session: AsyncSession):
         """When JSONB value is {"value": false}, should return False."""
-        from src.thinktank.queue.kill_switch import is_workers_active
+        from thinktank.queue.kill_switch import is_workers_active
 
         await create_system_config(
             session,
@@ -61,7 +61,7 @@ class TestIsWorkersActive:
 
     async def test_handles_jsonb_dict_value_true(self, session: AsyncSession):
         """When JSONB value is {"value": true}, should return True."""
-        from src.thinktank.queue.kill_switch import is_workers_active
+        from thinktank.queue.kill_switch import is_workers_active
 
         await create_system_config(
             session,

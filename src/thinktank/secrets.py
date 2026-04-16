@@ -13,7 +13,7 @@ import os
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
+from thinktank.models.config_table import SystemConfig
 
 
 async def get_secret(session: AsyncSession, name: str) -> str | None:

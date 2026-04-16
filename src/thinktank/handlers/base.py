@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Protocol
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
-    from src.thinktank.models.job import Job
+    from thinktank.models.job import Job
 
 
 class JobHandler(Protocol):

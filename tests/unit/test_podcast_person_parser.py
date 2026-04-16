@@ -5,7 +5,7 @@ Pure logic tests -- no database, no async.
 
 from pathlib import Path
 
-from src.thinktank.ingestion.podcast_person_parser import extract_podcast_persons
+from thinktank.ingestion.podcast_person_parser import extract_podcast_persons
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "rss"
 

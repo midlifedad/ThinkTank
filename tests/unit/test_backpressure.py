@@ -14,7 +14,7 @@ class TestBackpressureJobTypes:
 
     def test_contains_all_9_discovery_types(self):
         """All 9 discovery/fetch job types from spec Section 6 must be present."""
-        from src.thinktank.queue.backpressure import BACKPRESSURE_JOB_TYPES
+        from thinktank.queue.backpressure import BACKPRESSURE_JOB_TYPES
 
         expected = {
             "discover_thinker",
@@ -31,13 +31,13 @@ class TestBackpressureJobTypes:
 
     def test_process_content_not_in_backpressure_types(self):
         """process_content is the monitored queue, not a backpressure target."""
-        from src.thinktank.queue.backpressure import BACKPRESSURE_JOB_TYPES
+        from thinktank.queue.backpressure import BACKPRESSURE_JOB_TYPES
 
         assert "process_content" not in BACKPRESSURE_JOB_TYPES
 
     def test_is_a_set(self):
         """Should be a set for O(1) membership checks."""
-        from src.thinktank.queue.backpressure import BACKPRESSURE_JOB_TYPES
+        from thinktank.queue.backpressure import BACKPRESSURE_JOB_TYPES
 
         assert isinstance(BACKPRESSURE_JOB_TYPES, set)
 
@@ -74,7 +74,7 @@ class TestGetEffectivePriority:
 
     async def test_non_backpressure_type_returns_unchanged(self):
         """Non-discovery job types should return original priority."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
         mock_session = AsyncMock()
@@ -87,7 +87,7 @@ class TestGetEffectivePriority:
 
     async def test_discovery_type_demoted_when_above_threshold(self):
         """Discovery job should be demoted by +3 when depth > threshold."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
         mock_session = AsyncMock()
@@ -106,7 +106,7 @@ class TestGetEffectivePriority:
 
     async def test_discovery_type_normal_when_below_80_percent(self):
         """Discovery job returns original priority when depth < 80% of threshold."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
         mock_session = AsyncMock()
@@ -125,7 +125,7 @@ class TestGetEffectivePriority:
 
     async def test_discovery_type_unchanged_in_hysteresis_band(self):
         """Discovery job in 80-100% band returns original priority."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
         mock_session = AsyncMock()
@@ -144,7 +144,7 @@ class TestGetEffectivePriority:
 
     async def test_defaults_threshold_to_500_when_no_config(self):
         """When max_pending_transcriptions config is missing, default to 500."""
-        from src.thinktank.queue.backpressure import get_effective_priority
+        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
 
         mock_session = AsyncMock()

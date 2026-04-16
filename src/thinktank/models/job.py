@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.thinktank.models.base import Base, uuid_pk
+from thinktank.models.base import Base, uuid_pk
 
 
 class Job(Base):

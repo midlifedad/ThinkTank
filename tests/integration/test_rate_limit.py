@@ -17,7 +17,7 @@ class TestCheckAndAcquireRateLimit:
 
     async def test_allows_calls_under_limit(self, session: AsyncSession):
         """When under limit, all calls should return True."""
-        from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed: podcastindex_calls_per_hour = 3
         await create_system_config(
@@ -35,7 +35,7 @@ class TestCheckAndAcquireRateLimit:
 
     async def test_blocks_at_limit(self, session: AsyncSession):
         """4th call should be blocked when limit is 3."""
-        from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed: podcastindex_calls_per_hour = 3
         await create_system_config(
@@ -56,7 +56,7 @@ class TestCheckAndAcquireRateLimit:
 
     async def test_fail_open_when_no_config(self, session: AsyncSession):
         """When no system_config entry exists, should return True (fail-open)."""
-        from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # No system_config seeded for this api_name
         result = await check_and_acquire_rate_limit(
@@ -66,7 +66,7 @@ class TestCheckAndAcquireRateLimit:
 
     async def test_old_rows_outside_window_not_counted(self, session: AsyncSession):
         """Rows with called_at older than window should not count toward limit."""
-        from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed: youtube_calls_per_hour = 2
         await create_system_config(
@@ -99,7 +99,7 @@ class TestCheckAndAcquireRateLimit:
 
     async def test_different_api_names_have_separate_limits(self, session: AsyncSession):
         """Rate limits are per api_name, not global."""
-        from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed limits for two APIs
         await create_system_config(
@@ -127,7 +127,7 @@ class TestCheckAndAcquireRateLimit:
 
     async def test_raw_int_config_value(self, session: AsyncSession):
         """Config stored as raw integer (not wrapped in dict) should work."""
-        from src.thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed with raw integer value
         await create_system_config(

@@ -11,9 +11,9 @@ import httpx
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.ingestion.config_reader import get_config_value
-from src.thinktank.queue.backpressure import get_queue_depth
-from src.thinktank.secrets import get_secret
+from thinktank.ingestion.config_reader import get_config_value
+from thinktank.queue.backpressure import get_queue_depth
+from thinktank.secrets import get_secret
 
 logger = structlog.get_logger(__name__)
 
@@ -68,7 +68,7 @@ async def scale_gpu_service(replicas: int, session: AsyncSession | None = None) 
     }
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             resp = await client.post(
                 RAILWAY_API_URL,
                 json={"query": mutation, "variables": variables},
@@ -140,7 +140,7 @@ async def get_gpu_replica_count(session: AsyncSession | None = None) -> int | No
     }
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             resp = await client.post(
                 RAILWAY_API_URL,
                 json={"query": query, "variables": variables},

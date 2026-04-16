@@ -79,7 +79,7 @@ def extract_youtube_captions(video_url: str) -> str | None:
             return None
 
         # Fetch VTT content (sync, since yt-dlp is sync)
-        response = httpx.get(sub_url, timeout=30.0)
+        response = httpx.get(sub_url, timeout=30.0, follow_redirects=True)
         response.raise_for_status()
 
         text = _parse_vtt_text(response.text)

@@ -16,7 +16,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from src.thinktank.discovery.podcastindex_client import PodcastIndexClient, _podcastindex_headers
+from thinktank.discovery.podcastindex_client import PodcastIndexClient, _podcastindex_headers
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "podcastindex" / "search_byperson.json"
 
@@ -41,7 +41,7 @@ class TestPodcastIndexHeaders:
 
     def test_generates_correct_sha1(self):
         """Auth header is SHA-1 of api_key + api_secret + epoch_time."""
-        with patch("src.thinktank.discovery.podcastindex_client.time") as mock_time:
+        with patch("thinktank.discovery.podcastindex_client.time") as mock_time:
             mock_time.time.return_value = 1700000000.0
 
             headers = _podcastindex_headers("my-key", "my-secret")
@@ -57,7 +57,7 @@ class TestPodcastIndexHeaders:
 
     def test_fresh_timestamp_per_call(self):
         """Each call gets a fresh timestamp from time.time()."""
-        with patch("src.thinktank.discovery.podcastindex_client.time") as mock_time:
+        with patch("thinktank.discovery.podcastindex_client.time") as mock_time:
             mock_time.time.side_effect = [1000.0, 2000.0]
 
             h1 = _podcastindex_headers("k", "s")
@@ -79,12 +79,12 @@ class TestSearchByPerson:
 
         with (
             patch(
-                "src.thinktank.discovery.podcastindex_client.check_and_acquire_rate_limit",
+                "thinktank.discovery.podcastindex_client.check_and_acquire_rate_limit",
                 new_callable=AsyncMock,
                 return_value=True,
             ),
-            patch("src.thinktank.discovery.podcastindex_client.httpx.AsyncClient") as mock_client_cls,
-            patch("src.thinktank.discovery.podcastindex_client.time") as mock_time,
+            patch("thinktank.discovery.podcastindex_client.httpx.AsyncClient") as mock_client_cls,
+            patch("thinktank.discovery.podcastindex_client.time") as mock_time,
         ):
             mock_time.time.return_value = 1700000000.0
             mock_client_instance = AsyncMock()
@@ -104,7 +104,7 @@ class TestSearchByPerson:
     async def test_rate_limited_returns_none(self, client, mock_session):
         """Returns None when rate limiter denies the request."""
         with patch(
-            "src.thinktank.discovery.podcastindex_client.check_and_acquire_rate_limit",
+            "thinktank.discovery.podcastindex_client.check_and_acquire_rate_limit",
             new_callable=AsyncMock,
             return_value=False,
         ):
@@ -122,12 +122,12 @@ class TestSearchByPerson:
 
         with (
             patch(
-                "src.thinktank.discovery.podcastindex_client.check_and_acquire_rate_limit",
+                "thinktank.discovery.podcastindex_client.check_and_acquire_rate_limit",
                 new_callable=AsyncMock,
                 return_value=True,
             ),
-            patch("src.thinktank.discovery.podcastindex_client.httpx.AsyncClient") as mock_client_cls,
-            patch("src.thinktank.discovery.podcastindex_client.time") as mock_time,
+            patch("thinktank.discovery.podcastindex_client.httpx.AsyncClient") as mock_client_cls,
+            patch("thinktank.discovery.podcastindex_client.time") as mock_time,
         ):
             mock_time.time.return_value = 1700000000.0
             mock_client_instance = AsyncMock()
@@ -154,12 +154,12 @@ class TestSearchByPerson:
 
         with (
             patch(
-                "src.thinktank.discovery.podcastindex_client.check_and_acquire_rate_limit",
+                "thinktank.discovery.podcastindex_client.check_and_acquire_rate_limit",
                 new_callable=AsyncMock,
                 return_value=True,
             ),
-            patch("src.thinktank.discovery.podcastindex_client.httpx.AsyncClient") as mock_client_cls,
-            patch("src.thinktank.discovery.podcastindex_client.time") as mock_time,
+            patch("thinktank.discovery.podcastindex_client.httpx.AsyncClient") as mock_client_cls,
+            patch("thinktank.discovery.podcastindex_client.time") as mock_time,
         ):
             mock_time.time.return_value = 1700000000.0
             mock_client_instance = AsyncMock()

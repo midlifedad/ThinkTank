@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.constants import (
+from thinktank.models.constants import (
     ERROR_CONTENT_STATUSES,
     HEALTHY_CONTENT_STATUSES,
     WARNING_CONTENT_STATUSES,

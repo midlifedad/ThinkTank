@@ -10,7 +10,7 @@ then normalizes via the existing name_normalizer.
 
 import re
 
-from src.thinktank.ingestion.name_normalizer import normalize_name
+from thinktank.ingestion.name_normalizer import normalize_name
 
 # Regex to strip honorific titles from text before pattern matching.
 # Matches "Dr.", "Prof.", "Mr.", "Mrs.", "Ms.", "Rev." and similar.

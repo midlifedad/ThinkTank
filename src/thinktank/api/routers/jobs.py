@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import JobStatusResponse
 
-from src.thinktank.models.job import Job
+from thinktank.models.job import Job
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 

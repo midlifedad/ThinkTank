@@ -48,7 +48,7 @@ async def send_to_gpu(
     transcribe_url = f"{gpu_url.rstrip('/')}/transcribe"
 
     try:
-        async with httpx.AsyncClient(timeout=_GPU_TIMEOUT_SECONDS) as client:
+        async with httpx.AsyncClient(timeout=_GPU_TIMEOUT_SECONDS, follow_redirects=True) as client:
             with open(wav_path, "rb") as f:
                 response = await client.post(
                     transcribe_url,

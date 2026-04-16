@@ -20,13 +20,13 @@ import uuid
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.content import Content
-from src.thinktank.models.source import Source
-from src.thinktank.queue.claim import _now
-from src.thinktank.transcription.audio import transcribe_via_gpu
-from src.thinktank.transcription.captions import extract_youtube_captions
-from src.thinktank.transcription.existing import fetch_existing_transcript
-from src.thinktank.transcription.gpu_client import transcribe_with_chunking
+from thinktank.models.content import Content
+from thinktank.models.source import Source
+from thinktank.queue.claim import _now
+from thinktank.transcription.audio import transcribe_via_gpu
+from thinktank.transcription.captions import extract_youtube_captions
+from thinktank.transcription.existing import fetch_existing_transcript
+from thinktank.transcription.gpu_client import transcribe_with_chunking
 
 logger = structlog.get_logger(__name__)
 

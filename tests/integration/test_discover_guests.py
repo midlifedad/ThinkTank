@@ -12,10 +12,10 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.handlers.discover_guests_podcastindex import (
+from thinktank.handlers.discover_guests_podcastindex import (
     handle_discover_guests_podcastindex,
 )
-from src.thinktank.models.source import Source, SourceThinker
+from thinktank.models.source import Source, SourceThinker
 from tests.factories import create_job, create_source, create_thinker
 
 pytestmark = pytest.mark.anyio
@@ -30,7 +30,7 @@ def _mock_podcastindex_client(return_value):
     mock_instance.search_by_person = AsyncMock(return_value=return_value)
     mock_cls = lambda api_key, api_secret: mock_instance  # noqa: E731
     return patch(
-        "src.thinktank.handlers.discover_guests_podcastindex.PodcastIndexClient",
+        "thinktank.handlers.discover_guests_podcastindex.PodcastIndexClient",
         mock_cls,
     )
 

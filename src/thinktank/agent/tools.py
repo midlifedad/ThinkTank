@@ -11,11 +11,11 @@ from datetime import datetime, UTC
 from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
-from src.thinktank.models.job import Job
-from src.thinktank.models.review import LLMReview
-from src.thinktank.models.source import Source
-from src.thinktank.models.thinker import Thinker
+from thinktank.models.config_table import SystemConfig
+from thinktank.models.job import Job
+from thinktank.models.review import LLMReview
+from thinktank.models.source import Source
+from thinktank.models.thinker import Thinker
 
 AGENT_TOOLS: list[dict] = [
     {

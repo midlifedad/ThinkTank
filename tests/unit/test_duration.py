@@ -3,7 +3,7 @@
 Tests all formats from itunes:duration: HH:MM:SS, MM:SS, raw seconds.
 """
 
-from src.thinktank.ingestion.duration import parse_duration
+from thinktank.ingestion.duration import parse_duration
 
 
 class TestValidFormats:

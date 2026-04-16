@@ -19,16 +19,16 @@ from datetime import UTC, datetime
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.discovery.name_extractor import extract_names
-from src.thinktank.discovery.quota import (
+from thinktank.discovery.name_extractor import extract_names
+from thinktank.discovery.quota import (
     check_daily_quota,
     get_pending_candidate_count,
     should_trigger_llm_review,
 )
-from src.thinktank.ingestion.trigram import find_similar_candidates, find_similar_thinkers
-from src.thinktank.models.candidate import CandidateThinker
-from src.thinktank.models.content import Content
-from src.thinktank.models.job import Job
+from thinktank.ingestion.trigram import find_similar_candidates, find_similar_thinkers
+from thinktank.models.candidate import CandidateThinker
+from thinktank.models.content import Content
+from thinktank.models.job import Job
 
 logger = structlog.get_logger(__name__)
 

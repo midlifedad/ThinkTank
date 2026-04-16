@@ -14,8 +14,8 @@ import pytest
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.api_usage import ApiUsage
-from src.thinktank.models.rate_limit import RateLimitUsage
+from thinktank.models.api_usage import ApiUsage
+from thinktank.models.rate_limit import RateLimitUsage
 from tests.factories import create_job, create_rate_limit_usage
 
 pytestmark = pytest.mark.anyio
@@ -31,7 +31,7 @@ class TestRollupApiUsageHandler:
 
     async def test_aggregates_usage_with_correct_counts(self, session: AsyncSession):
         """Insert rate_limit_usage rows 3 hours ago, run handler, verify api_usage counts."""
-        from src.thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
+        from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
 
         three_hours_ago = _hours_ago(3)
         for _ in range(5):
@@ -57,7 +57,7 @@ class TestRollupApiUsageHandler:
 
     async def test_cost_estimates_applied(self, session: AsyncSession):
         """Verify cost estimates are calculated from API_COST_MAP."""
-        from src.thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
+        from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
 
         three_hours_ago = _hours_ago(3)
         for _ in range(10):
@@ -83,7 +83,7 @@ class TestRollupApiUsageHandler:
 
     async def test_idempotent_on_rerun(self, session: AsyncSession):
         """Running handler twice on same data does not duplicate api_usage rows."""
-        from src.thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
+        from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
 
         three_hours_ago = _hours_ago(3)
         for _ in range(3):
@@ -113,7 +113,7 @@ class TestRollupApiUsageHandler:
 
     async def test_purges_old_rate_limit_usage(self, session: AsyncSession):
         """rate_limit_usage rows older than 2 hours are purged after handler runs."""
-        from src.thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
+        from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
 
         three_hours_ago = _hours_ago(3)
         for _ in range(3):
@@ -137,7 +137,7 @@ class TestRollupApiUsageHandler:
 
     async def test_preserves_recent_rate_limit_usage(self, session: AsyncSession):
         """rate_limit_usage rows newer than current hour are NOT purged."""
-        from src.thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
+        from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
 
         # Old rows (should be aggregated and purged)
         three_hours_ago = _hours_ago(3)

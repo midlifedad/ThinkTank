@@ -8,8 +8,8 @@ as the shared coordination point.
 from sqlalchemy import bindparam, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.models.config_table import SystemConfig
-from src.thinktank.models.rate_limit import RateLimitUsage
+from thinktank.models.config_table import SystemConfig
+from thinktank.models.rate_limit import RateLimitUsage
 
 
 async def get_rate_limit_config(session: AsyncSession, api_name: str) -> int | None:

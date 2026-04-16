@@ -71,7 +71,7 @@ async def fetch_existing_transcript(
             transcript_url=transcript_url,
         )
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(transcript_url, timeout=30.0)
             response.raise_for_status()
 

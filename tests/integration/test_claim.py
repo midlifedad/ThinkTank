@@ -11,8 +11,8 @@ from datetime import timedelta
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.thinktank.queue.claim import claim_job, complete_job, fail_job
-from src.thinktank.queue.errors import ErrorCategory
+from thinktank.queue.claim import claim_job, complete_job, fail_job
+from thinktank.queue.errors import ErrorCategory
 from tests.factories import _now, create_job
 
 

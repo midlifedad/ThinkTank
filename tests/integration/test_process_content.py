@@ -10,15 +10,15 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.thinktank.handlers.process_content import handle_process_content
+from thinktank.handlers.process_content import handle_process_content
 from tests.factories import create_content, create_job, create_source, create_thinker
 
 LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(200))
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_full_pipeline_youtube_captions(
     mock_captions, mock_existing, mock_gpu, session
 ):
@@ -53,9 +53,9 @@ async def test_full_pipeline_youtube_captions(
     assert content.processed_at is not None
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_full_pipeline_parakeet_fallback(
     mock_captions, mock_existing, mock_gpu, session
 ):
@@ -93,9 +93,9 @@ async def test_full_pipeline_parakeet_fallback(
     mock_captions.assert_not_called()
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_full_pipeline_existing_transcript(
     mock_captions, mock_existing, mock_gpu, session
 ):
@@ -131,9 +131,9 @@ async def test_full_pipeline_existing_transcript(
     assert content.body_text == LONG_TRANSCRIPT
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_content_status_done_after_transcription(
     mock_captions, mock_existing, mock_gpu, session
 ):
@@ -165,9 +165,9 @@ async def test_content_status_done_after_transcription(
     assert content.status == "done"
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_word_count_calculated(
     mock_captions, mock_existing, mock_gpu, session
 ):
@@ -199,9 +199,9 @@ async def test_word_count_calculated(
     assert content.word_count == expected_count
 
 
-@patch("src.thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("src.thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions")
 async def test_all_passes_fail_raises(
     mock_captions, mock_existing, mock_gpu, session
 ):
