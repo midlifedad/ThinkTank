@@ -1,7 +1,7 @@
 """Add covering b-tree indexes on hot foreign-key columns.
 
 Revision ID: 009_index_hot_fks
-Revises: 008_renormalize_urls
+Revises: 006_status_check
 Create Date: 2026-04-16
 
 Source: DATA-REVIEW M-level finding. Postgres does NOT auto-create an index
@@ -33,13 +33,28 @@ Indexes added (all plain b-tree, nullable-safe):
 We intentionally do NOT use ``CREATE INDEX CONCURRENTLY`` here. Alembic
 migrations run inside a transaction, and CONCURRENTLY is incompatible
 with transactional DDL. For the current corpus sizes (<1M content rows)
-a locking index build completes in <5s on Railway Postgres. Should we
-outgrow that, a follow-up migration can drop-and-recreate concurrently
-outside alembic using a raw connection -- but only when needed.
+a locking index build completes in <5s on Railway Postgres.
 
-Chains off 008 rather than phase13_cataloged_idx so that the main
-migration sequence stays linear; phase13 remains a parallel head that
-will be merged separately when its feature ships.
+**CONCURRENTLY follow-up (staging/prod):** If ``content`` grows past a
+few million rows, the ShareLock on ``content.source_id`` /
+``content.source_owner_id`` from plain ``CREATE INDEX`` will begin to
+block writes for noticeable windows during deploy. At that point:
+
+1. Drop the two content indexes from this migration (they're created
+   via a locking build above).
+2. Add a follow-up migration that opens a raw connection outside the
+   alembic transaction (``with op.get_bind().execution_options(
+   isolation_level="AUTOCOMMIT")`` or a separate psql script) and
+   issues ``CREATE INDEX CONCURRENTLY ix_content_source_id ...`` etc.
+3. Run that follow-up during a maintenance window because failed
+   concurrent builds leave ``INVALID`` indexes that must be reaped.
+
+The other six indexes are on smaller tables (junctions, candidate,
+jobs) where the lock is negligible.
+
+Chains off 006 so the PR #24 (schema-only) deploy can land without
+007a/b/c + 008 (timezone + URL backfill, shipped via PR #25). The
+downstream chain 007a -> 007b -> 007c -> 008 picks up from 009.
 """
 
 from typing import Sequence, Union
@@ -48,7 +63,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "009_index_hot_fks"
-down_revision: Union[str, Sequence[str], None] = "008_renormalize_urls"
+down_revision: Union[str, Sequence[str], None] = "006_status_check"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

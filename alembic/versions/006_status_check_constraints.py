@@ -18,12 +18,34 @@ rejected} for `source.approval_status`, but production code actively writes
 {pending_llm, awaiting_llm, rejected_by_llm, pending_human} via the LLM
 approval pipeline (admin/routers, llm/decisions, agent/tools). The constant
 `ALLOWED_SOURCE_APPROVAL_STATUSES` therefore encodes the superset; narrowing
-would reject live rows at migration time. See commit message for details.
+would reject live rows at migration time.
+
+Deploy hardening (per Troy's review):
+
+1. **Pre-flight DISTINCT check.** Before adding each constraint we query
+   ``SELECT DISTINCT <col>`` to catch rows that would violate the allowed
+   set. If any offender is found we raise a ``RuntimeError`` with the
+   specific table, column, and offending values -- this halts the
+   migration cleanly with a remediation hint rather than failing halfway
+   through with an opaque psycopg error. Without this guard a row written
+   by a future worker with a typoed status ("complete" vs "done") would
+   tank the entire migration on production.
+
+2. **NOT VALID + separate VALIDATE.** Large tables like ``content`` and
+   ``jobs`` take an AccessExclusiveLock for the full-scan validation
+   that ``ADD CONSTRAINT ... CHECK`` performs by default. Adding the
+   constraint as ``NOT VALID`` first makes it apply to new rows
+   immediately (cheap, AccessExclusiveLock only for the catalog update)
+   and defers the full-scan validation to a separate ``VALIDATE
+   CONSTRAINT`` statement that takes only a ShareUpdateExclusiveLock
+   (concurrent writes still run). The downgrade path drops both
+   constraints symmetrically.
 """
 
 from typing import Sequence, Union
 
 from alembic import op
+from sqlalchemy import text
 
 from thinktank.models.constants import (
     ALLOWED_CONTENT_STATUSES,
@@ -43,18 +65,61 @@ def _in_list(column: str, values: tuple[str, ...]) -> str:
     return f"{column} IN ({quoted})"
 
 
+def _preflight(table: str, column: str, values: tuple[str, ...]) -> None:
+    """Raise if any row in ``table`` has a ``column`` value not in ``values``.
+
+    Rows with NULL are ignored (CHECK allows NULL unless explicitly
+    ``CHECK (col IS NOT NULL AND col IN (...))``). This matches Postgres
+    CHECK semantics so the pre-flight and the constraint agree.
+    """
+    bind = op.get_bind()
+    allowed_set = set(values)
+    offenders = bind.execute(
+        text(
+            f"SELECT DISTINCT {column} FROM {table} "
+            f"WHERE {column} IS NOT NULL"
+        )
+    ).scalars().all()
+    bad = [v for v in offenders if v not in allowed_set]
+    if bad:
+        raise RuntimeError(
+            f"006_status_check: {table}.{column} contains values that would "
+            f"violate the new CHECK constraint: {sorted(bad)!r}. "
+            f"Allowed set: {sorted(allowed_set)!r}. "
+            f"Fix the offending rows (UPDATE or DELETE) before re-running."
+        )
+
+
+def _add_check_not_valid(name: str, table: str, expr: str) -> None:
+    """Add a CHECK constraint as NOT VALID then run VALIDATE CONSTRAINT.
+
+    Splitting the operation avoids holding AccessExclusiveLock for the
+    full table scan; VALIDATE CONSTRAINT only needs ShareUpdateExclusive,
+    so concurrent writers keep running.
+    """
+    op.execute(
+        f'ALTER TABLE {table} ADD CONSTRAINT {name} CHECK ({expr}) NOT VALID'
+    )
+    op.execute(f'ALTER TABLE {table} VALIDATE CONSTRAINT {name}')
+
+
 def upgrade() -> None:
-    op.create_check_constraint(
+    # Pre-flight: fail fast with a helpful error if any row would violate.
+    _preflight("content", "status", ALLOWED_CONTENT_STATUSES)
+    _preflight("sources", "approval_status", ALLOWED_SOURCE_APPROVAL_STATUSES)
+    _preflight("jobs", "status", ALLOWED_JOB_STATUSES)
+
+    _add_check_not_valid(
         "ck_content_status",
         "content",
         _in_list("status", ALLOWED_CONTENT_STATUSES),
     )
-    op.create_check_constraint(
+    _add_check_not_valid(
         "ck_source_approval_status",
         "sources",
         _in_list("approval_status", ALLOWED_SOURCE_APPROVAL_STATUSES),
     )
-    op.create_check_constraint(
+    _add_check_not_valid(
         "ck_job_status",
         "jobs",
         _in_list("status", ALLOWED_JOB_STATUSES),
