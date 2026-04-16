@@ -42,7 +42,10 @@ class Thinker(Base):
     added_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
     last_refreshed: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
-    # Relationships
+    # Relationships. passive_deletes=True tells SQLAlchemy to rely on the
+    # DB-level ON DELETE CASCADE / SET NULL configured in migration 005
+    # instead of trying to null out FKs itself (which would error since the
+    # junction PKs include the FK columns).
     sources: Mapped[list["Source"]] = relationship(
         back_populates="thinker",
         lazy="selectin",
@@ -50,13 +53,16 @@ class Thinker(Base):
     profiles: Mapped[list["ThinkerProfile"]] = relationship(
         back_populates="thinker",
         lazy="selectin",
+        passive_deletes=True,
     )
     metrics: Mapped[list["ThinkerMetrics"]] = relationship(
         back_populates="thinker",
         lazy="selectin",
+        passive_deletes=True,
     )
     categories: Mapped[list["ThinkerCategory"]] = relationship(
         lazy="selectin",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:
@@ -69,7 +75,9 @@ class ThinkerProfile(Base):
     __tablename__ = "thinker_profiles"
 
     id: Mapped[uuid_pk]
-    thinker_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("thinkers.id"))
+    thinker_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("thinkers.id", ondelete="CASCADE")
+    )
     education: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
     positions_held: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
     notable_works: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
@@ -89,7 +97,9 @@ class ThinkerMetrics(Base):
     __tablename__ = "thinker_metrics"
 
     id: Mapped[uuid_pk]
-    thinker_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("thinkers.id"))
+    thinker_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("thinkers.id", ondelete="CASCADE")
+    )
     platform: Mapped[str] = mapped_column(sa.Text)
     handle: Mapped[str] = mapped_column(sa.Text)
     followers: Mapped[int] = mapped_column(sa.BigInteger)

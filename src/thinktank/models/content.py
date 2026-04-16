@@ -55,6 +55,7 @@ class Content(Base):
     content_thinkers: Mapped[list["ContentThinker"]] = relationship(
         back_populates="content",
         lazy="selectin",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:
@@ -70,11 +71,11 @@ class ContentThinker(Base):
     __tablename__ = "content_thinkers"
 
     content_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("content.id"),
+        sa.ForeignKey("content.id", ondelete="CASCADE"),
         primary_key=True,
     )
     thinker_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("thinkers.id"),
+        sa.ForeignKey("thinkers.id", ondelete="CASCADE"),
         primary_key=True,
     )
     role: Mapped[str] = mapped_column(sa.Text)

@@ -58,6 +58,7 @@ class Source(Base):
     source_thinkers: Mapped[list["SourceThinker"]] = relationship(
         back_populates="source",
         lazy="selectin",
+        passive_deletes=True,
     )
     content: Mapped[list["Content"]] = relationship(
         back_populates="source",
@@ -77,11 +78,11 @@ class SourceThinker(Base):
     __tablename__ = "source_thinkers"
 
     source_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("sources.id"),
+        sa.ForeignKey("sources.id", ondelete="CASCADE"),
         primary_key=True,
     )
     thinker_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("thinkers.id"),
+        sa.ForeignKey("thinkers.id", ondelete="CASCADE"),
         primary_key=True,
     )
     relationship_type: Mapped[str] = mapped_column(sa.Text)
