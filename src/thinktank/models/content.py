@@ -11,16 +11,27 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from thinktank.models.base import Base, uuid_pk
+from thinktank.models.constants import ALLOWED_CONTENT_STATUSES
 
 if TYPE_CHECKING:
     from thinktank.models.source import Source
     from thinktank.models.thinker import Thinker
 
 
+def _content_status_check() -> sa.CheckConstraint:
+    """CHECK constraint for Content.status (DATA-REVIEW H3)."""
+    values = ", ".join(f"'{s}'" for s in ALLOWED_CONTENT_STATUSES)
+    return sa.CheckConstraint(
+        f"status IN ({values})",
+        name="ck_content_status",
+    )
+
+
 class Content(Base):
     """A piece of ingested content (episode, video, article, paper, post)."""
 
     __tablename__ = "content"
+    __table_args__ = (_content_status_check(),)
 
     id: Mapped[uuid_pk]
     source_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("sources.id"))
