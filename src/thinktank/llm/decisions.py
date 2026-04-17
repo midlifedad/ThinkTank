@@ -44,6 +44,25 @@ def _slugify(name: str) -> str:
     return slug
 
 
+async def _unique_thinker_slug(session: AsyncSession, name: str) -> str:
+    """Return a slug that does not collide with any existing ``thinkers.slug``.
+
+    Two candidates with the same normalized name (e.g. "Jane Smith" surfacing
+    a second time from a different source) would otherwise race on the
+    ``thinkers.slug`` UNIQUE constraint and raise IntegrityError inside the
+    LLM commit path. Appends ``-2``, ``-3``, ... until the slug is free.
+    """
+    base = _slugify(name)
+    candidate = base
+    suffix = 2
+    while True:
+        existing = await session.execute(select(Thinker.id).where(Thinker.slug == candidate))
+        if existing.scalar_one_or_none() is None:
+            return candidate
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+
+
 async def apply_decision(
     session: AsyncSession,
     review_type: str,
@@ -261,7 +280,10 @@ async def promote_candidate_to_thinker(
         The newly created Thinker.
     """
     tier = result.tier if result.tier is not None else 3
-    slug = _slugify(candidate.name)
+    # ADMIN LO-02 (decisions path): same bug in the LLM promotion path as
+    # in add_thinker/promote_candidate admin routes -- _slugify alone can
+    # collide when two candidates share a normalized name.
+    slug = await _unique_thinker_slug(session, candidate.name)
 
     thinker = Thinker(
         id=uuid.uuid4(),
