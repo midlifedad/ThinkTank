@@ -289,9 +289,7 @@ class TestPromoteCandidateToThinker:
         assert "discover_thinker" in job_types, "promotion must enqueue discover_thinker"
         assert "rescan_cataloged_for_thinker" in job_types, "promotion must enqueue rescan_cataloged_for_thinker"
 
-        jobs_by_type = {
-            obj.job_type: obj for obj in added if hasattr(obj, "job_type")
-        }
+        jobs_by_type = {obj.job_type: obj for obj in added if hasattr(obj, "job_type")}
         assert jobs_by_type["discover_thinker"].payload == {"thinker_id": str(thinker.id)}
         assert jobs_by_type["rescan_cataloged_for_thinker"].payload == {
             "thinker_id": str(thinker.id),
