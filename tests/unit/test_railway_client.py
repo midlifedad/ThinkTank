@@ -143,6 +143,103 @@ class TestGetGpuReplicaCount:
         assert result == 2
 
 
+class TestRailwayExceptionNarrowing:
+    """INTEGRATIONS-REVIEW M-04 (T6.13): scale_gpu_service and
+    get_gpu_replica_count must catch only expected errors (httpx.HTTPError,
+    json.JSONDecodeError, KeyError, TypeError for subscripting None) so
+    true programming bugs surface instead of being silently swallowed.
+    """
+
+    @pytest.mark.asyncio
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
+    async def test_scale_handles_json_decode_error(self, mock_client_cls, monkeypatch):
+        import json as json_module
+
+        from thinktank.scaling.railway import scale_gpu_service
+
+        monkeypatch.setenv("RAILWAY_API_KEY", "k")
+        monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "s")
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT_ID", "e")
+
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.side_effect = json_module.JSONDecodeError("boom", "", 0)
+
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        result = await scale_gpu_service(1)
+        assert result is False
+
+    @pytest.mark.asyncio
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
+    async def test_get_replica_handles_missing_service_instance(self, mock_client_cls, monkeypatch):
+        """serviceInstance=null in response shouldn't raise."""
+        from thinktank.scaling.railway import get_gpu_replica_count
+
+        monkeypatch.setenv("RAILWAY_API_KEY", "k")
+        monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "s")
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT_ID", "e")
+
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"data": {"serviceInstance": None}}
+
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        result = await get_gpu_replica_count()
+        assert result is None
+
+    @pytest.mark.asyncio
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
+    async def test_get_replica_handles_missing_key(self, mock_client_cls, monkeypatch):
+        """Missing 'numReplicas' key shouldn't raise KeyError."""
+        from thinktank.scaling.railway import get_gpu_replica_count
+
+        monkeypatch.setenv("RAILWAY_API_KEY", "k")
+        monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "s")
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT_ID", "e")
+
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"data": {"serviceInstance": {}}}
+
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        result = await get_gpu_replica_count()
+        assert result is None
+
+    @pytest.mark.asyncio
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
+    async def test_programming_errors_propagate(self, mock_client_cls, monkeypatch):
+        """Unexpected bugs (e.g. attribute errors) must not be swallowed."""
+        from thinktank.scaling.railway import scale_gpu_service
+
+        monkeypatch.setenv("RAILWAY_API_KEY", "k")
+        monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "s")
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT_ID", "e")
+
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(side_effect=AttributeError("unexpected programming bug"))
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        with pytest.raises(AttributeError):
+            await scale_gpu_service(1)
+
+
 class TestManageGpuScaling:
     """Tests for manage_gpu_scaling orchestration function."""
 

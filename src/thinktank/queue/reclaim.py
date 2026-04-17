@@ -11,6 +11,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.models.config_table import SystemConfig
+from thinktank.queue.retry import calculate_backoff
 
 # Default stale timeout when system_config is missing
 _DEFAULT_STALE_TIMEOUT_MINUTES = 30
@@ -38,12 +39,11 @@ async def _get_stale_timeout(session: AsyncSession) -> int:
 async def reclaim_stale_jobs(session: AsyncSession) -> list[dict]:
     """Reclaim jobs stuck in 'running' state beyond the timeout.
 
-    Uses a parameterized approach: first reads the config value,
-    then uses it as a bind parameter in the bulk UPDATE.
-
     For each stale job:
     - If attempts + 1 >= max_attempts: set status='failed', completed_at=LOCALTIMESTAMP
     - Otherwise: set status='retrying', scheduled_at with exponential backoff
+      from ``calculate_backoff`` (single source of truth with worker retry
+      semantics, capped at 60 minutes).
 
     All reclaimed jobs get:
     - worker_id = NULL (release worker claim)
@@ -61,33 +61,71 @@ async def reclaim_stale_jobs(session: AsyncSession) -> list[dict]:
     """
     timeout_minutes = await _get_stale_timeout(session)
 
-    # Use raw SQL for this bulk operation (per research recommendation).
-    # Uses LOCALTIMESTAMP for timezone consistency with TIMESTAMP WITHOUT TIME ZONE columns.
-    stmt = text("""
+    # Select stale candidates first so we can apply the Python-side backoff
+    # formula per row (single source of truth with ``calculate_backoff``).
+    # HANDLERS-REVIEW HI-06 (T6.3): previously used raw SQL POWER(2, attempts+1)
+    # with no cap, scheduling some jobs many hours into the future.
+    select_stmt = text("""
+        SELECT id, job_type, worker_id, attempts, max_attempts
+        FROM jobs
+        WHERE status = 'running'
+          AND started_at < LOCALTIMESTAMP - MAKE_INTERVAL(mins => :timeout_minutes)
+        FOR UPDATE SKIP LOCKED
+    """)
+    candidates = (await session.execute(select_stmt, {"timeout_minutes": timeout_minutes})).fetchall()
+
+    reclaimed: list[dict] = []
+    update_retrying = text("""
         UPDATE jobs
-        SET status = CASE
-                WHEN attempts + 1 >= max_attempts THEN 'failed'
-                ELSE 'retrying'
-            END,
+        SET status = 'retrying',
             worker_id = NULL,
-            attempts = attempts + 1,
+            attempts = :new_attempts,
             error = 'Reclaimed: exceeded stale_job_timeout_minutes',
             error_category = 'worker_timeout',
             last_error_at = LOCALTIMESTAMP,
-            scheduled_at = CASE
-                WHEN attempts + 1 >= max_attempts THEN NULL
-                ELSE LOCALTIMESTAMP + (POWER(2, attempts + 1) * INTERVAL '1 minute')
-            END,
-            completed_at = CASE
-                WHEN attempts + 1 >= max_attempts THEN LOCALTIMESTAMP
-                ELSE NULL
-            END
-        WHERE status = 'running'
-          AND started_at < LOCALTIMESTAMP - MAKE_INTERVAL(mins => :timeout_minutes)
-        RETURNING id, job_type, worker_id, attempts, max_attempts
+            scheduled_at = LOCALTIMESTAMP + MAKE_INTERVAL(mins => :backoff_minutes),
+            completed_at = NULL
+        WHERE id = :id
+    """)
+    update_failed = text("""
+        UPDATE jobs
+        SET status = 'failed',
+            worker_id = NULL,
+            attempts = :new_attempts,
+            error = 'Reclaimed: exceeded stale_job_timeout_minutes',
+            error_category = 'worker_timeout',
+            last_error_at = LOCALTIMESTAMP,
+            scheduled_at = NULL,
+            completed_at = LOCALTIMESTAMP
+        WHERE id = :id
     """)
 
-    result = await session.execute(stmt, {"timeout_minutes": timeout_minutes})
-    reclaimed = [dict(row._mapping) for row in result.fetchall()]
+    for row in candidates:
+        new_attempts = row.attempts + 1
+        if new_attempts >= row.max_attempts:
+            await session.execute(
+                update_failed,
+                {"id": row.id, "new_attempts": new_attempts},
+            )
+        else:
+            backoff_minutes = int(calculate_backoff(new_attempts).total_seconds() // 60)
+            await session.execute(
+                update_retrying,
+                {
+                    "id": row.id,
+                    "new_attempts": new_attempts,
+                    "backoff_minutes": backoff_minutes,
+                },
+            )
+        reclaimed.append(
+            {
+                "id": row.id,
+                "job_type": row.job_type,
+                "worker_id": row.worker_id,
+                "attempts": row.attempts,
+                "max_attempts": row.max_attempts,
+            }
+        )
+
     await session.flush()
     return reclaimed

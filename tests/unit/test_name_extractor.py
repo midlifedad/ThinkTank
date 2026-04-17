@@ -12,7 +12,10 @@ Covers all behavior cases from PLAN 06-01 Task 1:
 
 import pytest
 
-from thinktank.discovery.name_extractor import extract_names
+from thinktank.discovery.name_extractor import (
+    _looks_like_person_name,
+    extract_names,
+)
 
 
 class TestExtractNamesPatterns:
@@ -152,6 +155,29 @@ class TestExtractNamesValidation:
     def test_preposition_conjunction_blocklist(self, title):
         """Title Case phrases with 'of/and/or/for/from/in/on' are not names (M-03)."""
         assert extract_names(title, "") == []
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "John\nSmith",
+            "John\rSmith",
+            "John `Smith",
+            "John ## Smith",
+            "## John Smith",
+        ],
+        ids=["newline", "carriage-return", "backtick", "double-hash-middle", "double-hash-prefix"],
+    )
+    def test_prompt_injection_chars_rejected(self, name):
+        """INTEGRATIONS-REVIEW M-01 (T6.10): defense-in-depth — names
+        containing ``##``, backticks, or newlines must be rejected even
+        if the regex capture somehow surfaces them, so they can't be
+        smuggled into LLM prompts as markdown / instruction boundaries.
+        """
+        assert _looks_like_person_name(name) is False
+
+    def test_clean_name_still_accepted(self):
+        """Baseline: normal names still pass validation after the T6.10 guard."""
+        assert _looks_like_person_name("John Smith") is True
 
 
 class TestExtractNamesDescription:

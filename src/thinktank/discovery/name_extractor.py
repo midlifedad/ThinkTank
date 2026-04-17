@@ -82,7 +82,12 @@ def _looks_like_person_name(name: str) -> bool:
     - Each word >= 2 characters
     - No all-caps words (length > 1) -- likely acronyms or shouted titles
     - No blocklist words (lowercased)
+    - No prompt-injection-ish characters (``##``, backticks, newlines)
+      (INTEGRATIONS-REVIEW M-01 / T6.10) so extracted names can't be
+      smuggled into LLM prompts as markdown / instruction boundaries.
     """
+    if any(bad in name for bad in ("##", "`", "\n", "\r")):
+        return False
     parts = name.split()
     if not (2 <= len(parts) <= 4):
         return False

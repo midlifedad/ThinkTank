@@ -5,6 +5,7 @@ Uses Railway GraphQL API at backboard.railway.com/graphql/v2 to
 scale the GPU worker service up and down based on queue depth.
 """
 
+import json
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -93,7 +94,10 @@ async def scale_gpu_service(replicas: int, session: AsyncSession | None = None) 
             )
             return True
 
-    except Exception:
+    # INTEGRATIONS-REVIEW M-04 (T6.13): narrowed from bare ``except Exception``
+    # so programming bugs (AttributeError, NameError, etc.) propagate instead
+    # of being silently swallowed as a scale failure.
+    except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError):
         logger.error(
             "railway_api_failed",
             replicas=replicas,
@@ -156,9 +160,17 @@ async def get_gpu_replica_count(session: AsyncSession | None = None) -> int | No
                 logger.error("railway_query_errors", errors=data["errors"])
                 return None
 
-            return data["data"]["serviceInstance"]["numReplicas"]
+            # Defensive walk: serviceInstance may be null when the service
+            # isn't provisioned in this environment (KeyError/TypeError).
+            service_instance = data.get("data", {}).get("serviceInstance")
+            if service_instance is None:
+                return None
+            return service_instance.get("numReplicas")
 
-    except Exception:
+    # INTEGRATIONS-REVIEW M-04 (T6.13): narrowed from bare ``except Exception``
+    # so programming bugs propagate rather than masquerading as a missing
+    # replica count.
+    except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError):
         logger.error("railway_query_failed", exc_info=True)
         return None
 
