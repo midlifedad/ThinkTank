@@ -4,10 +4,12 @@ Spec reference: Section 3.6 (sources).
 """
 
 import uuid
+import warnings
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 import sqlalchemy as sa
+from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -104,3 +106,28 @@ class SourceThinker(Base):
 
     def __repr__(self) -> str:
         return f"<SourceThinker(source={self.source_id}, thinker={self.thinker_id}, type={self.relationship_type!r})>"
+
+
+# DATA-REVIEW M2: emit a DeprecationWarning whenever something still writes
+# a non-None value to ``Source.thinker_id``. The column is kept (nullable)
+# for backward compatibility with existing rows, but the many-to-many
+# relationship lives on ``source_thinkers``. A follow-up migration (DATA
+# M5/L4) will drop the column entirely; until then this listener surfaces
+# any remaining callers in logs so they can be migrated to the junction.
+@event.listens_for(Source.thinker_id, "set", propagate=True)
+def _warn_on_source_thinker_id_write(
+    target: "Source",
+    value: uuid.UUID | None,
+    oldvalue: uuid.UUID | None,
+    initiator: object,
+) -> None:
+    # Allow clearing the field (None) and no-op repeats so factory defaults,
+    # ORM refreshes, and the deprecation cleanup don't themselves warn.
+    if value is None or value == oldvalue:
+        return
+    warnings.warn(
+        "Source.thinker_id is deprecated; write to the source_thinkers junction instead. "
+        "This column will be dropped in a follow-up migration (DATA M5/L4).",
+        DeprecationWarning,
+        stacklevel=3,
+    )
