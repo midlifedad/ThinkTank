@@ -22,10 +22,7 @@ _CONTEXT_INSTRUCTION = (
 
 def _wrap_context(context: dict) -> str:
     """Serialize ``context`` as JSON wrapped in a ``<context>...</context>`` block."""
-    return (
-        f"{_CONTEXT_INSTRUCTION}\n\n"
-        f"<context>\n{json.dumps(context, default=str, indent=2)}\n</context>"
-    )
+    return f"{_CONTEXT_INSTRUCTION}\n\n<context>\n{json.dumps(context, default=str, indent=2)}\n</context>"
 
 
 SYSTEM_PROMPT = """You are the ThinkTank Supervisor, responsible for governing a content ingestion pipeline.

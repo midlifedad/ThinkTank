@@ -141,9 +141,9 @@ class TestContextBoundaryMarkers:
         for builder in self.BUILDERS:
             _, user = builder({"foo": "bar"})
             lowered = user.lower()
-            assert "data" in lowered and (
-                "not instructions" in lowered or "treat" in lowered
-            ), f"{builder.__name__} missing treat-as-data instruction"
+            assert "data" in lowered and ("not instructions" in lowered or "treat" in lowered), (
+                f"{builder.__name__} missing treat-as-data instruction"
+            )
 
     def test_context_payload_sits_inside_tags(self):
         context = {"marker_value": "ZZZ-UNIQUE-123"}
@@ -151,6 +151,4 @@ class TestContextBoundaryMarkers:
             _, user = builder(context)
             start = user.index("<context>")
             end = user.index("</context>")
-            assert "ZZZ-UNIQUE-123" in user[start:end], (
-                f"{builder.__name__} did not place payload inside <context>"
-            )
+            assert "ZZZ-UNIQUE-123" in user[start:end], f"{builder.__name__} did not place payload inside <context>"

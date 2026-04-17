@@ -176,9 +176,7 @@ class TestRailwayExceptionNarrowing:
 
     @pytest.mark.asyncio
     @patch("thinktank.scaling.railway.httpx.AsyncClient")
-    async def test_get_replica_handles_missing_service_instance(
-        self, mock_client_cls, monkeypatch
-    ):
+    async def test_get_replica_handles_missing_service_instance(self, mock_client_cls, monkeypatch):
         """serviceInstance=null in response shouldn't raise."""
         from thinktank.scaling.railway import get_gpu_replica_count
 
@@ -233,9 +231,7 @@ class TestRailwayExceptionNarrowing:
         monkeypatch.setenv("RAILWAY_ENVIRONMENT_ID", "e")
 
         mock_client = AsyncMock()
-        mock_client.post = AsyncMock(
-            side_effect=AttributeError("unexpected programming bug")
-        )
+        mock_client.post = AsyncMock(side_effect=AttributeError("unexpected programming bug"))
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
         mock_client_cls.return_value = mock_client

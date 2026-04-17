@@ -99,10 +99,7 @@ class LLMClient:
             None,
         )
         if tool_use_block is None:
-            raise ValueError(
-                "Claude response did not include a tool_use block "
-                "(possibly a refusal or safety response)"
-            )
+            raise ValueError("Claude response did not include a tool_use block (possibly a refusal or safety response)")
         parsed_result = response_schema.model_validate(tool_use_block.input)
 
         duration_ms = int((time.monotonic() - start) * 1000)

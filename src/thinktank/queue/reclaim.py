@@ -72,9 +72,7 @@ async def reclaim_stale_jobs(session: AsyncSession) -> list[dict]:
           AND started_at < LOCALTIMESTAMP - MAKE_INTERVAL(mins => :timeout_minutes)
         FOR UPDATE SKIP LOCKED
     """)
-    candidates = (
-        await session.execute(select_stmt, {"timeout_minutes": timeout_minutes})
-    ).fetchall()
+    candidates = (await session.execute(select_stmt, {"timeout_minutes": timeout_minutes})).fetchall()
 
     reclaimed: list[dict] = []
     update_retrying = text("""
