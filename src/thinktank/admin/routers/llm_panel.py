@@ -7,7 +7,7 @@ recent decisions, LLM status, and a human override endpoint with audit trail.
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -175,9 +175,9 @@ async def override_decision(
 
     review = await session.get(LLMReview, review_id)
     if not review:
-        return templates.TemplateResponse(
-            request, "partials/llm_pending.html", {"pending": []},
+        raise HTTPException(
             status_code=404,
+            detail=f"LLM review {review_id} not found",
         )
 
     # Update the review record
