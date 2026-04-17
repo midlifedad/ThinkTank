@@ -34,9 +34,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.ingestion.name_matcher import match_thinkers_in_text
-from thinktank.ingestion.name_normalizer import normalize_name
-from thinktank.ingestion.trigram import find_similar_candidates, find_similar_thinkers
-from thinktank.models.candidate import CandidateThinker
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 from thinktank.models.source import Source, SourceThinker
@@ -50,9 +47,7 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-async def handle_tag_content_thinkers(
-    session: AsyncSession, job: Job
-) -> None:
+async def handle_tag_content_thinkers(session: AsyncSession, job: Job) -> None:
     """Create ContentThinker attribution rows for a batch of content.
 
     Reads content_ids, source_id, and descriptions from job.payload
@@ -129,9 +124,7 @@ async def handle_tag_content_thinkers(
         description = descriptions.get(content_id_str, "")
 
         # Match thinker names in title and description
-        matches = match_thinkers_in_text(
-            content.title, description, thinker_names, source_owner_name
-        )
+        matches = match_thinkers_in_text(content.title, description, thinker_names, source_owner_name)
 
         # Create ContentThinker rows for each match
         matched_thinker_ids = set()

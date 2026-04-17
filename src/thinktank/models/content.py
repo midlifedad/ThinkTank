@@ -35,40 +35,34 @@ class Content(Base):
 
     id: Mapped[uuid_pk]
     source_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("sources.id"))
-    source_owner_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    source_owner_id: Mapped[uuid.UUID | None] = mapped_column(
         sa.ForeignKey("thinkers.id"), nullable=True
     )  # DEPRECATED — use content_thinkers junction
     content_type: Mapped[str] = mapped_column(sa.Text)
     url: Mapped[str] = mapped_column(sa.Text)
     canonical_url: Mapped[str] = mapped_column(sa.Text, unique=True)
-    content_fingerprint: Mapped[Optional[str]] = mapped_column(
+    content_fingerprint: Mapped[str | None] = mapped_column(
         sa.Text,
         unique=True,
         nullable=True,
     )
-    source_guid: Mapped[Optional[str]] = mapped_column(
+    source_guid: Mapped[str | None] = mapped_column(
         sa.Text,
         nullable=True,
     )
     title: Mapped[str] = mapped_column(sa.Text)
-    body_text: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    word_count: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
-    published_at: Mapped[Optional[datetime]] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
-    duration_seconds: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
-    show_name: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    host_name: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    thumbnail_url: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    transcription_method: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
+    body_text: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    word_count: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    show_name: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    host_name: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    thumbnail_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    transcription_method: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     status: Mapped[str] = mapped_column(sa.Text, server_default="pending")
-    error_message: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    discovered_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
-    processed_at: Mapped[Optional[datetime]] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
+    error_message: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    discovered_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
+    processed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
     # Relationships
     source: Mapped["Source"] = relationship(back_populates="content")
@@ -101,9 +95,7 @@ class ContentThinker(Base):
     )
     role: Mapped[str] = mapped_column(sa.Text)
     confidence: Mapped[int] = mapped_column(sa.SmallInteger)
-    added_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
+    added_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
 
     # Relationships
     content: Mapped["Content"] = relationship(back_populates="content_thinkers")

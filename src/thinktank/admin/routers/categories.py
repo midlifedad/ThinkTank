@@ -44,7 +44,9 @@ async def category_tree_partial(
     """HTML fragment: hierarchical category tree."""
     roots = await _get_category_tree(session)
     return templates.TemplateResponse(
-        request, "partials/category_tree.html", {"roots": roots},
+        request,
+        "partials/category_tree.html",
+        {"roots": roots},
     )
 
 
@@ -72,7 +74,9 @@ async def create_category(
     # Re-render tree
     roots = await _get_category_tree(session)
     return templates.TemplateResponse(
-        request, "partials/category_tree.html", {"roots": roots},
+        request,
+        "partials/category_tree.html",
+        {"roots": roots},
     )
 
 
@@ -91,7 +95,9 @@ async def update_category(
     if not cat:
         roots = await _get_category_tree(session)
         return templates.TemplateResponse(
-            request, "partials/category_tree.html", {"roots": roots, "error": "Category not found"},
+            request,
+            "partials/category_tree.html",
+            {"roots": roots, "error": "Category not found"},
             status_code=404,
         )
 
@@ -102,7 +108,9 @@ async def update_category(
 
     roots = await _get_category_tree(session)
     return templates.TemplateResponse(
-        request, "partials/category_tree.html", {"roots": roots},
+        request,
+        "partials/category_tree.html",
+        {"roots": roots},
     )
 
 
@@ -119,7 +127,9 @@ async def delete_category(
     if not cat:
         roots = await _get_category_tree(session)
         return templates.TemplateResponse(
-            request, "partials/category_tree.html", {"roots": roots, "error": "Category not found"},
+            request,
+            "partials/category_tree.html",
+            {"roots": roots, "error": "Category not found"},
             status_code=404,
         )
 
@@ -131,7 +141,8 @@ async def delete_category(
     if (children_result.scalar() or 0) > 0:
         roots = await _get_category_tree(session)
         return templates.TemplateResponse(
-            request, "partials/category_tree.html",
+            request,
+            "partials/category_tree.html",
             {"roots": roots, "error": "Cannot delete category with children"},
             status_code=400,
         )
@@ -144,7 +155,8 @@ async def delete_category(
     if (assoc_result.scalar() or 0) > 0:
         roots = await _get_category_tree(session)
         return templates.TemplateResponse(
-            request, "partials/category_tree.html",
+            request,
+            "partials/category_tree.html",
             {"roots": roots, "error": "Cannot delete category with thinker associations"},
             status_code=400,
         )
@@ -154,5 +166,7 @@ async def delete_category(
 
     roots = await _get_category_tree(session)
     return templates.TemplateResponse(
-        request, "partials/category_tree.html", {"roots": roots},
+        request,
+        "partials/category_tree.html",
+        {"roots": roots},
     )

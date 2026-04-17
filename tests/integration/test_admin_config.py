@@ -60,11 +60,9 @@ class TestRateLimitsEditor:
         assert response.status_code == 200
         assert "200" in response.text  # youtube default
         assert "500" in response.text  # podcastindex default
-        assert "50" in response.text   # anthropic default
+        assert "50" in response.text  # anthropic default
 
-    async def test_rate_limits_partial_loads_custom(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_rate_limits_partial_loads_custom(self, admin_client, session: AsyncSession):
         """Seeded custom rate_limits are shown in the partial."""
         await create_system_config(
             session,
@@ -98,18 +96,14 @@ class TestRateLimitsEditor:
 
         from thinktank.models.config_table import SystemConfig
 
-        result = await session.execute(
-            select(SystemConfig.value).where(SystemConfig.key == "rate_limits")
-        )
+        result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == "rate_limits"))
         saved = result.scalar_one_or_none()
         assert saved is not None
         assert saved["youtube"] == 300
         assert saved["podcastindex"] == 600
         assert saved["anthropic"] == 100
 
-    async def test_save_rate_limits_updates_existing(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_save_rate_limits_updates_existing(self, admin_client, session: AsyncSession):
         """Saving rate limits twice correctly upserts (second values win)."""
         # First save
         await admin_client.post(
@@ -137,9 +131,7 @@ class TestRateLimitsEditor:
 
         from thinktank.models.config_table import SystemConfig
 
-        result = await session.execute(
-            select(SystemConfig.value).where(SystemConfig.key == "rate_limits")
-        )
+        result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == "rate_limits"))
         saved = result.scalar_one_or_none()
         assert saved is not None
         assert saved["youtube"] == 400
@@ -159,22 +151,12 @@ class TestSystemSettingsEditor:
         assert "Stale Job" in response.text
         assert "Max Candidates" in response.text
 
-    async def test_system_settings_partial_loads_custom(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_system_settings_partial_loads_custom(self, admin_client, session: AsyncSession):
         """Seeded custom system config values are shown in the partial."""
-        await create_system_config(
-            session, key="llm_timeout_hours", value=5, set_by="test"
-        )
-        await create_system_config(
-            session, key="backpressure_threshold", value=200, set_by="test"
-        )
-        await create_system_config(
-            session, key="stale_job_minutes", value=60, set_by="test"
-        )
-        await create_system_config(
-            session, key="max_candidates_per_day", value=25, set_by="test"
-        )
+        await create_system_config(session, key="llm_timeout_hours", value=5, set_by="test")
+        await create_system_config(session, key="backpressure_threshold", value=200, set_by="test")
+        await create_system_config(session, key="stale_job_minutes", value=60, set_by="test")
+        await create_system_config(session, key="max_candidates_per_day", value=25, set_by="test")
         await session.commit()
 
         response = await admin_client.get("/admin/config/partials/system-settings")
@@ -210,15 +192,11 @@ class TestSystemSettingsEditor:
             ("stale_job_minutes", 45),
             ("max_candidates_per_day", 30),
         ]:
-            result = await session.execute(
-                select(SystemConfig.value).where(SystemConfig.key == key)
-            )
+            result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == key))
             saved = result.scalar_one_or_none()
             assert saved == expected, f"{key}: expected {expected}, got {saved}"
 
-    async def test_save_system_settings_partial_update(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_save_system_settings_partial_update(self, admin_client, session: AsyncSession):
         """Saving settings, then changing one value preserves all 4 correctly."""
         # First save
         await admin_client.post(
@@ -254,8 +232,6 @@ class TestSystemSettingsEditor:
             ("stale_job_minutes", 45),
             ("max_candidates_per_day", 30),
         ]:
-            result = await session.execute(
-                select(SystemConfig.value).where(SystemConfig.key == key)
-            )
+            result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == key))
             saved = result.scalar_one_or_none()
             assert saved == expected, f"{key}: expected {expected}, got {saved}"

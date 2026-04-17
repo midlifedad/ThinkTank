@@ -16,6 +16,7 @@ import sys
 import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
+
 from thinktank.models import Base
 
 TEST_DATABASE_URL = os.getenv(
@@ -84,10 +85,12 @@ async def clean_migration_db(engine):
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await conn.run_sync(Base.metadata.create_all)
         # Re-create GiST index for trigram similarity tests
-        await conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_candidate_thinkers_trgm "
-            "ON candidate_thinkers USING gist (normalized_name gist_trgm_ops)"
-        ))
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_candidate_thinkers_trgm "
+                "ON candidate_thinkers USING gist (normalized_name gist_trgm_ops)"
+            )
+        )
 
 
 @pytest.mark.asyncio
@@ -96,24 +99,26 @@ async def test_upgrade_head_creates_all_tables():
     run_alembic("upgrade")
 
     tables = await get_table_names(TEST_DATABASE_URL)
-    expected_tables = sorted([
-        "api_usage",
-        "candidate_thinkers",
-        "categories",
-        "content",
-        "content_thinkers",
-        "jobs",
-        "llm_reviews",
-        "rate_limit_usage",
-        "source_categories",
-        "source_thinkers",
-        "sources",
-        "system_config",
-        "thinker_categories",
-        "thinker_metrics",
-        "thinker_profiles",
-        "thinkers",
-    ])
+    expected_tables = sorted(
+        [
+            "api_usage",
+            "candidate_thinkers",
+            "categories",
+            "content",
+            "content_thinkers",
+            "jobs",
+            "llm_reviews",
+            "rate_limit_usage",
+            "source_categories",
+            "source_thinkers",
+            "sources",
+            "system_config",
+            "thinker_categories",
+            "thinker_metrics",
+            "thinker_profiles",
+            "thinkers",
+        ]
+    )
     assert tables == expected_tables, f"Missing tables: {set(expected_tables) - set(tables)}"
 
 

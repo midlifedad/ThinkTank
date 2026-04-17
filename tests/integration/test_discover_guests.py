@@ -13,11 +13,11 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_job, create_source, create_thinker
 from thinktank.handlers.discover_guests_podcastindex import (
     handle_discover_guests_podcastindex,
 )
 from thinktank.models.source import Source, SourceThinker
-from tests.factories import create_job, create_source, create_thinker
 
 pytestmark = pytest.mark.anyio
 
@@ -65,18 +65,14 @@ async def test_podcastindex_registers_source(session: AsyncSession):
         await handle_discover_guests_podcastindex(session, job)
 
     # Source should exist with pending_llm status (thinker_id no longer set on source)
-    result = await session.execute(
-        select(Source).where(Source.approval_status == "pending_llm")
-    )
+    result = await session.execute(select(Source).where(Source.approval_status == "pending_llm"))
     sources = result.scalars().all()
     assert len(sources) == 1
     assert sources[0].name == "Science Talk"
     assert sources[0].approval_status == "pending_llm"
 
     # Verify junction row links source to thinker
-    junc_result = await session.execute(
-        select(SourceThinker).where(SourceThinker.source_id == sources[0].id)
-    )
+    junc_result = await session.execute(select(SourceThinker).where(SourceThinker.source_id == sources[0].id))
     junc = junc_result.scalar_one()
     assert junc.thinker_id == thinker.id
 
@@ -116,9 +112,7 @@ async def test_podcastindex_skips_existing(session: AsyncSession):
         await handle_discover_guests_podcastindex(session, job)
 
     count = await session.scalar(
-        select(func.count())
-        .select_from(Source)
-        .where(Source.approval_status == "pending_llm")
+        select(func.count()).select_from(Source).where(Source.approval_status == "pending_llm")
     )
     assert count == 0
 
@@ -173,9 +167,7 @@ async def test_podcastindex_skips_no_feedurl(session: AsyncSession):
         await handle_discover_guests_podcastindex(session, job)
 
     count = await session.scalar(
-        select(func.count())
-        .select_from(Source)
-        .where(Source.approval_status == "pending_llm")
+        select(func.count()).select_from(Source).where(Source.approval_status == "pending_llm")
     )
     assert count == 0
 
@@ -217,6 +209,7 @@ class TestConcurrentDiscoveryRace:
 
         async def run_handler(job_id) -> None:
             from thinktank.models.job import Job as JobModel
+
             async with session_factory() as s:
                 job = await s.get(JobModel, job_id)
                 await handle_discover_guests_podcastindex(s, job)
@@ -239,15 +232,9 @@ class TestConcurrentDiscoveryRace:
 
         async with session_factory() as check:
             src_count = await check.scalar(
-                select(func.count())
-                .select_from(Source)
-                .where(Source.url == "https://feeds.example.com/shared.xml")
+                select(func.count()).select_from(Source).where(Source.url == "https://feeds.example.com/shared.xml")
             )
             assert src_count == 1, f"Expected 1 source, got {src_count}"
 
-            junc_count = await check.scalar(
-                select(func.count()).select_from(SourceThinker)
-            )
-            assert junc_count == 2, (
-                f"Expected 2 junction rows (one per thinker), got {junc_count}"
-            )
+            junc_count = await check.scalar(select(func.count()).select_from(SourceThinker))
+            assert junc_count == 2, f"Expected 2 junction rows (one per thinker), got {junc_count}"

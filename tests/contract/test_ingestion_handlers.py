@@ -20,11 +20,6 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
-from thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
-from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
-from thinktank.models.content import Content, ContentThinker
-from thinktank.models.job import Job
 from tests.factories import (
     create_content,
     create_job,
@@ -32,6 +27,11 @@ from tests.factories import (
     create_source_thinker,
     create_thinker,
 )
+from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
+from thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
+from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
+from thinktank.models.content import Content, ContentThinker
+from thinktank.models.job import Job
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "rss"
 
@@ -65,9 +65,7 @@ class TestFetchPodcastFeedContract:
     """
 
     @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-    async def test_fetch_podcast_feed_contract(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_fetch_podcast_feed_contract(self, mock_client_cls: MagicMock, session: AsyncSession):
         """Approved source + RSS feed -> content rows + tag job with descriptions."""
         mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
@@ -90,9 +88,7 @@ class TestFetchPodcastFeedContract:
         await handle_fetch_podcast_feed(session, job)
 
         # Contract 1: Content rows created
-        result = await session.execute(
-            select(Content).where(Content.source_id == source.id)
-        )
+        result = await session.execute(select(Content).where(Content.source_id == source.id))
         content_rows = result.scalars().all()
         assert len(content_rows) == 3
 
@@ -102,9 +98,7 @@ class TestFetchPodcastFeedContract:
         assert source.item_count == 3
 
         # Contract 3: scan_episodes_for_thinkers job enqueued with descriptions
-        result = await session.execute(
-            select(Job).where(Job.job_type == "scan_episodes_for_thinkers")
-        )
+        result = await session.execute(select(Job).where(Job.job_type == "scan_episodes_for_thinkers"))
         tag_jobs = result.scalars().all()
         assert len(tag_jobs) == 1
 
@@ -164,9 +158,7 @@ class TestRefreshDueSourcesContract:
         await handle_refresh_due_sources(session, job)
 
         # Contract: fetch_podcast_feed jobs created for due sources only
-        result = await session.execute(
-            select(Job).where(Job.job_type == "fetch_podcast_feed")
-        )
+        result = await session.execute(select(Job).where(Job.job_type == "fetch_podcast_feed"))
         fetch_jobs = result.scalars().all()
         assert len(fetch_jobs) == 1
         assert fetch_jobs[0].payload["source_id"] == str(source1.id)
@@ -184,9 +176,7 @@ class TestTagContentThinkersContract:
         owner = await create_thinker(session, name="Contract Owner")
         guest = await create_thinker(session, name="Contract Guest")
         source = await create_source(session, thinker_id=owner.id)
-        await create_source_thinker(
-            session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
-        )
+        await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
         content = await create_content(
             session,
             source_id=source.id,
@@ -200,9 +190,7 @@ class TestTagContentThinkersContract:
             payload={
                 "content_ids": [str(content.id)],
                 "source_id": str(source.id),
-                "descriptions": {
-                    str(content.id): "An interview episode."
-                },
+                "descriptions": {str(content.id): "An interview episode."},
             },
         )
         await session.commit()
@@ -210,9 +198,7 @@ class TestTagContentThinkersContract:
         await handle_tag_content_thinkers(session, job)
 
         # Contract: ContentThinker rows created with correct roles
-        result = await session.execute(
-            select(ContentThinker).where(ContentThinker.content_id == content.id)
-        )
+        result = await session.execute(select(ContentThinker).where(ContentThinker.content_id == content.id))
         attributions = result.scalars().all()
 
         # Source owner -> primary/10, guest in title -> guest/9

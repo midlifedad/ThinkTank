@@ -13,6 +13,13 @@ import anthropic
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from tests.factories import (
+    create_candidate_thinker,
+    create_job,
+    create_source,
+    create_thinker,
+)
 from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 from thinktank.llm.schemas import (
     CandidateReviewResponse,
@@ -21,13 +28,6 @@ from thinktank.llm.schemas import (
 )
 from thinktank.models.review import LLMReview
 from thinktank.models.thinker import Thinker
-
-from tests.factories import (
-    create_candidate_thinker,
-    create_job,
-    create_source,
-    create_thinker,
-)
 
 
 def _mock_llm_review(result, tokens=500, duration=1200):
@@ -41,9 +41,7 @@ class TestThinkerApprovalFlows:
 
     async def test_thinker_approval_approved(self, session: AsyncSession):
         """Thinker with pending_llm status gets approved by LLM."""
-        thinker = await create_thinker(
-            session, approval_status="pending_llm"
-        )
+        thinker = await create_thinker(session, approval_status="pending_llm")
         job = await create_job(
             session,
             job_type="llm_approval_check",
@@ -53,13 +51,9 @@ class TestThinkerApprovalFlows:
             },
         )
 
-        mock_result = ThinkerApprovalResponse(
-            decision="approved", reasoning="Valid thinker with strong credentials"
-        )
+        mock_result = ThinkerApprovalResponse(decision="approved", reasoning="Valid thinker with strong credentials")
 
-        with patch(
-            "thinktank.handlers.llm_approval_check._llm_client"
-        ) as mock_client:
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
 
@@ -70,18 +64,14 @@ class TestThinkerApprovalFlows:
         assert thinker.approval_status == "approved"
 
         # Verify LLMReview row exists
-        result = await session.execute(
-            select(LLMReview).where(LLMReview.review_type == "thinker_approval")
-        )
+        result = await session.execute(select(LLMReview).where(LLMReview.review_type == "thinker_approval"))
         review = result.scalar_one()
         assert review.decision == "approved"
         assert review.decision_reasoning == "Valid thinker with strong credentials"
 
     async def test_thinker_approval_rejected(self, session: AsyncSession):
         """Thinker gets rejected by LLM, status becomes rejected_by_llm."""
-        thinker = await create_thinker(
-            session, approval_status="pending_llm"
-        )
+        thinker = await create_thinker(session, approval_status="pending_llm")
         job = await create_job(
             session,
             job_type="llm_approval_check",
@@ -91,13 +81,9 @@ class TestThinkerApprovalFlows:
             },
         )
 
-        mock_result = ThinkerApprovalResponse(
-            decision="rejected", reasoning="Not a recognized expert"
-        )
+        mock_result = ThinkerApprovalResponse(decision="rejected", reasoning="Not a recognized expert")
 
-        with patch(
-            "thinktank.handlers.llm_approval_check._llm_client"
-        ) as mock_client:
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
 
@@ -108,9 +94,7 @@ class TestThinkerApprovalFlows:
 
     async def test_thinker_approval_escalated(self, session: AsyncSession):
         """Thinker escalated to human, status becomes pending_human."""
-        thinker = await create_thinker(
-            session, approval_status="pending_llm"
-        )
+        thinker = await create_thinker(session, approval_status="pending_llm")
         job = await create_job(
             session,
             job_type="llm_approval_check",
@@ -125,9 +109,7 @@ class TestThinkerApprovalFlows:
             reasoning="Borderline case, needs human judgment",
         )
 
-        with patch(
-            "thinktank.handlers.llm_approval_check._llm_client"
-        ) as mock_client:
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
 
@@ -164,9 +146,7 @@ class TestSourceApprovalFlows:
             approved_backfill_days=90,
         )
 
-        with patch(
-            "thinktank.handlers.llm_approval_check._llm_client"
-        ) as mock_client:
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
 
@@ -208,9 +188,7 @@ class TestCandidateReviewFlows:
             initial_sources=["podcast_rss"],
         )
 
-        with patch(
-            "thinktank.handlers.llm_approval_check._llm_client"
-        ) as mock_client:
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
 
@@ -235,9 +213,7 @@ class TestAuditTrail:
 
     async def test_audit_trail_completeness(self, session: AsyncSession):
         """All LLMReview fields are populated after handler runs."""
-        thinker = await create_thinker(
-            session, approval_status="pending_llm"
-        )
+        thinker = await create_thinker(session, approval_status="pending_llm")
         job = await create_job(
             session,
             job_type="llm_approval_check",
@@ -253,9 +229,7 @@ class TestAuditTrail:
             flagged_items=["minor concern about coverage"],
         )
 
-        with patch(
-            "thinktank.handlers.llm_approval_check._llm_client"
-        ) as mock_client:
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
             mock_client.review = _mock_llm_review(mock_result, tokens=750, duration=2100)
             mock_client.model = "claude-sonnet-4-20250514"
 
@@ -281,9 +255,7 @@ class TestAuditTrail:
 
     async def test_pending_job_linked(self, session: AsyncSession):
         """Pending job gets llm_review_id set after approval."""
-        thinker = await create_thinker(
-            session, approval_status="pending_llm"
-        )
+        thinker = await create_thinker(session, approval_status="pending_llm")
         # Create a pending job that the thinker is waiting on
         pending_job = await create_job(
             session,
@@ -302,13 +274,9 @@ class TestAuditTrail:
             },
         )
 
-        mock_result = ThinkerApprovalResponse(
-            decision="approved", reasoning="Valid thinker"
-        )
+        mock_result = ThinkerApprovalResponse(decision="approved", reasoning="Valid thinker")
 
-        with patch(
-            "thinktank.handlers.llm_approval_check._llm_client"
-        ) as mock_client:
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
             mock_client.review = _mock_llm_review(mock_result)
             mock_client.model = "claude-sonnet-4-20250514"
 
@@ -325,9 +293,7 @@ class TestAPIUnavailability:
 
     async def test_api_unavailable_raises(self, session: AsyncSession):
         """API connection error propagates for worker loop retry."""
-        thinker = await create_thinker(
-            session, approval_status="pending_llm"
-        )
+        thinker = await create_thinker(session, approval_status="pending_llm")
         job = await create_job(
             session,
             job_type="llm_approval_check",
@@ -339,13 +305,9 @@ class TestAPIUnavailability:
 
         import httpx
 
-        api_error = anthropic.APIConnectionError(
-            request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")
-        )
+        api_error = anthropic.APIConnectionError(request=httpx.Request("POST", "https://api.anthropic.com/v1/messages"))
 
-        with patch(
-            "thinktank.handlers.llm_approval_check._llm_client"
-        ) as mock_client:
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
             mock_client.review = AsyncMock(side_effect=api_error)
 
             with pytest.raises(anthropic.APIConnectionError):

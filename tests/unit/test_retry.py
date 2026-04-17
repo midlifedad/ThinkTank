@@ -5,8 +5,6 @@ Pure functions with no I/O -- fast unit tests.
 
 from datetime import timedelta
 
-import pytest
-
 from thinktank.queue.retry import (
     MAX_ATTEMPTS_BY_TYPE,
     calculate_backoff,

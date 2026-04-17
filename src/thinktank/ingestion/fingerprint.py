@@ -71,9 +71,7 @@ def compute_fingerprint(
 
     # Bucket duration to nearest 10s boundary (round half up, no floats).
     raw_duration = duration_seconds or 0
-    bucketed = (
-        (raw_duration + _DURATION_BUCKET_HALF) // _DURATION_BUCKET_SECONDS
-    ) * _DURATION_BUCKET_SECONDS
+    bucketed = ((raw_duration + _DURATION_BUCKET_HALF) // _DURATION_BUCKET_SECONDS) * _DURATION_BUCKET_SECONDS
     duration = str(bucketed)
 
     payload = f"{normalized_title}{date_str}{duration}"

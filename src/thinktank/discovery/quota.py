@@ -58,14 +58,10 @@ async def check_daily_quota(session: AsyncSession) -> tuple[bool, int, int]:
         daily_limit = int(daily_limit_raw)
 
     # Timezone-aware midnight UTC — first_seen_at is TIMESTAMPTZ.
-    today_start = datetime.now(UTC).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
     result = await session.execute(
-        select(func.count())
-        .select_from(CandidateThinker)
-        .where(CandidateThinker.first_seen_at >= today_start)
+        select(func.count()).select_from(CandidateThinker).where(CandidateThinker.first_seen_at >= today_start)
     )
     candidates_today = result.scalar_one_or_none() or 0
 
@@ -102,8 +98,6 @@ async def get_pending_candidate_count(session: AsyncSession) -> int:
         Number of candidates awaiting LLM review.
     """
     result = await session.execute(
-        select(func.count())
-        .select_from(CandidateThinker)
-        .where(CandidateThinker.status == "pending_llm")
+        select(func.count()).select_from(CandidateThinker).where(CandidateThinker.status == "pending_llm")
     )
     return result.scalar_one_or_none() or 0

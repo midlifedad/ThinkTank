@@ -20,12 +20,10 @@ import structlog
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 
+from thinktank.gpu_worker import model as _model_module
 from thinktank.gpu_worker.model import load_model, transcribe_audio
 
 logger = structlog.get_logger(__name__)
-
-# Reference to check if model is loaded
-from thinktank.gpu_worker import model as _model_module
 
 
 @asynccontextmanager

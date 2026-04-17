@@ -4,8 +4,6 @@ Tests are pure logic -- just string building with sample context dicts.
 No DB or API calls needed.
 """
 
-import json
-
 from thinktank.llm.prompts import (
     SYSTEM_PROMPT,
     build_candidate_review_prompt,

@@ -29,9 +29,7 @@ async def llm_panel(
 ):
     """Render the full LLM decision panel page."""
     # Get timeout config
-    timeout_result = await session.execute(
-        text("SELECT value FROM system_config WHERE key = 'llm_timeout_hours'")
-    )
+    timeout_result = await session.execute(text("SELECT value FROM system_config WHERE key = 'llm_timeout_hours'"))
     timeout_row = timeout_result.fetchone()
     timeout_hours = timeout_row[0] if timeout_row else 2
     # Handle JSONB wrapping
@@ -39,7 +37,9 @@ async def llm_panel(
         timeout_hours = timeout_hours.get("value", 2)
 
     return templates.TemplateResponse(
-        request, "llm_panel.html", {"timeout_hours": timeout_hours},
+        request,
+        "llm_panel.html",
+        {"timeout_hours": timeout_hours},
     )
 
 
@@ -50,9 +50,7 @@ async def pending_partial(
 ):
     """HTML fragment: pending LLM reviews awaiting decision."""
     # Get timeout config
-    timeout_result = await session.execute(
-        text("SELECT value FROM system_config WHERE key = 'llm_timeout_hours'")
-    )
+    timeout_result = await session.execute(text("SELECT value FROM system_config WHERE key = 'llm_timeout_hours'"))
     timeout_row = timeout_result.fetchone()
     timeout_hours = timeout_row[0] if timeout_row else 2
     if isinstance(timeout_hours, dict):
@@ -74,17 +72,21 @@ async def pending_partial(
         time_waiting = now - created_at
         hours_waiting = time_waiting.total_seconds() / 3600
         is_timed_out = hours_waiting > float(timeout_hours)
-        pending.append({
-            "id": r[0],
-            "review_type": r[1],
-            "context_snapshot": r[2] or {},
-            "created_at": created_at,
-            "hours_waiting": f"{hours_waiting:.1f}",
-            "is_timed_out": is_timed_out,
-        })
+        pending.append(
+            {
+                "id": r[0],
+                "review_type": r[1],
+                "context_snapshot": r[2] or {},
+                "created_at": created_at,
+                "hours_waiting": f"{hours_waiting:.1f}",
+                "is_timed_out": is_timed_out,
+            }
+        )
 
     return templates.TemplateResponse(
-        request, "partials/llm_pending.html", {"pending": pending},
+        request,
+        "partials/llm_pending.html",
+        {"pending": pending},
     )
 
 
@@ -116,7 +118,9 @@ async def recent_partial(
         for r in rows
     ]
     return templates.TemplateResponse(
-        request, "partials/llm_recent.html", {"recent": recent},
+        request,
+        "partials/llm_recent.html",
+        {"recent": recent},
     )
 
 
@@ -126,9 +130,7 @@ async def status_partial(
     session: AsyncSession = Depends(get_session),
 ):
     """HTML fragment: LLM system status summary."""
-    pending_result = await session.execute(
-        text("SELECT COUNT(*) FROM llm_reviews WHERE decision IS NULL")
-    )
+    pending_result = await session.execute(text("SELECT COUNT(*) FROM llm_reviews WHERE decision IS NULL"))
     pending_count = pending_result.scalar() or 0
 
     tokens_result = await session.execute(
@@ -139,13 +141,12 @@ async def status_partial(
     )
     total_tokens = tokens_result.scalar() or 0
 
-    override_result = await session.execute(
-        text("SELECT COUNT(*) FROM llm_reviews WHERE overridden_by IS NOT NULL")
-    )
+    override_result = await session.execute(text("SELECT COUNT(*) FROM llm_reviews WHERE overridden_by IS NOT NULL"))
     override_count = override_result.scalar() or 0
 
     return templates.TemplateResponse(
-        request, "partials/llm_status.html",
+        request,
+        "partials/llm_status.html",
         {
             "pending_count": pending_count,
             "total_tokens": total_tokens,
@@ -222,9 +223,7 @@ async def override_decision(
     now = _now()
 
     # Get timeout config
-    timeout_result = await session.execute(
-        text("SELECT value FROM system_config WHERE key = 'llm_timeout_hours'")
-    )
+    timeout_result = await session.execute(text("SELECT value FROM system_config WHERE key = 'llm_timeout_hours'"))
     timeout_row = timeout_result.fetchone()
     timeout_hours = timeout_row[0] if timeout_row else 2
     if isinstance(timeout_hours, dict):
@@ -236,15 +235,19 @@ async def override_decision(
         time_waiting = now - created_at
         hours_waiting = time_waiting.total_seconds() / 3600
         is_timed_out = hours_waiting > float(timeout_hours)
-        pending.append({
-            "id": r[0],
-            "review_type": r[1],
-            "context_snapshot": r[2] or {},
-            "created_at": created_at,
-            "hours_waiting": f"{hours_waiting:.1f}",
-            "is_timed_out": is_timed_out,
-        })
+        pending.append(
+            {
+                "id": r[0],
+                "review_type": r[1],
+                "context_snapshot": r[2] or {},
+                "created_at": created_at,
+                "hours_waiting": f"{hours_waiting:.1f}",
+                "is_timed_out": is_timed_out,
+            }
+        )
 
     return templates.TemplateResponse(
-        request, "partials/llm_pending.html", {"pending": pending},
+        request,
+        "partials/llm_pending.html",
+        {"pending": pending},
     )

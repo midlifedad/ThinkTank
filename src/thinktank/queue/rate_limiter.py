@@ -5,7 +5,7 @@ Coordinates rate limiting across concurrent workers using PostgreSQL
 as the shared coordination point.
 """
 
-from sqlalchemy import bindparam, func, select, text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.models.config_table import SystemConfig
@@ -66,9 +66,7 @@ async def check_and_acquire_rate_limit(
     # see the same count, pass the limit check, and insert.
     # The lock releases automatically at commit/rollback.
     lock_key = hash(api_name) & 0x7FFFFFFF
-    await session.execute(
-        text("SELECT pg_advisory_xact_lock(:k)"), {"k": lock_key}
-    )
+    await session.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": lock_key})
 
     # Use PG's LOCALTIMESTAMP for cutoff to match server-default NOW()
     # on the called_at column (both TIMESTAMP WITHOUT TIME ZONE).
@@ -78,9 +76,7 @@ async def check_and_acquire_rate_limit(
         "WHERE api_name = :api_name "
         "AND called_at > LOCALTIMESTAMP - MAKE_INTERVAL(mins => :window_minutes)"
     )
-    count_result = await session.execute(
-        count_stmt, {"api_name": api_name, "window_minutes": window_minutes}
-    )
+    count_result = await session.execute(count_stmt, {"api_name": api_name, "window_minutes": window_minutes})
     current_count = count_result.scalar_one()
 
     # Get configured limit

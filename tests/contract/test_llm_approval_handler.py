@@ -9,6 +9,13 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from tests.factories import (
+    create_candidate_thinker,
+    create_job,
+    create_source,
+    create_thinker,
+)
 from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 from thinktank.llm.schemas import (
     CandidateReviewResponse,
@@ -17,13 +24,6 @@ from thinktank.llm.schemas import (
 )
 from thinktank.models.review import LLMReview
 from thinktank.models.thinker import Thinker
-
-from tests.factories import (
-    create_candidate_thinker,
-    create_job,
-    create_source,
-    create_thinker,
-)
 
 
 def _mock_llm(result, tokens=500, duration=1200):
@@ -42,9 +42,7 @@ class TestThinkerApprovalContract:
     """Given thinker_approval payload, handler creates 1 LLMReview + updates 1 Thinker."""
 
     async def test_thinker_approval_contract(self, session: AsyncSession):
-        thinker = await create_thinker(
-            session, approval_status="pending_llm"
-        )
+        thinker = await create_thinker(session, approval_status="pending_llm")
         job = await create_job(
             session,
             job_type="llm_approval_check",
@@ -54,17 +52,13 @@ class TestThinkerApprovalContract:
             },
         )
 
-        mock_result = ThinkerApprovalResponse(
-            decision="approved", reasoning="Meets criteria"
-        )
+        mock_result = ThinkerApprovalResponse(decision="approved", reasoning="Meets criteria")
 
         with _mock_llm(mock_result):
             await handle_llm_approval_check(session, job)
 
         # Contract: exactly 1 LLMReview row created
-        review_count = await session.scalar(
-            select(func.count()).select_from(LLMReview)
-        )
+        review_count = await session.scalar(select(func.count()).select_from(LLMReview))
         assert review_count == 1
 
         # Contract: Thinker approval_status updated
@@ -102,9 +96,7 @@ class TestSourceApprovalContract:
             await handle_llm_approval_check(session, job)
 
         # Contract: exactly 1 LLMReview row created
-        review_count = await session.scalar(
-            select(func.count()).select_from(LLMReview)
-        )
+        review_count = await session.scalar(select(func.count()).select_from(LLMReview))
         assert review_count == 1
 
         # Contract: Source approval_status updated
@@ -146,9 +138,7 @@ class TestCandidateReviewContract:
             await handle_llm_approval_check(session, job)
 
         # Contract: exactly 1 LLMReview row created
-        review_count = await session.scalar(
-            select(func.count()).select_from(LLMReview)
-        )
+        review_count = await session.scalar(select(func.count()).select_from(LLMReview))
         assert review_count == 1
 
         # Contract: CandidateThinker status updated (promoted creates a Thinker)
@@ -158,8 +148,6 @@ class TestCandidateReviewContract:
 
         # Contract: New Thinker row created
         thinker_count = await session.scalar(
-            select(func.count()).select_from(Thinker).where(
-                Thinker.name == "Test Candidate"
-            )
+            select(func.count()).select_from(Thinker).where(Thinker.name == "Test Candidate")
         )
         assert thinker_count == 1

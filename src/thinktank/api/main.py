@@ -8,12 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from thinktank.api.health import router as health_router
+from thinktank.api.middleware import CorrelationIDMiddleware
 from thinktank.api.routers.config import router as config_router
 from thinktank.api.routers.content import router as content_router
 from thinktank.api.routers.jobs import router as jobs_router
 from thinktank.api.routers.sources import router as sources_router
 from thinktank.api.routers.thinkers import router as thinkers_router
-from thinktank.api.middleware import CorrelationIDMiddleware
 from thinktank.config import get_settings
 from thinktank.database import engine
 from thinktank.logging import configure_logging, get_logger

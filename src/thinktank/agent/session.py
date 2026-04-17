@@ -6,7 +6,7 @@ proposals keyed by session_id. Sessions are in-memory only (no persistence).
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -94,29 +94,33 @@ class ChatSessionStore:
                 messages.append({"role": "assistant", "content": msg.content})
             elif msg.role == "tool_use":
                 # Tool use is an assistant message with a content block
-                messages.append({
-                    "role": "assistant",
-                    "content": [
-                        {
-                            "type": "tool_use",
-                            "id": msg.tool_use_id,
-                            "name": msg.tool_name,
-                            "input": msg.tool_input or {},
-                        }
-                    ],
-                })
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "id": msg.tool_use_id,
+                                "name": msg.tool_name,
+                                "input": msg.tool_input or {},
+                            }
+                        ],
+                    }
+                )
             elif msg.role == "tool_result":
                 # Tool result is a user message with a tool_result content block
-                messages.append({
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": msg.tool_use_id,
-                            "content": msg.content,
-                        }
-                    ],
-                })
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": msg.tool_use_id,
+                                "content": msg.content,
+                            }
+                        ],
+                    }
+                )
 
             i += 1
 

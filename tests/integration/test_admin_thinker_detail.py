@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.factories import (
     create_candidate_thinker,
+    create_category,
     create_content,
     create_content_thinker,
     create_llm_review,
@@ -17,7 +18,6 @@ from tests.factories import (
     create_source_thinker,
     create_thinker,
     create_thinker_category,
-    create_category,
 )
 
 pytestmark = pytest.mark.anyio
@@ -68,9 +68,7 @@ class TestThinkerDetail:
         """Detail page shows thinker's category names."""
         thinker = await create_thinker(session, name="Cat Detail", slug="cat-detail")
         cat = await create_category(session, name="Philosophy", slug="philosophy")
-        await create_thinker_category(
-            session, thinker_id=thinker.id, category_id=cat.id, relevance=5
-        )
+        await create_thinker_category(session, thinker_id=thinker.id, category_id=cat.id, relevance=5)
         await session.commit()
 
         response = await admin_client.get(f"/admin/thinkers/{thinker.id}")
@@ -86,15 +84,11 @@ class TestThinkerSources:
         thinker = await create_thinker(session, name="No Sources", slug="no-sources")
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/thinkers/{thinker.id}/partials/sources"
-        )
+        response = await admin_client.get(f"/admin/thinkers/{thinker.id}/partials/sources")
         assert response.status_code == 200
         assert "No sources found" in response.text
 
-    async def test_sources_partial_shows_sources(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_sources_partial_shows_sources(self, admin_client, session: AsyncSession):
         """GET sources partial with seeded sources shows both source names."""
         thinker = await create_thinker(session, name="Sourced", slug="sourced")
         source_a = await create_source(
@@ -103,23 +97,17 @@ class TestThinkerSources:
             name="Feed Alpha",
             url="https://example.com/alpha.xml",
         )
-        await create_source_thinker(
-            session, source_id=source_a.id, thinker_id=thinker.id, relationship_type="host"
-        )
+        await create_source_thinker(session, source_id=source_a.id, thinker_id=thinker.id, relationship_type="host")
         source_b = await create_source(
             session,
             thinker_id=thinker.id,
             name="Feed Beta",
             url="https://example.com/beta.xml",
         )
-        await create_source_thinker(
-            session, source_id=source_b.id, thinker_id=thinker.id, relationship_type="host"
-        )
+        await create_source_thinker(session, source_id=source_b.id, thinker_id=thinker.id, relationship_type="host")
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/thinkers/{thinker.id}/partials/sources"
-        )
+        response = await admin_client.get(f"/admin/thinkers/{thinker.id}/partials/sources")
         assert response.status_code == 200
         assert "Feed Alpha" in response.text
         assert "Feed Beta" in response.text
@@ -133,15 +121,11 @@ class TestThinkerContent:
         thinker = await create_thinker(session, name="No Content", slug="no-content")
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/thinkers/{thinker.id}/partials/content"
-        )
+        response = await admin_client.get(f"/admin/thinkers/{thinker.id}/partials/content")
         assert response.status_code == 200
         assert "No content found" in response.text
 
-    async def test_content_partial_shows_content(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_content_partial_shows_content(self, admin_client, session: AsyncSession):
         """GET content partial with seeded content shows titles."""
         thinker = await create_thinker(session, name="Has Content", slug="has-content")
         source = await create_source(
@@ -170,9 +154,7 @@ class TestThinkerContent:
         )
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/thinkers/{thinker.id}/partials/content"
-        )
+        response = await admin_client.get(f"/admin/thinkers/{thinker.id}/partials/content")
         assert response.status_code == 200
         assert "Episode Alpha" in response.text
         assert "Episode Beta" in response.text
@@ -186,15 +168,11 @@ class TestThinkerReviews:
         thinker = await create_thinker(session, name="No Reviews", slug="no-reviews")
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/thinkers/{thinker.id}/partials/reviews"
-        )
+        response = await admin_client.get(f"/admin/thinkers/{thinker.id}/partials/reviews")
         assert response.status_code == 200
         assert "No LLM reviews found" in response.text
 
-    async def test_reviews_partial_shows_reviews(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_reviews_partial_shows_reviews(self, admin_client, session: AsyncSession):
         """GET reviews partial with review containing thinker_id shows decision."""
         thinker = await create_thinker(session, name="Reviewed", slug="reviewed")
         await create_llm_review(
@@ -206,9 +184,7 @@ class TestThinkerReviews:
         )
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/thinkers/{thinker.id}/partials/reviews"
-        )
+        response = await admin_client.get(f"/admin/thinkers/{thinker.id}/partials/reviews")
         assert response.status_code == 200
         assert "approve" in response.text
 
@@ -216,42 +192,28 @@ class TestThinkerReviews:
 class TestDiscoveryTrigger:
     """Test the PodcastIndex discovery trigger."""
 
-    async def test_trigger_discovery_creates_job(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_trigger_discovery_creates_job(self, admin_client, session: AsyncSession):
         """POST discover creates a discover_guests_podcastindex job."""
-        thinker = await create_thinker(
-            session, name="Discover Me", slug="discover-me"
-        )
+        thinker = await create_thinker(session, name="Discover Me", slug="discover-me")
         await session.commit()
 
-        response = await admin_client.post(
-            f"/admin/thinkers/{thinker.id}/discover"
-        )
+        response = await admin_client.post(f"/admin/thinkers/{thinker.id}/discover")
         assert response.status_code == 200
 
         from thinktank.models.job import Job
 
-        result = await session.execute(
-            select(Job).where(Job.job_type == "discover_thinker")
-        )
+        result = await session.execute(select(Job).where(Job.job_type == "discover_thinker"))
         job = result.scalar_one_or_none()
         assert job is not None
         assert job.payload["thinker_id"] == str(thinker.id)
         assert job.status == "pending"
 
-    async def test_trigger_discovery_returns_success(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_trigger_discovery_returns_success(self, admin_client, session: AsyncSession):
         """POST discover returns success message with thinker name."""
-        thinker = await create_thinker(
-            session, name="Discovery Target", slug="discovery-target"
-        )
+        thinker = await create_thinker(session, name="Discovery Target", slug="discovery-target")
         await session.commit()
 
-        response = await admin_client.post(
-            f"/admin/thinkers/{thinker.id}/discover"
-        )
+        response = await admin_client.post(f"/admin/thinkers/{thinker.id}/discover")
         assert response.status_code == 200
         assert "Discovery job queued" in response.text
         assert "Discovery Target" in response.text
@@ -266,16 +228,10 @@ class TestCandidateQueue:
         assert response.status_code == 200
         assert "Candidate Queue" in response.text
 
-    async def test_candidate_queue_shows_candidates(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_candidate_queue_shows_candidates(self, admin_client, session: AsyncSession):
         """Seeded candidates appear in the queue."""
-        await create_candidate_thinker(
-            session, name="Candidate Alpha", normalized_name="candidate alpha"
-        )
-        await create_candidate_thinker(
-            session, name="Candidate Beta", normalized_name="candidate beta"
-        )
+        await create_candidate_thinker(session, name="Candidate Alpha", normalized_name="candidate alpha")
+        await create_candidate_thinker(session, name="Candidate Beta", normalized_name="candidate beta")
         await session.commit()
 
         response = await admin_client.get("/admin/thinkers/candidates")
@@ -283,9 +239,7 @@ class TestCandidateQueue:
         assert "Candidate Alpha" in response.text
         assert "Candidate Beta" in response.text
 
-    async def test_candidate_queue_shows_appearance_count(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_candidate_queue_shows_appearance_count(self, admin_client, session: AsyncSession):
         """Candidate with appearance_count=5 shows that count."""
         await create_candidate_thinker(
             session,
@@ -304,9 +258,7 @@ class TestCandidateQueue:
 class TestCandidatePromote:
     """Test promoting a candidate to thinker."""
 
-    async def test_promote_creates_thinker(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_promote_creates_thinker(self, admin_client, session: AsyncSession):
         """POST promote creates a new Thinker and updates candidate status."""
         candidate = await create_candidate_thinker(
             session,
@@ -322,13 +274,11 @@ class TestCandidatePromote:
         )
         assert response.status_code == 200
 
-        from thinktank.models.thinker import Thinker
         from thinktank.models.candidate import CandidateThinker
+        from thinktank.models.thinker import Thinker
 
         # Verify thinker created
-        thinker_result = await session.execute(
-            select(Thinker).where(Thinker.name == "Promotable Expert")
-        )
+        thinker_result = await session.execute(select(Thinker).where(Thinker.name == "Promotable Expert"))
         thinker = thinker_result.scalar_one_or_none()
         assert thinker is not None
         assert thinker.tier == 3
@@ -344,9 +294,7 @@ class TestCandidatePromote:
         assert updated_cand.status == "promoted"
         assert updated_cand.thinker_id == thinker.id
 
-    async def test_promote_creates_llm_job(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_promote_creates_llm_job(self, admin_client, session: AsyncSession):
         """After promotion, an llm_approval_check job exists for the new thinker."""
         candidate = await create_candidate_thinker(
             session,
@@ -365,23 +313,17 @@ class TestCandidatePromote:
         from thinktank.models.thinker import Thinker
 
         # Find the new thinker
-        thinker_result = await session.execute(
-            select(Thinker).where(Thinker.name == "LLM Check Expert")
-        )
+        thinker_result = await session.execute(select(Thinker).where(Thinker.name == "LLM Check Expert"))
         thinker = thinker_result.scalar_one()
 
         # Verify job exists
-        job_result = await session.execute(
-            select(Job).where(Job.job_type == "llm_approval_check")
-        )
+        job_result = await session.execute(select(Job).where(Job.job_type == "llm_approval_check"))
         job = job_result.scalar_one_or_none()
         assert job is not None
         assert job.payload["target_id"] == str(thinker.id)
         assert job.payload["entity_type"] == "thinker"
 
-    async def test_promote_returns_updated_queue(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_promote_returns_updated_queue(self, admin_client, session: AsyncSession):
         """Response shows candidate as promoted or success message."""
         candidate = await create_candidate_thinker(
             session,
@@ -402,9 +344,7 @@ class TestCandidatePromote:
 class TestCandidateReject:
     """Test rejecting a candidate."""
 
-    async def test_reject_updates_status(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_reject_updates_status(self, admin_client, session: AsyncSession):
         """POST reject updates candidate status to rejected with admin reviewer."""
         candidate = await create_candidate_thinker(
             session,
@@ -431,9 +371,7 @@ class TestCandidateReject:
         assert updated.status == "rejected"
         assert updated.reviewed_by == "admin"
 
-    async def test_reject_preserves_data(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_reject_preserves_data(self, admin_client, session: AsyncSession):
         """After rejection, candidate name, appearance_count, first_seen_at unchanged."""
         candidate = await create_candidate_thinker(
             session,

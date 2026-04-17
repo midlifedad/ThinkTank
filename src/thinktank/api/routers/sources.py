@@ -1,7 +1,6 @@
 """Source listing endpoints."""
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
@@ -9,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import PaginatedResponse, SourceResponse
-
 from thinktank.models.source import Source, SourceThinker
 
 router = APIRouter(prefix="/api/sources", tags=["sources"])
@@ -19,8 +17,8 @@ router = APIRouter(prefix="/api/sources", tags=["sources"])
 async def list_sources(
     page: int = Query(default=1, ge=1),
     size: int = Query(default=20, ge=1, le=100),
-    thinker_id: Optional[uuid.UUID] = Query(default=None),
-    approval_status: Optional[str] = Query(default=None),
+    thinker_id: uuid.UUID | None = Query(default=None),
+    approval_status: str | None = Query(default=None),
     session: AsyncSession = Depends(get_session),
 ) -> PaginatedResponse[SourceResponse]:
     """List sources with optional filters and pagination."""

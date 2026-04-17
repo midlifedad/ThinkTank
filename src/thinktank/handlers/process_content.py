@@ -31,7 +31,7 @@ from thinktank.transcription.gpu_client import transcribe_with_chunking
 logger = structlog.get_logger(__name__)
 
 
-async def handle_process_content(session: AsyncSession, job: "Job") -> None:  # noqa: F821
+async def handle_process_content(session: AsyncSession, job: Job) -> None:  # noqa: F821
     """Orchestrate three-pass transcription for a content item.
 
     Args:
@@ -60,9 +60,7 @@ async def handle_process_content(session: AsyncSession, job: "Job") -> None:  # 
     # with an opaque AttributeError.
     source = await session.get(Source, content.source_id)
     if source is None:
-        raise ValueError(
-            f"Source {content.source_id} missing for content {content_id}"
-        )
+        raise ValueError(f"Source {content.source_id} missing for content {content_id}")
 
     transcript: str | None = None
     method: str | None = None

@@ -8,8 +8,8 @@ import json
 
 import structlog
 from fastapi import APIRouter, Depends, Form, HTTPException, Query
-from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sse_starlette.sse import EventSourceResponse
 
 from thinktank.admin.dependencies import get_session
 from thinktank.agent.session import chat_sessions

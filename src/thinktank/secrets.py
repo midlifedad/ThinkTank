@@ -31,9 +31,7 @@ async def get_secret(session: AsyncSession, name: str) -> str | None:
         The secret value, or None if not found in either location.
     """
     db_key = f"secret_{name}"
-    result = await session.execute(
-        select(SystemConfig.value).where(SystemConfig.key == db_key)
-    )
+    result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == db_key))
     row = result.scalar_one_or_none()
     if row is not None:
         # JSONB can hold either a plain string ("sk-ant-...") or a dict

@@ -8,18 +8,16 @@ lifecycle, and configure recurring task schedules.
 
 import json
 import uuid
-from datetime import datetime, timedelta, UTC
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import func, select
+from sqlalchemy import text as sa_text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sqlalchemy import text as sa_text
-
+from thinktank.admin.dependencies import get_session, get_templates
 from thinktank.models.config_table import SystemConfig
 from thinktank.models.job import Job
-from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin/pipeline", tags=["pipeline"])
 templates = get_templates()
@@ -47,8 +45,18 @@ KNOWN_JOB_TYPES = [
 
 # Configurable scheduled tasks
 SCHEDULED_TASKS = [
-    {"key": "refresh_due_sources", "label": "Refresh Due Sources", "default_hours": 1, "job_type": "refresh_due_sources"},
-    {"key": "scan_for_candidates", "label": "Scan for Candidates", "default_hours": 24, "job_type": "scan_for_candidates"},
+    {
+        "key": "refresh_due_sources",
+        "label": "Refresh Due Sources",
+        "default_hours": 1,
+        "job_type": "refresh_due_sources",
+    },
+    {
+        "key": "scan_for_candidates",
+        "label": "Scan for Candidates",
+        "default_hours": 24,
+        "job_type": "scan_for_candidates",
+    },
     {"key": "llm_health_check", "label": "LLM Health Check", "default_hours": 6, "job_type": None},
     {"key": "llm_daily_digest", "label": "LLM Daily Digest", "default_hours": 24, "job_type": None},
     {"key": "llm_weekly_audit", "label": "LLM Weekly Audit", "default_hours": 168, "job_type": None},
@@ -79,10 +87,10 @@ async def pipeline_page(request: Request):
 async def job_list_partial(
     request: Request,
     session: AsyncSession = Depends(get_session),
-    status: Optional[str] = None,
-    job_type: Optional[str] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
+    status: str | None = None,
+    job_type: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
     page: int = 1,
 ):
     """HTMX partial: paginated, filtered job list."""
@@ -158,9 +166,7 @@ async def activity_feed_partial(
     query = (
         select(Job)
         .where(Job.status.in_(["running", "done", "failed", "retrying"]))
-        .order_by(
-            func.coalesce(Job.completed_at, Job.started_at, Job.last_error_at, Job.created_at).desc()
-        )
+        .order_by(func.coalesce(Job.completed_at, Job.started_at, Job.last_error_at, Job.created_at).desc())
         .limit(20)
     )
     result = await session.execute(query)
@@ -232,7 +238,7 @@ async def trigger_job(
     request: Request,
     job_type: str,
     session: AsyncSession = Depends(get_session),
-    thinker_id: Optional[str] = Form(None),
+    thinker_id: str | None = Form(None),
 ):
     """Manually trigger a pipeline job."""
     if job_type not in ALLOWED_TRIGGER_TYPES:
@@ -280,7 +286,10 @@ async def retry_job(
         response = templates.TemplateResponse(
             request,
             "partials/trigger_result.html",
-            {"success": False, "message": f"Cannot retry job with status '{job.status}'. Only failed jobs can be retried."},
+            {
+                "success": False,
+                "message": f"Cannot retry job with status '{job.status}'. Only failed jobs can be retried.",
+            },
         )
         return response
 
@@ -322,7 +331,10 @@ async def cancel_job(
         response = templates.TemplateResponse(
             request,
             "partials/trigger_result.html",
-            {"success": False, "message": f"Cannot cancel job with status '{job.status}'. Only pending jobs can be cancelled."},
+            {
+                "success": False,
+                "message": f"Cannot cancel job with status '{job.status}'. Only pending jobs can be cancelled.",
+            },
         )
         return response
 
@@ -350,9 +362,7 @@ async def _build_scheduler_context(
     tasks = []
     for task_def in SCHEDULED_TASKS:
         config_key = f"scheduler_{task_def['key']}"
-        result = await session.execute(
-            select(SystemConfig.value).where(SystemConfig.key == config_key)
-        )
+        result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == config_key))
         raw = result.scalar_one_or_none()
 
         if raw and isinstance(raw, dict):
@@ -378,15 +388,17 @@ async def _build_scheduler_context(
             except ValueError:
                 next_run_at = None
 
-        tasks.append({
-            "key": task_def["key"],
-            "label": task_def["label"],
-            "frequency_hours": frequency_hours,
-            "enabled": enabled,
-            "last_run_at": last_run_at,
-            "next_run_at": next_run_at,
-            "has_job_type": task_def["job_type"] is not None,
-        })
+        tasks.append(
+            {
+                "key": task_def["key"],
+                "label": task_def["label"],
+                "frequency_hours": frequency_hours,
+                "enabled": enabled,
+                "last_run_at": last_run_at,
+                "next_run_at": next_run_at,
+                "has_job_type": task_def["job_type"] is not None,
+            }
+        )
     return tasks
 
 
@@ -394,8 +406,8 @@ async def _build_scheduler_context(
 async def scheduler_editor_partial(
     request: Request,
     session: AsyncSession = Depends(get_session),
-    success: Optional[str] = None,
-    info: Optional[str] = None,
+    success: str | None = None,
+    info: str | None = None,
 ):
     """HTMX partial: recurring task scheduler editor."""
     tasks = await _build_scheduler_context(session)
@@ -422,9 +434,7 @@ async def scheduler_save(
     config_key = f"scheduler_{task_key}"
     now = _utcnow()
 
-    result = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == config_key)
-    )
+    result = await session.execute(select(SystemConfig).where(SystemConfig.key == config_key))
     existing = result.scalar_one_or_none()
 
     if existing:
@@ -444,17 +454,19 @@ async def scheduler_save(
         existing.set_by = "admin"
         existing.updated_at = now
     else:
-        session.add(SystemConfig(
-            key=config_key,
-            value={
-                "frequency_hours": frequency_hours,
-                "enabled": True,
-                "last_run_at": None,
-                "next_run_at": (now + timedelta(hours=frequency_hours)).isoformat(),
-            },
-            set_by="admin",
-            updated_at=now,
-        ))
+        session.add(
+            SystemConfig(
+                key=config_key,
+                value={
+                    "frequency_hours": frequency_hours,
+                    "enabled": True,
+                    "last_run_at": None,
+                    "next_run_at": (now + timedelta(hours=frequency_hours)).isoformat(),
+                },
+                set_by="admin",
+                updated_at=now,
+            )
+        )
 
     await session.commit()
 
@@ -480,9 +492,7 @@ async def scheduler_toggle(
     config_key = f"scheduler_{task_key}"
     now = _utcnow()
 
-    result = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == config_key)
-    )
+    result = await session.execute(select(SystemConfig).where(SystemConfig.key == config_key))
     existing = result.scalar_one_or_none()
 
     if existing:
@@ -498,17 +508,19 @@ async def scheduler_toggle(
         existing.updated_at = now
     else:
         # Default is enabled=True, so toggling creates with enabled=False
-        session.add(SystemConfig(
-            key=config_key,
-            value={
-                "frequency_hours": task_def["default_hours"],
-                "enabled": False,
-                "last_run_at": None,
-                "next_run_at": None,
-            },
-            set_by="admin",
-            updated_at=now,
-        ))
+        session.add(
+            SystemConfig(
+                key=config_key,
+                value={
+                    "frequency_hours": task_def["default_hours"],
+                    "enabled": False,
+                    "last_run_at": None,
+                    "next_run_at": None,
+                },
+                set_by="admin",
+                updated_at=now,
+            )
+        )
 
     await session.commit()
 
@@ -540,7 +552,10 @@ async def scheduler_run_now(
         return templates.TemplateResponse(
             request,
             "partials/scheduler_editor.html",
-            {"tasks": tasks, "info": f"{task_def['label']}: LLM tasks run on their internal schedule in the worker loop."},
+            {
+                "tasks": tasks,
+                "info": f"{task_def['label']}: LLM tasks run on their internal schedule in the worker loop.",
+            },
         )
 
     # Create a pending job
@@ -556,9 +571,7 @@ async def scheduler_run_now(
     session.add(new_job)
 
     # Update scheduler config: last_run_at = now, next_run_at = now + frequency
-    result = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == config_key)
-    )
+    result = await session.execute(select(SystemConfig).where(SystemConfig.key == config_key))
     existing = result.scalar_one_or_none()
 
     if existing:
@@ -570,17 +583,19 @@ async def scheduler_run_now(
         existing.set_by = "admin"
         existing.updated_at = now
     else:
-        session.add(SystemConfig(
-            key=config_key,
-            value={
-                "frequency_hours": task_def["default_hours"],
-                "enabled": True,
-                "last_run_at": now.isoformat(),
-                "next_run_at": (now + timedelta(hours=task_def["default_hours"])).isoformat(),
-            },
-            set_by="admin",
-            updated_at=now,
-        ))
+        session.add(
+            SystemConfig(
+                key=config_key,
+                value={
+                    "frequency_hours": task_def["default_hours"],
+                    "enabled": True,
+                    "last_run_at": now.isoformat(),
+                    "next_run_at": (now + timedelta(hours=task_def["default_hours"])).isoformat(),
+                },
+                set_by="admin",
+                updated_at=now,
+            )
+        )
 
     await session.commit()
 

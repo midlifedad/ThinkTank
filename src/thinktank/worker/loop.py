@@ -21,6 +21,7 @@ from datetime import datetime
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 from thinktank.handlers.registry import get_handler
 from thinktank.http_utils import RateLimitedError
 from thinktank.llm.escalation import escalate_timed_out_reviews
@@ -109,18 +110,10 @@ async def worker_loop(
     )
 
     # Start LLM governance schedulers
-    escalation_task = asyncio.create_task(
-        _llm_timeout_escalation_scheduler(session_factory, 900, shutdown_event)
-    )
-    health_check_task = asyncio.create_task(
-        _llm_health_check_scheduler(session_factory, 21600, shutdown_event)
-    )
-    digest_task = asyncio.create_task(
-        _llm_digest_scheduler(session_factory, shutdown_event)
-    )
-    audit_task = asyncio.create_task(
-        _llm_audit_scheduler(session_factory, shutdown_event)
-    )
+    escalation_task = asyncio.create_task(_llm_timeout_escalation_scheduler(session_factory, 900, shutdown_event))
+    health_check_task = asyncio.create_task(_llm_health_check_scheduler(session_factory, 21600, shutdown_event))
+    digest_task = asyncio.create_task(_llm_digest_scheduler(session_factory, shutdown_event))
+    audit_task = asyncio.create_task(_llm_audit_scheduler(session_factory, shutdown_event))
 
     try:
         while not shutdown_event.is_set():
@@ -193,9 +186,7 @@ async def worker_loop(
 
             # Step 4e: Dispatch
             await semaphore.acquire()
-            task = asyncio.create_task(
-                _process_job(session_factory, job, semaphore, worker_id)
-            )
+            task = asyncio.create_task(_process_job(session_factory, job, semaphore, worker_id))
             active_tasks.add(task)
             task.add_done_callback(active_tasks.discard)
 
@@ -285,9 +276,7 @@ async def _process_job(
             max_attempts = get_max_attempts(job.job_type)
             # Honor upstream Retry-After on 429 so the next retry doesn't
             # fire before the server asked us to (INTEGRATIONS-REVIEW M-02).
-            retry_after_seconds = (
-                exc.retry_after_seconds if isinstance(exc, RateLimitedError) else None
-            )
+            retry_after_seconds = exc.retry_after_seconds if isinstance(exc, RateLimitedError) else None
             logger.warning(
                 "job_failed",
                 job_id=str(job.id),

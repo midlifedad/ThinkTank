@@ -6,9 +6,7 @@ Tests verify:
 3. Structured logging produces correctly formatted entries
 """
 
-import io
 import json
-import logging
 
 import structlog
 

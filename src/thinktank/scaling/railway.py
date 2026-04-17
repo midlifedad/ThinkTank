@@ -38,6 +38,7 @@ async def scale_gpu_service(replicas: int, session: AsyncSession | None = None) 
         environment_id = await get_secret(session, "railway_environment_id")
     else:
         import os
+
         api_key = os.environ.get("RAILWAY_API_KEY")
         service_id = os.environ.get("RAILWAY_GPU_SERVICE_ID")
         environment_id = os.environ.get("RAILWAY_ENVIRONMENT_ID")
@@ -116,6 +117,7 @@ async def get_gpu_replica_count(session: AsyncSession | None = None) -> int | No
         environment_id = await get_secret(session, "railway_environment_id")
     else:
         import os
+
         api_key = os.environ.get("RAILWAY_API_KEY")
         service_id = os.environ.get("RAILWAY_GPU_SERVICE_ID")
         environment_id = os.environ.get("RAILWAY_ENVIRONMENT_ID")
@@ -182,9 +184,7 @@ async def manage_gpu_scaling(
     """
     depth = await get_queue_depth(session, "process_content")
     threshold = await get_config_value(session, "gpu_queue_threshold", 5)
-    idle_minutes = await get_config_value(
-        session, "gpu_idle_minutes_before_shutdown", 30
-    )
+    idle_minutes = await get_config_value(session, "gpu_idle_minutes_before_shutdown", 30)
     current_replicas = await get_gpu_replica_count(session)
 
     logger.info(

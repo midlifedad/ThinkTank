@@ -3,7 +3,6 @@
 Tests queue depth queries and priority demotion with real data.
 """
 
-import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.factories import create_job, create_system_config
@@ -69,9 +68,7 @@ class TestGetEffectivePriorityIntegration:
             await create_job(session, job_type="process_content", status="pending")
 
         # Create a discovery job
-        job = await create_job(
-            session, job_type="discover_thinker", priority=5, status="pending"
-        )
+        job = await create_job(session, job_type="discover_thinker", priority=5, status="pending")
 
         result = await get_effective_priority(session, job)
         assert result == 8  # 5 + 3
@@ -91,9 +88,7 @@ class TestGetEffectivePriorityIntegration:
         for _ in range(399):
             await create_job(session, job_type="process_content", status="pending")
 
-        job = await create_job(
-            session, job_type="discover_thinker", priority=5, status="pending"
-        )
+        job = await create_job(session, job_type="discover_thinker", priority=5, status="pending")
 
         result = await get_effective_priority(session, job)
         assert result == 5  # No demotion
@@ -113,9 +108,7 @@ class TestGetEffectivePriorityIntegration:
         for _ in range(450):
             await create_job(session, job_type="process_content", status="pending")
 
-        job = await create_job(
-            session, job_type="discover_thinker", priority=5, status="pending"
-        )
+        job = await create_job(session, job_type="discover_thinker", priority=5, status="pending")
 
         result = await get_effective_priority(session, job)
         assert result == 5  # Hysteresis: no change
@@ -136,9 +129,7 @@ class TestGetEffectivePriorityIntegration:
             await create_job(session, job_type="process_content", status="pending")
 
         # process_content job itself should NOT be demoted
-        job = await create_job(
-            session, job_type="process_content", priority=5, status="pending"
-        )
+        job = await create_job(session, job_type="process_content", priority=5, status="pending")
 
         result = await get_effective_priority(session, job)
         assert result == 5  # Not a backpressure type
@@ -156,9 +147,7 @@ class TestGetEffectivePriorityIntegration:
         for _ in range(501):
             await create_job(session, job_type="process_content", status="pending")
 
-        job = await create_job(
-            session, job_type="discover_thinker", priority=9, status="pending"
-        )
+        job = await create_job(session, job_type="discover_thinker", priority=9, status="pending")
 
         result = await get_effective_priority(session, job)
         assert result == 10  # 9 + 3 = 12, capped at 10

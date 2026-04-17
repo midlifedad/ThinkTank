@@ -8,23 +8,20 @@ promote/reject, and PodcastIndex discovery trigger.
 
 import re
 import uuid
-from datetime import datetime, UTC
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from thinktank.admin.dependencies import get_session, get_templates
 from thinktank.models.candidate import CandidateThinker
 from thinktank.models.category import Category, ThinkerCategory
-from thinktank.models.content import Content
+from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
-from thinktank.models.review import LLMReview
-from thinktank.models.content import ContentThinker
 from thinktank.models.source import Source, SourceThinker
 from thinktank.models.thinker import Thinker
-from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin/thinkers", tags=["thinkers"])
 templates = get_templates()
@@ -39,9 +36,9 @@ def _slugify(name: str) -> str:
 
 async def _build_thinker_list(
     session: AsyncSession,
-    q: Optional[str] = None,
-    tier: Optional[int] = None,
-    active: Optional[str] = None,
+    q: str | None = None,
+    tier: int | None = None,
+    active: str | None = None,
 ) -> list[dict]:
     """Build thinker list with source counts and category names, applying filters."""
     # Source count subquery via junction
@@ -86,16 +83,18 @@ async def _build_thinker_list(
         # Category names are eager-loaded; no per-row SELECT required.
         category_names = [tc.category.name for tc in thinker.categories if tc.category]
 
-        thinkers.append({
-            "id": str(thinker.id),
-            "name": thinker.name,
-            "slug": thinker.slug,
-            "tier": thinker.tier,
-            "active": thinker.active,
-            "approval_status": thinker.approval_status,
-            "source_count": source_count or 0,
-            "category_names": ", ".join(category_names) if category_names else "",
-        })
+        thinkers.append(
+            {
+                "id": str(thinker.id),
+                "name": thinker.name,
+                "slug": thinker.slug,
+                "tier": thinker.tier,
+                "active": thinker.active,
+                "approval_status": thinker.approval_status,
+                "source_count": source_count or 0,
+                "category_names": ", ".join(category_names) if category_names else "",
+            }
+        )
 
     return thinkers
 
@@ -110,9 +109,9 @@ async def thinker_page(request: Request):
 async def thinker_list_partial(
     request: Request,
     session: AsyncSession = Depends(get_session),
-    q: Optional[str] = None,
-    tier: Optional[int] = None,
-    active: Optional[str] = None,
+    q: str | None = None,
+    tier: int | None = None,
+    active: str | None = None,
 ):
     """HTML fragment: thinker table with search/filter results."""
     thinkers = await _build_thinker_list(session, q=q, tier=tier, active=active)
@@ -308,9 +307,7 @@ async def candidate_queue_page(
     session: AsyncSession = Depends(get_session),
 ):
     """Candidate queue page showing pending and reviewed candidates."""
-    result = await session.execute(
-        select(CandidateThinker).order_by(CandidateThinker.appearance_count.desc())
-    )
+    result = await session.execute(select(CandidateThinker).order_by(CandidateThinker.appearance_count.desc()))
     candidates = result.scalars().all()
     return templates.TemplateResponse(
         request,
@@ -327,9 +324,7 @@ async def promote_candidate(
     reason: str = Form(""),
 ):
     """Promote a candidate to a full thinker with LLM approval job."""
-    result = await session.execute(
-        select(CandidateThinker).where(CandidateThinker.id == candidate_id)
-    )
+    result = await session.execute(select(CandidateThinker).where(CandidateThinker.id == candidate_id))
     candidate = result.scalar_one_or_none()
     if candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
@@ -368,9 +363,7 @@ async def promote_candidate(
     await session.commit()
 
     # Re-render the candidate queue
-    result = await session.execute(
-        select(CandidateThinker).order_by(CandidateThinker.appearance_count.desc())
-    )
+    result = await session.execute(select(CandidateThinker).order_by(CandidateThinker.appearance_count.desc()))
     candidates = result.scalars().all()
     return templates.TemplateResponse(
         request,
@@ -387,9 +380,7 @@ async def reject_candidate(
     reason: str = Form(""),
 ):
     """Reject a candidate with a reason."""
-    result = await session.execute(
-        select(CandidateThinker).where(CandidateThinker.id == candidate_id)
-    )
+    result = await session.execute(select(CandidateThinker).where(CandidateThinker.id == candidate_id))
     candidate = result.scalar_one_or_none()
     if candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
@@ -402,9 +393,7 @@ async def reject_candidate(
     await session.commit()
 
     # Re-render the candidate queue
-    result = await session.execute(
-        select(CandidateThinker).order_by(CandidateThinker.appearance_count.desc())
-    )
+    result = await session.execute(select(CandidateThinker).order_by(CandidateThinker.appearance_count.desc()))
     candidates = result.scalars().all()
     return templates.TemplateResponse(
         request,
@@ -428,9 +417,7 @@ async def thinker_detail_page(
     # Resolve category names
     category_names = []
     for tc in thinker.categories:
-        cat_result = await session.execute(
-            select(Category.name).where(Category.id == tc.category_id)
-        )
+        cat_result = await session.execute(select(Category.name).where(Category.id == tc.category_id))
         cat_name = cat_result.scalar_one_or_none()
         if cat_name:
             category_names.append(cat_name)
@@ -455,10 +442,7 @@ async def thinker_sources_partial(
         .where(SourceThinker.thinker_id == thinker_id)
         .order_by(Source.name)
     )
-    sources = [
-        {"source": row[0], "relationship_type": row[1]}
-        for row in result.all()
-    ]
+    sources = [{"source": row[0], "relationship_type": row[1]} for row in result.all()]
     return templates.TemplateResponse(
         request,
         "partials/thinker_sources.html",
@@ -616,9 +600,7 @@ async def edit_thinker(
     thinker.active = active == "on"
 
     # Replace categories: delete existing, insert new
-    await session.execute(
-        delete(ThinkerCategory).where(ThinkerCategory.thinker_id == thinker_id)
-    )
+    await session.execute(delete(ThinkerCategory).where(ThinkerCategory.thinker_id == thinker_id))
     for cid_str in category_ids:
         try:
             cid = uuid.UUID(cid_str)

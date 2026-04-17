@@ -38,9 +38,7 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-async def handle_scan_episodes_for_thinkers(
-    session: AsyncSession, job: Job
-) -> None:
+async def handle_scan_episodes_for_thinkers(session: AsyncSession, job: Job) -> None:
     """Scan cataloged episodes for thinker matches and promote to pending.
 
     Job payload schema:
@@ -138,9 +136,7 @@ async def handle_scan_episodes_for_thinkers(
             # mentioned in episode titles (e.g. Jensen Huang on Lex Fridman)
             # get a guest junction row. Host IDs are excluded from the guest
             # match set to avoid duplicate primary/guest rows for the host.
-            guest_thinker_names = [
-                t for t in thinker_names if t["id"] not in host_id_set
-            ]
+            guest_thinker_names = [t for t in thinker_names if t["id"] not in host_id_set]
             matches = match_thinkers_in_text(
                 content.title,
                 description,
@@ -149,9 +145,7 @@ async def handle_scan_episodes_for_thinkers(
             )
         else:
             # Guest sources: match thinker names in title/description
-            matches = match_thinkers_in_text(
-                content.title, description, thinker_names, source_owner_name
-            )
+            matches = match_thinkers_in_text(content.title, description, thinker_names, source_owner_name)
 
         # T6.7: look up podcast:person tags for THIS episode only. Previously
         # the handler iterated every person across every GUID in the feed and
@@ -169,11 +163,13 @@ async def handle_scan_episodes_for_thinkers(
                     continue
                 if tid in matched_ids_from_text:
                     continue
-                matches.append({
-                    "thinker_id": tid,
-                    "role": "guest",
-                    "confidence": 10,
-                })
+                matches.append(
+                    {
+                        "thinker_id": tid,
+                        "role": "guest",
+                        "confidence": 10,
+                    }
+                )
                 matched_ids_from_text.add(tid)
 
         # Promotion: host sources always promote; guest sources only promote
@@ -184,9 +180,7 @@ async def handle_scan_episodes_for_thinkers(
 
             if is_host_source:
                 for host_tid in host_thinker_ids:
-                    existing = await session.get(
-                        ContentThinker, (content.id, host_tid)
-                    )
+                    existing = await session.get(ContentThinker, (content.id, host_tid))
                     if existing is None:
                         session.add(
                             ContentThinker(
@@ -200,9 +194,7 @@ async def handle_scan_episodes_for_thinkers(
 
             for match in matches:
                 thinker_id = match["thinker_id"]
-                existing = await session.get(
-                    ContentThinker, (content.id, thinker_id)
-                )
+                existing = await session.get(ContentThinker, (content.id, thinker_id))
                 if existing is None:
                     session.add(
                         ContentThinker(

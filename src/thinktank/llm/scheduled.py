@@ -9,6 +9,7 @@ Spec reference: Section 8.2 (scheduled check track).
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from thinktank.llm.client import LLMClient
 from thinktank.llm.prompts import (
     build_daily_digest_prompt,
@@ -50,9 +51,7 @@ async def run_health_check(session: AsyncSession) -> LLMReview | None:
         context = await build_health_check_context(session)
         system_prompt, user_prompt = build_health_check_prompt(context)
 
-        result, tokens, duration = await _llm_client.review(
-            system_prompt, user_prompt, HealthCheckResponse
-        )
+        result, tokens, duration = await _llm_client.review(system_prompt, user_prompt, HealthCheckResponse)
 
         review = LLMReview(
             review_type="health_check",
@@ -106,9 +105,7 @@ async def run_daily_digest(session: AsyncSession) -> LLMReview | None:
         context = await build_daily_digest_context(session)
         system_prompt, user_prompt = build_daily_digest_prompt(context)
 
-        result, tokens, duration = await _llm_client.review(
-            system_prompt, user_prompt, DailyDigestResponse
-        )
+        result, tokens, duration = await _llm_client.review(system_prompt, user_prompt, DailyDigestResponse)
 
         review = LLMReview(
             review_type="daily_digest",
@@ -155,9 +152,7 @@ async def run_weekly_audit(session: AsyncSession) -> LLMReview | None:
         context = await build_weekly_audit_context(session)
         system_prompt, user_prompt = build_weekly_audit_prompt(context)
 
-        result, tokens, duration = await _llm_client.review(
-            system_prompt, user_prompt, WeeklyAuditResponse
-        )
+        result, tokens, duration = await _llm_client.review(system_prompt, user_prompt, WeeklyAuditResponse)
 
         review = LLMReview(
             review_type="weekly_audit",

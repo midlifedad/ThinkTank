@@ -59,16 +59,13 @@ async def _run_with_query_count(session: AsyncSession, coro_fn):
 class TestBuildThinkerListQueryCount:
     """``_build_thinker_list`` must not scale query count with N thinkers."""
 
-    async def test_thinker_list_is_bounded_regardless_of_count(
-        self, session: AsyncSession
-    ) -> None:
-        from thinktank.admin.routers.thinkers import _build_thinker_list
-
+    async def test_thinker_list_is_bounded_regardless_of_count(self, session: AsyncSession) -> None:
         from tests.factories import (
             create_category,
             create_thinker,
             create_thinker_category,
         )
+        from thinktank.admin.routers.thinkers import _build_thinker_list
 
         # Two shared categories.
         cat_a = await create_category(session, name="Philosophy", slug="philosophy-qc")
@@ -77,20 +74,12 @@ class TestBuildThinkerListQueryCount:
         # Seed 10 thinkers, each with 2 categories -> 20 junction rows.
         n_rows = 10
         for i in range(n_rows):
-            t = await create_thinker(
-                session, name=f"QC Thinker {i}", slug=f"qc-thinker-{i}"
-            )
-            await create_thinker_category(
-                session, thinker_id=t.id, category_id=cat_a.id
-            )
-            await create_thinker_category(
-                session, thinker_id=t.id, category_id=cat_b.id
-            )
+            t = await create_thinker(session, name=f"QC Thinker {i}", slug=f"qc-thinker-{i}")
+            await create_thinker_category(session, thinker_id=t.id, category_id=cat_a.id)
+            await create_thinker_category(session, thinker_id=t.id, category_id=cat_b.id)
         await session.commit()
 
-        result, query_count = await _run_with_query_count(
-            session, lambda: _build_thinker_list(session)
-        )
+        result, query_count = await _run_with_query_count(session, lambda: _build_thinker_list(session))
 
         assert len(result) >= n_rows
         # With selectinload we expect a small constant: the main SELECT plus
@@ -102,67 +91,48 @@ class TestBuildThinkerListQueryCount:
             f"expected a bounded constant (N+1 regression)"
         )
 
-    async def test_thinker_list_query_count_independent_of_n(
-        self, session: AsyncSession
-    ) -> None:
+    async def test_thinker_list_query_count_independent_of_n(self, session: AsyncSession) -> None:
         """Query count with 5 thinkers must equal query count with 15 thinkers."""
-        from thinktank.admin.routers.thinkers import _build_thinker_list
-
         from tests.factories import (
             create_category,
             create_thinker,
             create_thinker_category,
         )
+        from thinktank.admin.routers.thinkers import _build_thinker_list
 
         cat = await create_category(session, name="Policy", slug="policy-qc-n")
 
         async def _seed(n: int) -> None:
             for i in range(n):
-                t = await create_thinker(
-                    session, name=f"NThinker {n}-{i}", slug=f"n-thinker-{n}-{i}"
-                )
-                await create_thinker_category(
-                    session, thinker_id=t.id, category_id=cat.id
-                )
+                t = await create_thinker(session, name=f"NThinker {n}-{i}", slug=f"n-thinker-{n}-{i}")
+                await create_thinker_category(session, thinker_id=t.id, category_id=cat.id)
             await session.commit()
 
         await _seed(5)
-        _, count_small = await _run_with_query_count(
-            session, lambda: _build_thinker_list(session)
-        )
+        _, count_small = await _run_with_query_count(session, lambda: _build_thinker_list(session))
 
         await _seed(10)  # total now 15
-        _, count_large = await _run_with_query_count(
-            session, lambda: _build_thinker_list(session)
-        )
+        _, count_large = await _run_with_query_count(session, lambda: _build_thinker_list(session))
 
         assert count_small == count_large, (
-            f"Query count varies with N (5 thinkers: {count_small}, "
-            f"15 thinkers: {count_large}) — N+1 regression"
+            f"Query count varies with N (5 thinkers: {count_small}, 15 thinkers: {count_large}) — N+1 regression"
         )
 
 
 class TestBuildSourceListQueryCount:
     """``_build_source_list`` must not scale query count with N sources."""
 
-    async def test_source_list_is_bounded_regardless_of_count(
-        self, session: AsyncSession
-    ) -> None:
-        from thinktank.admin.routers.sources import _build_source_list
-
+    async def test_source_list_is_bounded_regardless_of_count(self, session: AsyncSession) -> None:
         from tests.factories import (
             create_source,
             create_source_thinker,
             create_thinker,
         )
+        from thinktank.admin.routers.sources import _build_source_list
 
         # Two shared thinkers, each linked to every source.
-        thinker_a = await create_thinker(
-            session, name="QC Source Thinker A", slug="qc-src-thinker-a"
-        )
-        thinker_b = await create_thinker(
-            session, name="QC Source Thinker B", slug="qc-src-thinker-b"
-        )
+        thinker_a = await create_thinker(session, name="QC Source Thinker A", slug="qc-src-thinker-a")
+        thinker_b = await create_thinker(session, name="QC Source Thinker B", slug="qc-src-thinker-b")
 
         n_rows = 10
         for i in range(n_rows):
@@ -185,9 +155,7 @@ class TestBuildSourceListQueryCount:
             )
         await session.commit()
 
-        result, query_count = await _run_with_query_count(
-            session, lambda: _build_source_list(session)
-        )
+        result, query_count = await _run_with_query_count(session, lambda: _build_source_list(session))
 
         assert len(result) >= n_rows
         assert query_count <= 10, (
@@ -195,20 +163,15 @@ class TestBuildSourceListQueryCount:
             f"expected a bounded constant (N+1 regression)"
         )
 
-    async def test_source_list_query_count_independent_of_n(
-        self, session: AsyncSession
-    ) -> None:
-        from thinktank.admin.routers.sources import _build_source_list
-
+    async def test_source_list_query_count_independent_of_n(self, session: AsyncSession) -> None:
         from tests.factories import (
             create_source,
             create_source_thinker,
             create_thinker,
         )
+        from thinktank.admin.routers.sources import _build_source_list
 
-        thinker = await create_thinker(
-            session, name="QC N-Source Thinker", slug="qc-n-src-thinker"
-        )
+        thinker = await create_thinker(session, name="QC N-Source Thinker", slug="qc-n-src-thinker")
 
         async def _seed(n: int, tag: str) -> None:
             for i in range(n):
@@ -226,16 +189,11 @@ class TestBuildSourceListQueryCount:
             await session.commit()
 
         await _seed(5, "small")
-        _, count_small = await _run_with_query_count(
-            session, lambda: _build_source_list(session)
-        )
+        _, count_small = await _run_with_query_count(session, lambda: _build_source_list(session))
 
         await _seed(10, "large")  # total now 15
-        _, count_large = await _run_with_query_count(
-            session, lambda: _build_source_list(session)
-        )
+        _, count_large = await _run_with_query_count(session, lambda: _build_source_list(session))
 
         assert count_small == count_large, (
-            f"Query count varies with N (5 sources: {count_small}, "
-            f"15 sources: {count_large}) — N+1 regression"
+            f"Query count varies with N (5 sources: {count_small}, 15 sources: {count_large}) — N+1 regression"
         )

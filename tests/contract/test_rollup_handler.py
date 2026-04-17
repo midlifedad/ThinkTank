@@ -7,16 +7,15 @@ Verifies:
 - Handler preserves rate_limit_usage rows newer than current hour
 """
 
-import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_job, create_rate_limit_usage
 from thinktank.models.api_usage import ApiUsage
 from thinktank.models.rate_limit import RateLimitUsage
-from tests.factories import create_job, create_rate_limit_usage
 
 pytestmark = pytest.mark.anyio
 
@@ -47,9 +46,7 @@ class TestRollupApiUsageHandler:
         await handle_rollup_api_usage(session, job)
         await session.commit()
 
-        result = await session.execute(
-            select(ApiUsage).where(ApiUsage.api_name == "podcastindex")
-        )
+        result = await session.execute(select(ApiUsage).where(ApiUsage.api_name == "podcastindex"))
         rows = result.scalars().all()
         assert len(rows) >= 1
         total_calls = sum(r.call_count for r in rows)
@@ -73,9 +70,7 @@ class TestRollupApiUsageHandler:
         await handle_rollup_api_usage(session, job)
         await session.commit()
 
-        result = await session.execute(
-            select(ApiUsage).where(ApiUsage.api_name == "youtube")
-        )
+        result = await session.execute(select(ApiUsage).where(ApiUsage.api_name == "youtube"))
         rows = result.scalars().all()
         total_cost = sum(float(r.estimated_cost_usd) for r in rows if r.estimated_cost_usd)
         # 10 calls * $0.001 = $0.01
@@ -104,9 +99,7 @@ class TestRollupApiUsageHandler:
         await handle_rollup_api_usage(session, job)
         await session.commit()
 
-        result = await session.execute(
-            select(ApiUsage).where(ApiUsage.api_name == "youtube")
-        )
+        result = await session.execute(select(ApiUsage).where(ApiUsage.api_name == "youtube"))
         rows = result.scalars().all()
         total_calls = sum(r.call_count for r in rows)
         assert total_calls == 3  # Not 6 (no duplicates)
@@ -129,9 +122,7 @@ class TestRollupApiUsageHandler:
         await handle_rollup_api_usage(session, job)
         await session.commit()
 
-        result = await session.execute(
-            select(RateLimitUsage).where(RateLimitUsage.api_name == "anthropic")
-        )
+        result = await session.execute(select(RateLimitUsage).where(RateLimitUsage.api_name == "anthropic"))
         remaining = result.scalars().all()
         assert len(remaining) == 0
 
@@ -163,9 +154,7 @@ class TestRollupApiUsageHandler:
         await handle_rollup_api_usage(session, job)
         await session.commit()
 
-        result = await session.execute(
-            select(RateLimitUsage).where(RateLimitUsage.api_name == "podcastindex")
-        )
+        result = await session.execute(select(RateLimitUsage).where(RateLimitUsage.api_name == "podcastindex"))
         remaining = result.scalars().all()
         # The recent row (within current hour) should still be there
         assert len(remaining) == 1

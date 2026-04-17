@@ -9,12 +9,11 @@ Tests verify:
 - Exception propagation
 """
 
-import uuid
+from typing import Literal
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import BaseModel
-from typing import Literal
 
 from thinktank.llm.client import LLMClient
 
@@ -55,8 +54,10 @@ class TestLLMClientInit:
     @pytest.mark.asyncio
     async def test_get_client_sets_max_retries(self):
         """_get_client should configure max_retries=2."""
-        with patch("thinktank.llm.client.AsyncAnthropic") as mock_cls, \
-             patch("thinktank.llm.client.get_secret", new_callable=AsyncMock, return_value="test-key"):
+        with (
+            patch("thinktank.llm.client.AsyncAnthropic") as mock_cls,
+            patch("thinktank.llm.client.get_secret", new_callable=AsyncMock, return_value="test-key"),
+        ):
             client = LLMClient()
             mock_session = AsyncMock()
             await client._get_client(mock_session)
@@ -137,9 +138,7 @@ class TestLLMClientReview:
     async def test_propagates_api_exceptions(self, client):
         from anthropic import APIConnectionError
 
-        client._client.messages.create = AsyncMock(
-            side_effect=APIConnectionError(request=MagicMock())
-        )
+        client._client.messages.create = AsyncMock(side_effect=APIConnectionError(request=MagicMock()))
 
         with pytest.raises(APIConnectionError):
             await client.review("sys", "usr", SampleResponse)

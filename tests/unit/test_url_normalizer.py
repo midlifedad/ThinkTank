@@ -127,16 +127,10 @@ class TestDropFragment:
     """Deep-link fragments (`#t=42`) are never relevant for dedup."""
 
     def test_drops_timestamp_fragment(self):
-        assert (
-            normalize_url("https://example.com/ep.mp3#t=10")
-            == "https://example.com/ep.mp3"
-        )
+        assert normalize_url("https://example.com/ep.mp3#t=10") == "https://example.com/ep.mp3"
 
     def test_drops_fragment_with_query(self):
-        assert (
-            normalize_url("https://example.com/page?x=1#section")
-            == "https://example.com/page?x=1"
-        )
+        assert normalize_url("https://example.com/page?x=1#section") == "https://example.com/page?x=1"
 
 
 class TestYouTubeHostCanonicalization:

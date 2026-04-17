@@ -6,7 +6,7 @@ plus execute_confirmed_action for running approved mutations.
 
 import re
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -146,9 +146,7 @@ def _generate_slug(name: str) -> str:
     return slug.strip("-")
 
 
-async def execute_confirmed_action(
-    action_type: str, details: dict, session: AsyncSession
-) -> dict:
+async def execute_confirmed_action(action_type: str, details: dict, session: AsyncSession) -> dict:
     """Execute a confirmed action after operator approval.
 
     Args:
@@ -223,9 +221,7 @@ async def _action_approve_source(details: dict, session: AsyncSession) -> dict:
         return {"error": "source_id is required"}
 
     await session.execute(
-        update(Source)
-        .where(Source.id == uuid.UUID(str(source_id)))
-        .values(approval_status="approved")
+        update(Source).where(Source.id == uuid.UUID(str(source_id))).values(approval_status="approved")
     )
 
     review = LLMReview(
@@ -249,9 +245,7 @@ async def _action_reject_source(details: dict, session: AsyncSession) -> dict:
         return {"error": "source_id is required"}
 
     await session.execute(
-        update(Source)
-        .where(Source.id == uuid.UUID(str(source_id)))
-        .values(approval_status="rejected")
+        update(Source).where(Source.id == uuid.UUID(str(source_id))).values(approval_status="rejected")
     )
 
     review = LLMReview(
@@ -288,18 +282,14 @@ async def _action_trigger_discovery(details: dict, session: AsyncSession) -> dic
 
 async def _action_toggle_kill_switch(session: AsyncSession) -> dict:
     """Toggle the global worker kill switch."""
-    result = await session.execute(
-        select(SystemConfig.value).where(SystemConfig.key == "workers_active")
-    )
+    result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == "workers_active"))
     current = result.scalar_one_or_none()
 
     # Default to True if not set, then flip
     current_bool = bool(current) if current is not None else True
     new_value = not current_bool
 
-    existing = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == "workers_active")
-    )
+    existing = await session.execute(select(SystemConfig).where(SystemConfig.key == "workers_active"))
     row = existing.scalar_one_or_none()
     if row:
         row.value = new_value
@@ -326,9 +316,7 @@ async def _action_update_config(details: dict, session: AsyncSession) -> dict:
     if not key:
         return {"error": "Config key is required"}
 
-    existing = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == key)
-    )
+    existing = await session.execute(select(SystemConfig).where(SystemConfig.key == key))
     row = existing.scalar_one_or_none()
     if row:
         row.value = value
@@ -352,9 +340,7 @@ async def _action_retry_job(details: dict, session: AsyncSession) -> dict:
     if not job_id:
         return {"error": "job_id is required"}
 
-    result = await session.execute(
-        select(Job).where(Job.id == uuid.UUID(str(job_id)))
-    )
+    result = await session.execute(select(Job).where(Job.id == uuid.UUID(str(job_id))))
     original = result.scalar_one_or_none()
     if not original:
         return {"error": f"Job {job_id} not found"}

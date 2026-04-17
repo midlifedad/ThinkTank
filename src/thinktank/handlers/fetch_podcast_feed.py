@@ -60,9 +60,7 @@ _DEFAULT_SKIP_PATTERNS = [
 ]
 
 
-async def handle_fetch_podcast_feed(
-    session: AsyncSession, job: Job
-) -> None:
+async def handle_fetch_podcast_feed(session: AsyncSession, job: Job) -> None:
     """Fetch and parse a podcast RSS feed, inserting new content rows.
 
     Pipeline:
@@ -110,12 +108,8 @@ async def handle_fetch_podcast_feed(
     # d. source.thinker_id is deprecated — thinker lookup happens via junction if needed
 
     # e. Read global config values
-    global_min_duration = await get_config_value(
-        session, "min_duration_seconds", 600
-    )
-    global_skip_patterns = await get_config_value(
-        session, "skip_title_patterns", _DEFAULT_SKIP_PATTERNS
-    )
+    global_min_duration = await get_config_value(session, "min_duration_seconds", 600)
+    global_skip_patterns = await get_config_value(session, "skip_title_patterns", _DEFAULT_SKIP_PATTERNS)
 
     # f. Compute effective filter config from source overrides
     effective_min_duration, effective_skip_patterns = get_source_filter_config(
@@ -175,9 +169,7 @@ async def handle_fetch_podcast_feed(
             title_lower = (entry.title or "").lower()
             desc_lower = (entry.description or "").lower()
             name_match = guest_thinker_name in title_lower or guest_thinker_name in desc_lower
-            last_name_match = guest_last_name and (
-                guest_last_name in title_lower or guest_last_name in desc_lower
-            )
+            last_name_match = guest_last_name and (guest_last_name in title_lower or guest_last_name in desc_lower)
             if not name_match and not last_name_match:
                 guest_filtered_count += 1
                 continue
@@ -186,25 +178,17 @@ async def handle_fetch_podcast_feed(
         canonical = normalize_url(entry.url)
 
         # Layer 1: URL dedup
-        url_exists = await session.execute(
-            select(Content.id).where(Content.canonical_url == canonical).limit(1)
-        )
+        url_exists = await session.execute(select(Content.id).where(Content.canonical_url == canonical).limit(1))
         if url_exists.scalar_one_or_none() is not None:
             dedup_count += 1
             continue
 
         # Compute fingerprint (Layer 2 dedup prep)
-        fp = compute_fingerprint(
-            entry.title, entry.published_at, entry.duration_seconds
-        )
+        fp = compute_fingerprint(entry.title, entry.published_at, entry.duration_seconds)
 
         # Layer 2: Fingerprint dedup
         if fp is not None:
-            fp_exists = await session.execute(
-                select(Content.id)
-                .where(Content.content_fingerprint == fp)
-                .limit(1)
-            )
+            fp_exists = await session.execute(select(Content.id).where(Content.content_fingerprint == fp).limit(1))
             if fp_exists.scalar_one_or_none() is not None:
                 log.debug(
                     "fingerprint_alias_detected",
@@ -215,9 +199,9 @@ async def handle_fetch_podcast_feed(
                 continue
 
         # Determine status based on filtering
-        if should_skip_by_duration(
-            entry.duration_seconds, effective_min_duration
-        ) or should_skip_by_title(entry.title, effective_skip_patterns):
+        if should_skip_by_duration(entry.duration_seconds, effective_min_duration) or should_skip_by_title(
+            entry.title, effective_skip_patterns
+        ):
             status = "skipped"
             skipped_count += 1
         else:

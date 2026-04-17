@@ -16,17 +16,17 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.handlers.fetch_youtube_channel import (
-    handle_fetch_youtube_channel,
-)
-from thinktank.models.content import Content
-from thinktank.models.job import Job
 from tests.factories import (
     create_content,
     create_job,
     create_source,
     create_system_config,
 )
+from thinktank.handlers.fetch_youtube_channel import (
+    handle_fetch_youtube_channel,
+)
+from thinktank.models.content import Content
+from thinktank.models.job import Job
 
 pytestmark = pytest.mark.anyio
 
@@ -92,9 +92,7 @@ class TestFetchYouTubeChannelContract:
         return source, job
 
     @patch("thinktank.handlers.fetch_youtube_channel.YouTubeClient")
-    async def test_fetch_creates_cataloged_content(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_fetch_creates_cataloged_content(self, mock_client_cls: MagicMock, session: AsyncSession):
         """YouTube videos -> Content rows with status='cataloged'."""
         source, job = await self._setup_source_and_job(session)
 
@@ -111,9 +109,7 @@ class TestFetchYouTubeChannelContract:
 
         await handle_fetch_youtube_channel(session, job)
 
-        result = await session.execute(
-            select(Content).where(Content.source_id == source.id)
-        )
+        result = await session.execute(select(Content).where(Content.source_id == source.id))
         content_rows = result.scalars().all()
         assert len(content_rows) == 3
 
@@ -123,9 +119,7 @@ class TestFetchYouTubeChannelContract:
             assert row.source_id == source.id
 
     @patch("thinktank.handlers.fetch_youtube_channel.YouTubeClient")
-    async def test_fetch_applies_duration_filter(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_fetch_applies_duration_filter(self, mock_client_cls: MagicMock, session: AsyncSession):
         """Videos shorter than min_duration get status='skipped'."""
         source, job = await self._setup_source_and_job(session)
 
@@ -141,9 +135,7 @@ class TestFetchYouTubeChannelContract:
 
         await handle_fetch_youtube_channel(session, job)
 
-        result = await session.execute(
-            select(Content).where(Content.source_id == source.id)
-        )
+        result = await session.execute(select(Content).where(Content.source_id == source.id))
         content_rows = result.scalars().all()
         by_url = {c.canonical_url: c for c in content_rows}
 
@@ -154,9 +146,7 @@ class TestFetchYouTubeChannelContract:
         assert by_url[short_url].status == "skipped"
 
     @patch("thinktank.handlers.fetch_youtube_channel.YouTubeClient")
-    async def test_fetch_applies_category_filter(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_fetch_applies_category_filter(self, mock_client_cls: MagicMock, session: AsyncSession):
         """Music (10) category videos get status='skipped'."""
         source, job = await self._setup_source_and_job(session)
 
@@ -172,9 +162,7 @@ class TestFetchYouTubeChannelContract:
 
         await handle_fetch_youtube_channel(session, job)
 
-        result = await session.execute(
-            select(Content).where(Content.source_id == source.id)
-        )
+        result = await session.execute(select(Content).where(Content.source_id == source.id))
         content_rows = result.scalars().all()
         by_url = {c.canonical_url: c for c in content_rows}
 
@@ -182,9 +170,7 @@ class TestFetchYouTubeChannelContract:
         assert by_url["https://youtube.com/watch?v=wX1yZ2aB3cD"].status == "skipped"
 
     @patch("thinktank.handlers.fetch_youtube_channel.YouTubeClient")
-    async def test_fetch_applies_title_filter(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_fetch_applies_title_filter(self, mock_client_cls: MagicMock, session: AsyncSession):
         """Title matching skip patterns -> status='skipped'."""
         source, job = await self._setup_source_and_job(session)
 
@@ -192,17 +178,25 @@ class TestFetchYouTubeChannelContract:
         mock_client_cls.return_value = mock_client
         mock_client.fetch_all_channel_videos.return_value = _make_youtube_videos(
             [
-                {"video_id": "eF5gH6iJ7kL", "title": "Great Interview", "duration_seconds": 3600, "category_id": "27"},
-                {"video_id": "mN8oP9qR0sT", "title": "Best of #shorts compilation", "duration_seconds": 3600, "category_id": "27"},
+                {
+                    "video_id": "eF5gH6iJ7kL",
+                    "title": "Great Interview",
+                    "duration_seconds": 3600,
+                    "category_id": "27",
+                },
+                {
+                    "video_id": "mN8oP9qR0sT",
+                    "title": "Best of #shorts compilation",
+                    "duration_seconds": 3600,
+                    "category_id": "27",
+                },
             ]
         )
         mock_client.quota_used = 2
 
         await handle_fetch_youtube_channel(session, job)
 
-        result = await session.execute(
-            select(Content).where(Content.source_id == source.id)
-        )
+        result = await session.execute(select(Content).where(Content.source_id == source.id))
         content_rows = result.scalars().all()
         by_url = {c.canonical_url: c for c in content_rows}
 
@@ -210,9 +204,7 @@ class TestFetchYouTubeChannelContract:
         assert by_url["https://youtube.com/watch?v=mN8oP9qR0sT"].status == "skipped"
 
     @patch("thinktank.handlers.fetch_youtube_channel.YouTubeClient")
-    async def test_fetch_enqueues_scan_job(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_fetch_enqueues_scan_job(self, mock_client_cls: MagicMock, session: AsyncSession):
         """Handler enqueues scan_episodes_for_thinkers job with content_ids."""
         source, job = await self._setup_source_and_job(session)
 
@@ -228,9 +220,7 @@ class TestFetchYouTubeChannelContract:
 
         await handle_fetch_youtube_channel(session, job)
 
-        result = await session.execute(
-            select(Job).where(Job.job_type == "scan_episodes_for_thinkers")
-        )
+        result = await session.execute(select(Job).where(Job.job_type == "scan_episodes_for_thinkers"))
         scan_jobs = result.scalars().all()
         assert len(scan_jobs) == 1
 
@@ -240,9 +230,7 @@ class TestFetchYouTubeChannelContract:
         assert "descriptions" in payload
 
     @patch("thinktank.handlers.fetch_youtube_channel.YouTubeClient")
-    async def test_fetch_dedup_by_canonical_url(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_fetch_dedup_by_canonical_url(self, mock_client_cls: MagicMock, session: AsyncSession):
         """Pre-existing Content with matching canonical_url -> no duplicate created."""
         source, job = await self._setup_source_and_job(session)
 
@@ -268,17 +256,13 @@ class TestFetchYouTubeChannelContract:
 
         await handle_fetch_youtube_channel(session, job)
 
-        result = await session.execute(
-            select(Content).where(Content.source_id == source.id)
-        )
+        result = await session.execute(select(Content).where(Content.source_id == source.id))
         content_rows = result.scalars().all()
         # Should be 2: the pre-existing one + the new one (not a duplicate)
         assert len(content_rows) == 2
 
     @patch("thinktank.handlers.fetch_youtube_channel.YouTubeClient")
-    async def test_fetch_updates_source_metadata(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_fetch_updates_source_metadata(self, mock_client_cls: MagicMock, session: AsyncSession):
         """source.last_fetched updated, source.item_count incremented."""
         source, job = await self._setup_source_and_job(session)
 

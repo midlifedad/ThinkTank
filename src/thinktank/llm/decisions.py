@@ -14,7 +14,9 @@ import uuid
 from datetime import UTC, datetime
 
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from thinktank.llm.schemas import (
     CandidateReviewResponse,
     SourceApprovalResponse,
@@ -22,8 +24,6 @@ from thinktank.llm.schemas import (
 )
 from thinktank.models.candidate import CandidateThinker
 from thinktank.models.job import Job
-from sqlalchemy import select
-
 from thinktank.models.source import Source, SourceThinker
 from thinktank.models.thinker import Thinker
 
@@ -185,10 +185,12 @@ async def apply_source_decision(
         fetch_payload = {"source_id": str(source_id)}
         # Add guest filtering if a thinker has a guest_appearance relationship
         guest_result = await session.execute(
-            select(SourceThinker.thinker_id).where(
+            select(SourceThinker.thinker_id)
+            .where(
                 SourceThinker.source_id == source.id,
                 SourceThinker.relationship_type == "guest_appearance",
-            ).limit(1)
+            )
+            .limit(1)
         )
         guest_thinker_id = guest_result.scalar_one_or_none()
         if guest_thinker_id is not None:

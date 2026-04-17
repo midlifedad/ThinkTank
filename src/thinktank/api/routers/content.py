@@ -1,7 +1,6 @@
 """Content listing with pagination."""
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
@@ -9,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import ContentResponse, PaginatedResponse
-
 from thinktank.models.content import Content, ContentThinker
 
 router = APIRouter(prefix="/api/content", tags=["content"])
@@ -19,9 +17,9 @@ router = APIRouter(prefix="/api/content", tags=["content"])
 async def list_content(
     page: int = Query(default=1, ge=1),
     size: int = Query(default=20, ge=1, le=100),
-    source_id: Optional[uuid.UUID] = Query(default=None),
-    thinker_id: Optional[uuid.UUID] = Query(default=None),
-    status: Optional[str] = Query(default=None),
+    source_id: uuid.UUID | None = Query(default=None),
+    thinker_id: uuid.UUID | None = Query(default=None),
+    status: str | None = Query(default=None),
     session: AsyncSession = Depends(get_session),
 ) -> PaginatedResponse[ContentResponse]:
     """List content with optional filters and pagination."""
@@ -33,9 +31,9 @@ async def list_content(
         # Filter via the content_thinkers junction, not the deprecated
         # Content.source_owner_id FK (which is None on all new content
         # since Phase 13 / PR #17).
-        query = query.join(
-            ContentThinker, ContentThinker.content_id == Content.id
-        ).where(ContentThinker.thinker_id == thinker_id)
+        query = query.join(ContentThinker, ContentThinker.content_id == Content.id).where(
+            ContentThinker.thinker_id == thinker_id
+        )
     if status is not None:
         query = query.where(Content.status == status)
 

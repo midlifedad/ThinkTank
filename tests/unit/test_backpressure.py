@@ -6,8 +6,6 @@ These are pure logic tests -- no database required.
 
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
 
 class TestBackpressureJobTypes:
     """Test that BACKPRESSURE_JOB_TYPES contains the correct 9 discovery/fetch types."""
@@ -27,7 +25,7 @@ class TestBackpressureJobTypes:
             "search_youtube_appearances",
             "scan_for_candidates",
         }
-        assert BACKPRESSURE_JOB_TYPES == expected
+        assert expected == BACKPRESSURE_JOB_TYPES
 
     def test_process_content_not_in_backpressure_types(self):
         """process_content is the monitored queue, not a backpressure target."""
@@ -74,8 +72,8 @@ class TestGetEffectivePriority:
 
     async def test_non_backpressure_type_returns_unchanged(self):
         """Non-discovery job types should return original priority."""
-        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
+        from thinktank.queue.backpressure import get_effective_priority
 
         mock_session = AsyncMock()
         job = make_job(job_type="process_content", priority=5)
@@ -87,8 +85,8 @@ class TestGetEffectivePriority:
 
     async def test_discovery_type_demoted_when_above_threshold(self):
         """Discovery job should be demoted by +3 when depth > threshold."""
-        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
+        from thinktank.queue.backpressure import get_effective_priority
 
         mock_session = AsyncMock()
         # First call: get_queue_depth returns 501
@@ -106,8 +104,8 @@ class TestGetEffectivePriority:
 
     async def test_discovery_type_normal_when_below_80_percent(self):
         """Discovery job returns original priority when depth < 80% of threshold."""
-        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
+        from thinktank.queue.backpressure import get_effective_priority
 
         mock_session = AsyncMock()
         # First call: get_queue_depth returns 399 (below 80% of 500)
@@ -125,8 +123,8 @@ class TestGetEffectivePriority:
 
     async def test_discovery_type_unchanged_in_hysteresis_band(self):
         """Discovery job in 80-100% band returns original priority."""
-        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
+        from thinktank.queue.backpressure import get_effective_priority
 
         mock_session = AsyncMock()
         # First call: get_queue_depth returns 450 (between 400 and 500)
@@ -144,8 +142,8 @@ class TestGetEffectivePriority:
 
     async def test_defaults_threshold_to_500_when_no_config(self):
         """When max_pending_transcriptions config is missing, default to 500."""
-        from thinktank.queue.backpressure import get_effective_priority
         from tests.factories import make_job
+        from thinktank.queue.backpressure import get_effective_priority
 
         mock_session = AsyncMock()
         # First call: get_queue_depth returns 501 (above default 500)

@@ -8,10 +8,8 @@ status='done', processed_at).
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
-
-from thinktank.handlers.process_content import handle_process_content
 from tests.factories import create_content, create_job, create_source, create_thinker
+from thinktank.handlers.process_content import handle_process_content
 
 LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(250))
 
@@ -19,9 +17,7 @@ LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(250))
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.extract_youtube_captions")
-async def test_process_content_contract(
-    mock_captions, mock_existing, mock_gpu, session
-):
+async def test_process_content_contract(mock_captions, mock_existing, mock_gpu, session):
     """Contract: pending content -> done content with all fields populated.
 
     Input state:
@@ -38,9 +34,7 @@ async def test_process_content_contract(
     """
     # Setup: create complete object graph in DB
     thinker = await create_thinker(session)
-    source = await create_source(
-        session, thinker_id=thinker.id, source_type="youtube_channel"
-    )
+    source = await create_source(session, thinker_id=thinker.id, source_type="youtube_channel")
     content = await create_content(
         session,
         source_id=source.id,

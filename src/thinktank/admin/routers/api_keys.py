@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends, Form, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.models.config_table import SystemConfig
 from thinktank.admin.dependencies import get_session, get_templates
+from thinktank.models.config_table import SystemConfig
 
 router = APIRouter(prefix="/admin/api-keys", tags=["api-keys"])
 templates = get_templates()
@@ -53,23 +53,25 @@ async def api_keys_list_partial(
     for key_def in MANAGED_KEYS:
         db_key = f"secret_{key_def['name']}"
         result = await session.execute(
-            select(SystemConfig.value, SystemConfig.updated_at).where(
-                SystemConfig.key == db_key
-            )
+            select(SystemConfig.value, SystemConfig.updated_at).where(SystemConfig.key == db_key)
         )
         row = result.one_or_none()
 
-        keys_status.append({
-            "name": key_def["name"],
-            "label": key_def["label"],
-            "required": key_def["required"],
-            "is_set": row is not None and bool(row[0]),
-            "masked": _mask_value(str(row[0]) if row and row[0] else None),
-            "updated_at": row[1] if row else None,
-        })
+        keys_status.append(
+            {
+                "name": key_def["name"],
+                "label": key_def["label"],
+                "required": key_def["required"],
+                "is_set": row is not None and bool(row[0]),
+                "masked": _mask_value(str(row[0]) if row and row[0] else None),
+                "updated_at": row[1] if row else None,
+            }
+        )
 
     return templates.TemplateResponse(
-        request, "partials/api_keys_list.html", {"keys": keys_status},
+        request,
+        "partials/api_keys_list.html",
+        {"keys": keys_status},
     )
 
 
@@ -85,7 +87,8 @@ async def set_api_key(
     valid_names = {k["name"] for k in MANAGED_KEYS}
     if key_name not in valid_names:
         return templates.TemplateResponse(
-            request, "partials/api_keys_list.html",
+            request,
+            "partials/api_keys_list.html",
             {"keys": [], "error": f"Unknown key: {key_name}"},
             status_code=400,
         )
@@ -94,9 +97,7 @@ async def set_api_key(
     now = datetime.now(UTC)
 
     # Check if key already exists
-    result = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == db_key)
-    )
+    result = await session.execute(select(SystemConfig).where(SystemConfig.key == db_key))
     existing = result.scalar_one_or_none()
 
     if existing:
@@ -104,9 +105,14 @@ async def set_api_key(
         existing.set_by = "admin"
         existing.updated_at = now
     else:
-        session.add(SystemConfig(
-            key=db_key, value=key_value, set_by="admin", updated_at=now,
-        ))
+        session.add(
+            SystemConfig(
+                key=db_key,
+                value=key_value,
+                set_by="admin",
+                updated_at=now,
+            )
+        )
 
     await session.commit()
 
@@ -124,15 +130,14 @@ async def delete_api_key(
     valid_names = {k["name"] for k in MANAGED_KEYS}
     if key_name not in valid_names:
         return templates.TemplateResponse(
-            request, "partials/api_keys_list.html",
+            request,
+            "partials/api_keys_list.html",
             {"keys": [], "error": f"Unknown key: {key_name}"},
             status_code=400,
         )
 
     db_key = f"secret_{key_name}"
-    result = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == db_key)
-    )
+    result = await session.execute(select(SystemConfig).where(SystemConfig.key == db_key))
     existing = result.scalar_one_or_none()
     if existing:
         await session.delete(existing)

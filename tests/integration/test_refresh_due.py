@@ -9,9 +9,9 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_job, create_source, create_thinker
 from thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
 from thinktank.models.job import Job
-from tests.factories import create_job, create_source, create_thinker
 
 pytestmark = pytest.mark.anyio
 
@@ -73,9 +73,7 @@ async def test_not_due_source_skipped(session: AsyncSession):
 
     await handle_refresh_due_sources(session, trigger_job)
 
-    result = await session.execute(
-        select(Job).where(Job.job_type == "fetch_podcast_feed")
-    )
+    result = await session.execute(select(Job).where(Job.job_type == "fetch_podcast_feed"))
     fetch_jobs = result.scalars().all()
     assert len(fetch_jobs) == 0
 
@@ -100,9 +98,7 @@ async def test_never_fetched_source_due(session: AsyncSession):
 
     await handle_refresh_due_sources(session, trigger_job)
 
-    result = await session.execute(
-        select(Job).where(Job.job_type == "fetch_podcast_feed")
-    )
+    result = await session.execute(select(Job).where(Job.job_type == "fetch_podcast_feed"))
     fetch_jobs = result.scalars().all()
     assert len(fetch_jobs) == 1
     assert fetch_jobs[0].payload["source_id"] == str(source.id)
@@ -128,9 +124,7 @@ async def test_unapproved_source_not_due(session: AsyncSession):
 
     await handle_refresh_due_sources(session, trigger_job)
 
-    result = await session.execute(
-        select(Job).where(Job.job_type == "fetch_podcast_feed")
-    )
+    result = await session.execute(select(Job).where(Job.job_type == "fetch_podcast_feed"))
     assert len(result.scalars().all()) == 0
 
 
@@ -154,9 +148,7 @@ async def test_inactive_source_not_due(session: AsyncSession):
 
     await handle_refresh_due_sources(session, trigger_job)
 
-    result = await session.execute(
-        select(Job).where(Job.job_type == "fetch_podcast_feed")
-    )
+    result = await session.execute(select(Job).where(Job.job_type == "fetch_podcast_feed"))
     assert len(result.scalars().all()) == 0
 
 
@@ -203,9 +195,7 @@ async def test_orchestrator_creates_jobs(session: AsyncSession):
 
     await handle_refresh_due_sources(session, trigger_job)
 
-    result = await session.execute(
-        select(Job).where(Job.job_type == "fetch_podcast_feed")
-    )
+    result = await session.execute(select(Job).where(Job.job_type == "fetch_podcast_feed"))
     fetch_jobs = result.scalars().all()
     assert len(fetch_jobs) == 2
 

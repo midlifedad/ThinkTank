@@ -5,15 +5,13 @@ behavior and concurrent claim safety.
 """
 
 import asyncio
-import uuid
 from datetime import timedelta
 
-import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import _now, create_job
 from thinktank.queue.claim import claim_job, complete_job, fail_job
 from thinktank.queue.errors import ErrorCategory
-from tests.factories import _now, create_job
 
 
 class TestClaimJob:
@@ -115,7 +113,8 @@ class TestClaimJob:
         assert result is None
 
     async def test_concurrent_claims_mutual_exclusion(
-        self, session_factory,
+        self,
+        session_factory,
     ):
         """Two workers claiming the same single job: exactly one wins."""
         # Create one job using a dedicated session
@@ -351,6 +350,5 @@ class TestFailJob:
         expected_min = before + timedelta(seconds=89)
         expected_max = after + timedelta(seconds=91)
         assert expected_min <= job.scheduled_at <= expected_max, (
-            f"scheduled_at {job.scheduled_at} not in "
-            f"[{expected_min}, {expected_max}] — backoff ignored Retry-After"
+            f"scheduled_at {job.scheduled_at} not in [{expected_min}, {expected_max}] — backoff ignored Retry-After"
         )

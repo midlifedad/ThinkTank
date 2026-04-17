@@ -38,9 +38,7 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-async def handle_scan_for_candidates(
-    session: AsyncSession, job: Job
-) -> None:
+async def handle_scan_for_candidates(session: AsyncSession, job: Job) -> None:
     """Scan episode content for candidate thinker names.
 
     Reads content_ids from job.payload, extracts names from each content

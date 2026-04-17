@@ -5,7 +5,6 @@ Spec reference: Section 3.10 (jobs).
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
@@ -40,28 +39,18 @@ class Job(Base):
     priority: Mapped[int] = mapped_column(sa.SmallInteger, server_default=sa.text("5"))
     attempts: Mapped[int] = mapped_column(sa.SmallInteger, server_default=sa.text("0"))
     max_attempts: Mapped[int] = mapped_column(sa.SmallInteger, server_default=sa.text("3"))
-    error: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    error_category: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    last_error_at: Mapped[Optional[datetime]] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
-    worker_id: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    llm_review_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    error: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    error_category: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    last_error_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    worker_id: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    llm_review_id: Mapped[uuid.UUID | None] = mapped_column(
         sa.ForeignKey("llm_reviews.id"),
         nullable=True,
     )
-    scheduled_at: Mapped[Optional[datetime]] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
-    started_at: Mapped[Optional[datetime]] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
-    completed_at: Mapped[Optional[datetime]] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
+    scheduled_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
 
     def __repr__(self) -> str:
         return f"<Job(type={self.job_type!r}, status={self.status!r}, priority={self.priority})>"

@@ -3,7 +3,6 @@
 Tests the workers_active flag behavior from system_config.
 """
 
-import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.factories import create_system_config

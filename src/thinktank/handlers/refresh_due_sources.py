@@ -35,9 +35,7 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-async def handle_refresh_due_sources(
-    session: AsyncSession, job: Job
-) -> None:
+async def handle_refresh_due_sources(session: AsyncSession, job: Job) -> None:
     """Find sources due for refresh and create fetch_podcast_feed jobs for each.
 
     Uses PostgreSQL MAKE_INTERVAL for interval arithmetic on the
@@ -71,11 +69,7 @@ async def handle_refresh_due_sources(
     enqueued = 0
     skipped = 0
     for source_id, source_type in due_sources:
-        job_type = (
-            "fetch_youtube_channel"
-            if source_type == "youtube_channel"
-            else "fetch_podcast_feed"
-        )
+        job_type = "fetch_youtube_channel" if source_type == "youtube_channel" else "fetch_podcast_feed"
 
         existing = await session.execute(
             select(Job.id).where(

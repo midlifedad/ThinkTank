@@ -74,9 +74,7 @@ async def test_invalid_uuid_is_logged_and_skipped(caplog):
     get_calls = session.get.await_args_list
     call_args = [c.args[1] for c in get_calls]
     assert valid_id in call_args, "valid UUID must still be queried"
-    assert "not-a-uuid" not in call_args, (
-        "invalid UUID string was passed to session.get -- must be skipped"
-    )
+    assert "not-a-uuid" not in call_args, "invalid UUID string was passed to session.get -- must be skipped"
 
     # Handler must not have crashed. session.commit was reached.
     session.commit.assert_awaited()

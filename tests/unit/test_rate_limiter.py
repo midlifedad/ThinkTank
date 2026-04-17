@@ -8,8 +8,6 @@ Integration tests cover the actual DB queries.
 
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
 
 class TestGetRateLimitConfig:
     """Test get_rate_limit_config helper logic."""
@@ -88,9 +86,7 @@ class TestCheckAndAcquireRateLimit:
             mock_config_result,
         ]
 
-        result = await check_and_acquire_rate_limit(
-            mock_session, "podcastindex", "worker-1"
-        )
+        result = await check_and_acquire_rate_limit(mock_session, "podcastindex", "worker-1")
         assert result is True
 
     async def test_returns_false_when_at_limit(self):
@@ -113,9 +109,7 @@ class TestCheckAndAcquireRateLimit:
             mock_config_result,
         ]
 
-        result = await check_and_acquire_rate_limit(
-            mock_session, "podcastindex", "worker-1"
-        )
+        result = await check_and_acquire_rate_limit(mock_session, "podcastindex", "worker-1")
         assert result is False
 
     async def test_returns_true_and_records_when_under_limit(self):
@@ -138,9 +132,7 @@ class TestCheckAndAcquireRateLimit:
             mock_config_result,
         ]
 
-        result = await check_and_acquire_rate_limit(
-            mock_session, "podcastindex", "worker-1"
-        )
+        result = await check_and_acquire_rate_limit(mock_session, "podcastindex", "worker-1")
         assert result is True
         # Should have added a RateLimitUsage row
         mock_session.add.assert_called_once()

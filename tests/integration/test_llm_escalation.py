@@ -8,10 +8,10 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from thinktank.llm.escalation import escalate_timed_out_reviews
-from thinktank.models.review import LLMReview
 
 from tests.factories import create_job, create_system_config
+from thinktank.llm.escalation import escalate_timed_out_reviews
+from thinktank.models.review import LLMReview
 
 
 def _now() -> datetime:
@@ -23,9 +23,7 @@ def _now() -> datetime:
 async def test_escalation_flags_timed_out_job(session: AsyncSession):
     """Jobs older than timeout hours get needs_human_review flag set."""
     # Setup: config + job older than timeout
-    await create_system_config(
-        session, key="llm_timeout_hours", value=2, set_by="test"
-    )
+    await create_system_config(session, key="llm_timeout_hours", value=2, set_by="test")
     three_hours_ago = _now() - timedelta(hours=3)
     job = await create_job(
         session,
@@ -51,10 +49,8 @@ async def test_escalation_flags_timed_out_job(session: AsyncSession):
 
     # Verify LLMReview row created
     reviews = (
-        await session.execute(
-            select(LLMReview).where(LLMReview.review_type == "timeout_escalation")
-        )
-    ).scalars().all()
+        (await session.execute(select(LLMReview).where(LLMReview.review_type == "timeout_escalation"))).scalars().all()
+    )
     assert len(reviews) == 1
     assert reviews[0].decision == "escalate_to_human"
     assert str(job.id) in reviews[0].context_snapshot["job_id"]
@@ -63,9 +59,7 @@ async def test_escalation_flags_timed_out_job(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_escalation_skips_recent_job(session: AsyncSession):
     """Jobs younger than timeout hours are NOT escalated."""
-    await create_system_config(
-        session, key="llm_timeout_hours", value=2, set_by="test"
-    )
+    await create_system_config(session, key="llm_timeout_hours", value=2, set_by="test")
     one_hour_ago = _now() - timedelta(hours=1)
     await create_job(
         session,
@@ -82,19 +76,15 @@ async def test_escalation_skips_recent_job(session: AsyncSession):
 
     # No LLMReview rows
     reviews = (
-        await session.execute(
-            select(LLMReview).where(LLMReview.review_type == "timeout_escalation")
-        )
-    ).scalars().all()
+        (await session.execute(select(LLMReview).where(LLMReview.review_type == "timeout_escalation"))).scalars().all()
+    )
     assert len(reviews) == 0
 
 
 @pytest.mark.asyncio
 async def test_escalation_skips_already_flagged(session: AsyncSession):
     """Jobs already flagged with needs_human_review are NOT re-escalated."""
-    await create_system_config(
-        session, key="llm_timeout_hours", value=2, set_by="test"
-    )
+    await create_system_config(session, key="llm_timeout_hours", value=2, set_by="test")
     three_hours_ago = _now() - timedelta(hours=3)
     await create_job(
         session,
@@ -112,19 +102,15 @@ async def test_escalation_skips_already_flagged(session: AsyncSession):
 
     # No new LLMReview rows
     reviews = (
-        await session.execute(
-            select(LLMReview).where(LLMReview.review_type == "timeout_escalation")
-        )
-    ).scalars().all()
+        (await session.execute(select(LLMReview).where(LLMReview.review_type == "timeout_escalation"))).scalars().all()
+    )
     assert len(reviews) == 0
 
 
 @pytest.mark.asyncio
 async def test_escalation_returns_count(session: AsyncSession):
     """Escalation returns the count of escalated jobs."""
-    await create_system_config(
-        session, key="llm_timeout_hours", value=2, set_by="test"
-    )
+    await create_system_config(session, key="llm_timeout_hours", value=2, set_by="test")
     three_hours_ago = _now() - timedelta(hours=3)
     one_hour_ago = _now() - timedelta(hours=1)
 
@@ -157,8 +143,6 @@ async def test_escalation_returns_count(session: AsyncSession):
 
     # Verify exactly 2 LLMReview rows
     reviews = (
-        await session.execute(
-            select(LLMReview).where(LLMReview.review_type == "timeout_escalation")
-        )
-    ).scalars().all()
+        (await session.execute(select(LLMReview).where(LLMReview.review_type == "timeout_escalation"))).scalars().all()
+    )
     assert len(reviews) == 2

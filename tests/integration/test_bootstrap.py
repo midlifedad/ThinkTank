@@ -11,7 +11,7 @@ Tests verify:
 import uuid
 
 import pytest
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.models.category import Category
@@ -36,24 +36,18 @@ class TestSeedCategories:
         assert count > 0
 
         # Verify top-level categories exist (no parent_id)
-        result = await session.execute(
-            select(Category).where(Category.parent_id.is_(None))
-        )
+        result = await session.execute(select(Category).where(Category.parent_id.is_(None)))
         top_level = result.scalars().all()
         assert len(top_level) >= 3, "Expected at least 3 top-level categories"
 
         # Verify subcategories exist (have parent_id)
-        result = await session.execute(
-            select(Category).where(Category.parent_id.is_not(None))
-        )
+        result = await session.execute(select(Category).where(Category.parent_id.is_not(None)))
         children = result.scalars().all()
         assert len(children) > 0, "Expected subcategories with parent references"
 
         # Verify parent references are valid
         for child in children:
-            parent_result = await session.execute(
-                select(Category).where(Category.id == child.parent_id)
-            )
+            parent_result = await session.execute(select(Category).where(Category.id == child.parent_id))
             parent = parent_result.scalar_one_or_none()
             assert parent is not None, f"Child {child.slug} has invalid parent_id"
 
@@ -82,9 +76,7 @@ class TestSeedCategories:
         await session.commit()
 
         # Get a known category
-        result = await session.execute(
-            select(Category).where(Category.slug == "technology")
-        )
+        result = await session.execute(select(Category).where(Category.slug == "technology"))
         cat = result.scalar_one()
 
         expected_id = uuid.uuid5(uuid.NAMESPACE_DNS, "thinktank.category.technology")
@@ -96,7 +88,7 @@ class TestSeedConfig:
 
     async def test_seed_config_creates_defaults(self, session: AsyncSession):
         """Running seed_config creates all expected config keys with correct values."""
-        from scripts.seed_config import seed_config, CONFIG_DEFAULTS
+        from scripts.seed_config import CONFIG_DEFAULTS, seed_config
 
         count = await seed_config(session)
         await session.commit()
@@ -105,9 +97,7 @@ class TestSeedConfig:
 
         # Verify each key exists with the correct value
         for entry in CONFIG_DEFAULTS:
-            result = await session.execute(
-                select(SystemConfig).where(SystemConfig.key == entry["key"])
-            )
+            result = await session.execute(select(SystemConfig).where(SystemConfig.key == entry["key"]))
             config = result.scalar_one()
             assert config.value == entry["value"], (
                 f"Config {entry['key']}: expected {entry['value']}, got {config.value}"
@@ -133,9 +123,7 @@ class TestSeedConfig:
         await seed_config(session)
         await session.commit()
 
-        result = await session.execute(
-            select(SystemConfig).where(SystemConfig.key == "workers_active")
-        )
+        result = await session.execute(select(SystemConfig).where(SystemConfig.key == "workers_active"))
         config = result.scalar_one()
         assert config.value is False
 
@@ -146,7 +134,7 @@ class TestSeedThinkers:
     async def test_seed_thinkers_creates_with_llm_jobs(self, session: AsyncSession):
         """Seeding thinkers creates 5 thinkers with pending_llm status and LLM jobs."""
         from scripts.seed_categories import seed_categories
-        from scripts.seed_thinkers import seed_thinkers, INITIAL_THINKERS
+        from scripts.seed_thinkers import INITIAL_THINKERS, seed_thinkers
 
         # Categories must exist first (FK requirements for thinker_categories)
         await seed_categories(session)
@@ -166,9 +154,7 @@ class TestSeedThinkers:
             assert t.approval_status == "pending_llm"
 
         # Verify LLM approval jobs created
-        result = await session.execute(
-            select(Job).where(Job.job_type == "llm_approval_check")
-        )
+        result = await session.execute(select(Job).where(Job.job_type == "llm_approval_check"))
         jobs = result.scalars().all()
         assert len(jobs) == len(INITIAL_THINKERS)
 
@@ -181,7 +167,7 @@ class TestSeedThinkers:
     async def test_seed_thinkers_idempotent(self, session: AsyncSession):
         """Running seed_thinkers twice produces no duplicate thinkers or jobs."""
         from scripts.seed_categories import seed_categories
-        from scripts.seed_thinkers import seed_thinkers, INITIAL_THINKERS
+        from scripts.seed_thinkers import INITIAL_THINKERS, seed_thinkers
 
         await seed_categories(session)
         await session.commit()
@@ -201,9 +187,7 @@ class TestSeedThinkers:
 
         # No duplicate jobs
         result = await session.execute(
-            select(func.count()).select_from(Job).where(
-                Job.job_type == "llm_approval_check"
-            )
+            select(func.count()).select_from(Job).where(Job.job_type == "llm_approval_check")
         )
         total_jobs = result.scalar()
         assert total_jobs == len(INITIAL_THINKERS)
@@ -225,9 +209,7 @@ class TestBootstrap:
         assert results["thinkers"] > 0
 
         # Verify workers_active is True after bootstrap
-        result = await session.execute(
-            select(SystemConfig).where(SystemConfig.key == "workers_active")
-        )
+        result = await session.execute(select(SystemConfig).where(SystemConfig.key == "workers_active"))
         config = result.scalar_one()
         assert config.value is True
 
@@ -241,9 +223,7 @@ class TestBootstrap:
 
         # Verify LLM jobs exist
         result = await session.execute(
-            select(func.count()).select_from(Job).where(
-                Job.job_type == "llm_approval_check"
-            )
+            select(func.count()).select_from(Job).where(Job.job_type == "llm_approval_check")
         )
         assert result.scalar() > 0
 

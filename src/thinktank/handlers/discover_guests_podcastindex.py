@@ -26,9 +26,7 @@ from thinktank.secrets import get_secret
 logger = structlog.get_logger(__name__)
 
 
-async def handle_discover_guests_podcastindex(
-    session: AsyncSession, job: Job
-) -> None:
+async def handle_discover_guests_podcastindex(session: AsyncSession, job: Job) -> None:
     """Discover guest appearances via Podcast Index API.
 
     Reads thinker_id from job.payload, searches Podcast Index for episodes
@@ -52,9 +50,7 @@ async def handle_discover_guests_podcastindex(
     # asyncpg DataError inside session.get() and fail the job with an
     # opaque error. Early-return cleanly instead.
     try:
-        thinker_uuid = (
-            uuid.UUID(thinker_id) if isinstance(thinker_id, str) else thinker_id
-        )
+        thinker_uuid = uuid.UUID(thinker_id) if isinstance(thinker_id, str) else thinker_id
     except (ValueError, TypeError, AttributeError):
         log.error("discover_guests_podcastindex_invalid_thinker_id")
         return
@@ -70,9 +66,7 @@ async def handle_discover_guests_podcastindex(
         raise ValueError("Podcast Index API key/secret not configured — set via Admin > API Keys")
 
     client = PodcastIndexClient(api_key, api_secret)
-    data = await client.search_by_person(
-        session, worker_id=str(job.id), person_name=thinker.name
-    )
+    data = await client.search_by_person(session, worker_id=str(job.id), person_name=thinker.name)
 
     if data is None:
         raise ValueError("Rate limited by Podcast Index")
@@ -111,9 +105,7 @@ async def handle_discover_guests_podcastindex(
         if inserted_id is None:
             # Another worker already inserted this URL — ensure the junction
             # row links it to this thinker, then move on.
-            existing = await session.execute(
-                select(Source).where(Source.url == normalized)
-            )
+            existing = await session.execute(select(Source).where(Source.url == normalized))
             existing_source = existing.scalar_one()
             existing_junction = await session.execute(
                 select(SourceThinker).where(

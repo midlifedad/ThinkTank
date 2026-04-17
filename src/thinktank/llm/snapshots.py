@@ -19,6 +19,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
 from thinktank.models.candidate import CandidateThinker
 from thinktank.models.content import Content
 from thinktank.models.job import Job
@@ -46,9 +47,7 @@ async def build_thinker_approval_context(
     """
     # Load thinker with categories (sources loaded via junction below)
     result = await session.execute(
-        select(Thinker)
-        .where(Thinker.id == thinker_id)
-        .options(selectinload(Thinker.categories))
+        select(Thinker).where(Thinker.id == thinker_id).options(selectinload(Thinker.categories))
     )
     thinker = result.scalar_one()
 
@@ -61,21 +60,16 @@ async def build_thinker_approval_context(
     source_rows = sources_result.all()
 
     # Corpus stats
-    total_approved = await session.scalar(
-        select(func.count()).select_from(Thinker).where(
-            Thinker.approval_status == "approved"
-        )
-    ) or 0
+    total_approved = (
+        await session.scalar(select(func.count()).select_from(Thinker).where(Thinker.approval_status == "approved"))
+        or 0
+    )
 
-    total_content = await session.scalar(
-        select(func.count()).select_from(Content)
-    ) or 0
+    total_content = await session.scalar(select(func.count()).select_from(Content)) or 0
 
-    queue_depth = await session.scalar(
-        select(func.count()).select_from(Job).where(
-            Job.status.in_(["pending", "retrying"])
-        )
-    ) or 0
+    queue_depth = (
+        await session.scalar(select(func.count()).select_from(Job).where(Job.status.in_(["pending", "retrying"]))) or 0
+    )
 
     proposed = {
         "name": thinker.name,
@@ -83,14 +77,8 @@ async def build_thinker_approval_context(
         "tier": thinker.tier,
         "bio": thinker.bio,
         "approval_status": thinker.approval_status,
-        "sources": [
-            {"name": r[0], "source_type": r[1], "url": r[2]}
-            for r in source_rows
-        ],
-        "categories": [
-            {"slug": getattr(c, "slug", str(c))}
-            for c in thinker.categories
-        ],
+        "sources": [{"name": r[0], "source_type": r[1], "url": r[2]} for r in source_rows],
+        "categories": [{"slug": getattr(c, "slug", str(c))} for c in thinker.categories],
     }
 
     return {
@@ -118,19 +106,12 @@ async def build_source_approval_context(
     """
     # Load source with junction relationships
     result = await session.execute(
-        select(Source)
-        .where(Source.id == source_id)
-        .options(selectinload(Source.source_thinkers))
+        select(Source).where(Source.id == source_id).options(selectinload(Source.source_thinkers))
     )
     source = result.scalar_one()
 
     # Sample episodes (bounded to 10)
-    stmt = (
-        select(Content)
-        .where(Content.source_id == source_id)
-        .order_by(Content.discovered_at.desc())
-        .limit(10)
-    )
+    stmt = select(Content).where(Content.source_id == source_id).order_by(Content.discovered_at.desc()).limit(10)
     result = await session.execute(stmt)
     episodes = result.scalars().all()
 
@@ -159,10 +140,7 @@ async def build_source_approval_context(
         else {"name": "Unknown", "slug": "unknown"}
     )
 
-    episode_samples = [
-        {"title": e.title, "url": e.url, "status": e.status}
-        for e in episodes
-    ]
+    episode_samples = [{"title": e.title, "url": e.url, "status": e.status} for e in episodes]
 
     return {
         "source": source_info,
@@ -185,11 +163,7 @@ async def build_candidate_review_context(
         Dict with candidate list (max 20) and corpus stats.
     """
     if candidate_ids is not None:
-        stmt = (
-            select(CandidateThinker)
-            .where(CandidateThinker.id.in_(candidate_ids))
-            .limit(20)
-        )
+        stmt = select(CandidateThinker).where(CandidateThinker.id.in_(candidate_ids)).limit(20)
     else:
         stmt = (
             select(CandidateThinker)
@@ -201,11 +175,10 @@ async def build_candidate_review_context(
     result = await session.execute(stmt)
     candidates = result.scalars().all()
 
-    total_approved = await session.scalar(
-        select(func.count()).select_from(Thinker).where(
-            Thinker.approval_status == "approved"
-        )
-    ) or 0
+    total_approved = (
+        await session.scalar(select(func.count()).select_from(Thinker).where(Thinker.approval_status == "approved"))
+        or 0
+    )
 
     candidate_list = [
         {
@@ -241,11 +214,7 @@ async def build_health_check_context(session: AsyncSession) -> dict:
     six_hours_ago = now - timedelta(hours=6)
 
     # Jobs summary by status (last 6h)
-    jobs_by_status_stmt = (
-        select(Job.status, func.count())
-        .where(Job.created_at >= six_hours_ago)
-        .group_by(Job.status)
-    )
+    jobs_by_status_stmt = select(Job.status, func.count()).where(Job.created_at >= six_hours_ago).group_by(Job.status)
     result = await session.execute(jobs_by_status_stmt)
     jobs_summary = {row[0]: row[1] for row in result.all()}
 
@@ -276,16 +245,11 @@ async def build_health_check_context(session: AsyncSession) -> dict:
         .limit(50)
     )
     result = await session.execute(source_health_stmt)
-    source_health = [
-        {"name": row[0], "error_count": row[1]}
-        for row in result.all()
-    ]
+    source_health = [{"name": row[0], "error_count": row[1]} for row in result.all()]
 
     # Queue depth by type
     queue_stmt = (
-        select(Job.job_type, func.count())
-        .where(Job.status.in_(["pending", "retrying"]))
-        .group_by(Job.job_type)
+        select(Job.job_type, func.count()).where(Job.status.in_(["pending", "retrying"])).group_by(Job.job_type)
     )
     result = await session.execute(queue_stmt)
     queue_depth = {row[0]: row[1] for row in result.all()}
@@ -311,64 +275,78 @@ async def build_daily_digest_context(session: AsyncSession) -> dict:
     yesterday = now - timedelta(hours=24)
 
     # Content stats (last 24h)
-    discovered = await session.scalar(
-        select(func.count()).select_from(Content).where(
-            Content.discovered_at >= yesterday
-        )
-    ) or 0
+    discovered = (
+        await session.scalar(select(func.count()).select_from(Content).where(Content.discovered_at >= yesterday)) or 0
+    )
 
-    transcribed = await session.scalar(
-        select(func.count()).select_from(Content).where(
-            Content.processed_at >= yesterday,
-            Content.status == "done",
+    transcribed = (
+        await session.scalar(
+            select(func.count())
+            .select_from(Content)
+            .where(
+                Content.processed_at >= yesterday,
+                Content.status == "done",
+            )
         )
-    ) or 0
+        or 0
+    )
 
-    failed = await session.scalar(
-        select(func.count()).select_from(Content).where(
-            Content.discovered_at >= yesterday,
-            Content.status == "error",
+    failed = (
+        await session.scalar(
+            select(func.count())
+            .select_from(Content)
+            .where(
+                Content.discovered_at >= yesterday,
+                Content.status == "error",
+            )
         )
-    ) or 0
+        or 0
+    )
 
     # Thinker stats (last 24h)
-    new_approved = await session.scalar(
-        select(func.count()).select_from(Thinker).where(
-            Thinker.approval_status == "approved",
-            Thinker.added_at >= yesterday,
+    new_approved = (
+        await session.scalar(
+            select(func.count())
+            .select_from(Thinker)
+            .where(
+                Thinker.approval_status == "approved",
+                Thinker.added_at >= yesterday,
+            )
         )
-    ) or 0
+        or 0
+    )
 
-    new_rejected = await session.scalar(
-        select(func.count()).select_from(Thinker).where(
-            Thinker.approval_status.in_(["rejected_by_llm", "rejected"]),
-            Thinker.added_at >= yesterday,
+    new_rejected = (
+        await session.scalar(
+            select(func.count())
+            .select_from(Thinker)
+            .where(
+                Thinker.approval_status.in_(["rejected_by_llm", "rejected"]),
+                Thinker.added_at >= yesterday,
+            )
         )
-    ) or 0
+        or 0
+    )
 
     # Candidates surfaced
-    candidates_surfaced = await session.scalar(
-        select(func.count()).select_from(CandidateThinker).where(
-            CandidateThinker.first_seen_at >= yesterday
+    candidates_surfaced = (
+        await session.scalar(
+            select(func.count()).select_from(CandidateThinker).where(CandidateThinker.first_seen_at >= yesterday)
         )
-    ) or 0
+        or 0
+    )
 
     # Corpus totals
-    total_thinkers = await session.scalar(
-        select(func.count()).select_from(Thinker).where(
-            Thinker.approval_status == "approved"
-        )
-    ) or 0
+    total_thinkers = (
+        await session.scalar(select(func.count()).select_from(Thinker).where(Thinker.approval_status == "approved"))
+        or 0
+    )
 
-    total_content = await session.scalar(
-        select(func.count()).select_from(Content)
-    ) or 0
+    total_content = await session.scalar(select(func.count()).select_from(Content)) or 0
 
-    total_sources = await session.scalar(
-        select(func.count()).select_from(Source).where(
-            Source.approval_status == "approved"
-        )
-    ) or 0
+    total_sources = (
+        await session.scalar(select(func.count()).select_from(Source).where(Source.approval_status == "approved")) or 0
+    )
 
     # Top 5 active thinkers (by content added in last 24h) via junction
     top_stmt = (
@@ -382,10 +360,7 @@ async def build_daily_digest_context(session: AsyncSession) -> dict:
         .limit(5)
     )
     result = await session.execute(top_stmt)
-    top_thinkers = [
-        {"name": row[0], "new_content_count": row[1]}
-        for row in result.all()
-    ]
+    top_thinkers = [{"name": row[0], "new_content_count": row[1]} for row in result.all()]
 
     return {
         "content_stats": {
@@ -420,22 +395,17 @@ async def build_weekly_audit_context(session: AsyncSession) -> dict:
     week_ago = now - timedelta(days=7)
 
     # Weekly content counts
-    content_this_week = await session.scalar(
-        select(func.count()).select_from(Content).where(
-            Content.discovered_at >= week_ago
-        )
-    ) or 0
+    content_this_week = (
+        await session.scalar(select(func.count()).select_from(Content).where(Content.discovered_at >= week_ago)) or 0
+    )
 
     # Total corpus
-    total_content = await session.scalar(
-        select(func.count()).select_from(Content)
-    ) or 0
+    total_content = await session.scalar(select(func.count()).select_from(Content)) or 0
 
-    total_thinkers = await session.scalar(
-        select(func.count()).select_from(Thinker).where(
-            Thinker.approval_status == "approved"
-        )
-    ) or 0
+    total_thinkers = (
+        await session.scalar(select(func.count()).select_from(Thinker).where(Thinker.approval_status == "approved"))
+        or 0
+    )
 
     # Growth rate (content this week / total, as percentage)
     growth_rate = (content_this_week / total_content * 100) if total_content > 0 else 0.0
@@ -463,10 +433,7 @@ async def build_weekly_audit_context(session: AsyncSession) -> dict:
         .limit(50)
     )
     result = await session.execute(inactive_stmt)
-    inactive_thinkers = [
-        {"name": row[0], "slug": row[1]}
-        for row in result.all()
-    ]
+    inactive_thinkers = [{"name": row[0], "slug": row[1]} for row in result.all()]
 
     # Sources with high error rates
     error_sources_stmt = (
@@ -476,17 +443,15 @@ async def build_weekly_audit_context(session: AsyncSession) -> dict:
         .limit(20)
     )
     result = await session.execute(error_sources_stmt)
-    error_sources = [
-        {"name": row[0], "error_count": row[1], "item_count": row[2]}
-        for row in result.all()
-    ]
+    error_sources = [{"name": row[0], "error_count": row[1], "item_count": row[2]} for row in result.all()]
 
     # Candidate backlog
-    candidate_backlog = await session.scalar(
-        select(func.count()).select_from(CandidateThinker).where(
-            CandidateThinker.status == "pending_llm"
+    candidate_backlog = (
+        await session.scalar(
+            select(func.count()).select_from(CandidateThinker).where(CandidateThinker.status == "pending_llm")
         )
-    ) or 0
+        or 0
+    )
 
     return {
         "weekly_summary": {

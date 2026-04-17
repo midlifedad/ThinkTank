@@ -13,18 +13,18 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.handlers.discover_guests_podcastindex import (
-    handle_discover_guests_podcastindex,
-)
-from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
-from thinktank.models.candidate import CandidateThinker
-from thinktank.models.source import Source, SourceThinker
 from tests.factories import (
     create_content,
     create_job,
     create_source,
     create_thinker,
 )
+from thinktank.handlers.discover_guests_podcastindex import (
+    handle_discover_guests_podcastindex,
+)
+from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
+from thinktank.models.candidate import CandidateThinker
+from thinktank.models.source import Source, SourceThinker
 
 pytestmark = pytest.mark.anyio
 
@@ -52,9 +52,7 @@ class TestScanForCandidatesContract:
         await handle_scan_for_candidates(session, job)
 
         # Contract: exactly 1 CandidateThinker row created
-        candidate_count = await session.scalar(
-            select(func.count()).select_from(CandidateThinker)
-        )
+        candidate_count = await session.scalar(select(func.count()).select_from(CandidateThinker))
         assert candidate_count == 1
 
         # Contract: status is pending_llm, normalized_name matches
@@ -104,24 +102,18 @@ class TestDiscoverGuestsPodcastindexContract:
 
         # Contract: exactly 1 Source created
         source_count = await session.scalar(
-            select(func.count())
-            .select_from(Source)
-            .where(Source.approval_status == "pending_llm")
+            select(func.count()).select_from(Source).where(Source.approval_status == "pending_llm")
         )
         assert source_count == 1
 
         # Contract: Source has correct approval_status and junction link
-        result = await session.execute(
-            select(Source).where(Source.approval_status == "pending_llm")
-        )
+        result = await session.execute(select(Source).where(Source.approval_status == "pending_llm"))
         source = result.scalar_one()
         assert source.approval_status == "pending_llm"
         assert source.thinker_id is None  # thinker_id deprecated; use junction
         assert source.name == "Tech Insights Podcast"
 
         # Verify junction row links source to thinker
-        junc_result = await session.execute(
-            select(SourceThinker).where(SourceThinker.source_id == source.id)
-        )
+        junc_result = await session.execute(select(SourceThinker).where(SourceThinker.source_id == source.id))
         junc = junc_result.scalar_one()
         assert junc.thinker_id == thinker.id

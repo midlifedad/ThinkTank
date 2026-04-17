@@ -45,8 +45,12 @@ class TestContentEndpointContract:
         assert resp.status_code == 200
         item = resp.json()["items"][0]
         required_keys = {
-            "id", "source_id", "source_owner_id", "title",
-            "status", "discovered_at",
+            "id",
+            "source_id",
+            "source_owner_id",
+            "title",
+            "status",
+            "discovered_at",
         }
         assert required_keys.issubset(set(item.keys()))
 
@@ -111,15 +115,9 @@ class TestContentEndpointContract:
         )
         await session.commit()
 
-        resp = await client.get(
-            "/api/content", params={"thinker_id": str(thinker.id)}
-        )
+        resp = await client.get("/api/content", params={"thinker_id": str(thinker.id)})
         assert resp.status_code == 200
         body = resp.json()
         ids = {item["id"] for item in body["items"]}
-        assert str(content.id) in ids, (
-            "content linked via content_thinkers junction was not returned"
-        )
-        assert str(other_content.id) not in ids, (
-            "filter returned content for a different thinker"
-        )
+        assert str(content.id) in ids, "content linked via content_thinkers junction was not returned"
+        assert str(other_content.id) not in ids, "filter returned content for a different thinker"

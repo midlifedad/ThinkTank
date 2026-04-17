@@ -11,8 +11,8 @@ from fastapi import APIRouter, Depends, Form, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.models.config_table import SystemConfig
 from thinktank.admin.dependencies import get_session, get_templates
+from thinktank.models.config_table import SystemConfig
 
 router = APIRouter(prefix="/admin/config", tags=["config"])
 templates = get_templates()
@@ -68,9 +68,7 @@ async def rate_limits_editor_partial(
 ):
     """HTML fragment: editable rate limits form."""
     # Load current limits from system_config
-    result = await session.execute(
-        select(SystemConfig.value).where(SystemConfig.key == "rate_limits")
-    )
+    result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == "rate_limits"))
     row = result.scalar_one_or_none()
 
     limits = dict(DEFAULT_RATE_LIMITS)
@@ -80,7 +78,9 @@ async def rate_limits_editor_partial(
                 limits[api] = int(limit)
 
     return templates.TemplateResponse(
-        request, "partials/rate_limits_editor.html", {"limits": limits},
+        request,
+        "partials/rate_limits_editor.html",
+        {"limits": limits},
     )
 
 
@@ -102,9 +102,7 @@ async def save_rate_limits(
     now = datetime.now(UTC)
 
     # Upsert rate_limits row
-    result = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == "rate_limits")
-    )
+    result = await session.execute(select(SystemConfig).where(SystemConfig.key == "rate_limits"))
     existing = result.scalar_one_or_none()
 
     if existing:
@@ -112,14 +110,20 @@ async def save_rate_limits(
         existing.set_by = "admin"
         existing.updated_at = now
     else:
-        session.add(SystemConfig(
-            key="rate_limits", value=new_limits, set_by="admin", updated_at=now,
-        ))
+        session.add(
+            SystemConfig(
+                key="rate_limits",
+                value=new_limits,
+                set_by="admin",
+                updated_at=now,
+            )
+        )
 
     await session.commit()
 
     return templates.TemplateResponse(
-        request, "partials/rate_limits_editor.html",
+        request,
+        "partials/rate_limits_editor.html",
         {"limits": new_limits, "success": "Rate limits saved successfully."},
     )
 
@@ -132,20 +136,22 @@ async def system_settings_editor_partial(
     """HTML fragment: editable system settings form."""
     settings = []
     for cfg in SYSTEM_CONFIG_KEYS:
-        result = await session.execute(
-            select(SystemConfig.value).where(SystemConfig.key == cfg["key"])
-        )
+        result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == cfg["key"]))
         raw_value = result.scalar_one_or_none()
         current_value = _coerce_to_int(raw_value, cfg["default"])
 
-        settings.append({
-            "key": cfg["key"],
-            "label": cfg["label"],
-            "value": current_value,
-        })
+        settings.append(
+            {
+                "key": cfg["key"],
+                "label": cfg["label"],
+                "value": current_value,
+            }
+        )
 
     return templates.TemplateResponse(
-        request, "partials/system_config_editor.html", {"settings": settings},
+        request,
+        "partials/system_config_editor.html",
+        {"settings": settings},
     )
 
 
@@ -169,9 +175,7 @@ async def save_system_settings(
     now = datetime.now(UTC)
 
     for key, val in values.items():
-        result = await session.execute(
-            select(SystemConfig).where(SystemConfig.key == key)
-        )
+        result = await session.execute(select(SystemConfig).where(SystemConfig.key == key))
         existing = result.scalar_one_or_none()
 
         if existing:
@@ -179,9 +183,14 @@ async def save_system_settings(
             existing.set_by = "admin"
             existing.updated_at = now
         else:
-            session.add(SystemConfig(
-                key=key, value=val, set_by="admin", updated_at=now,
-            ))
+            session.add(
+                SystemConfig(
+                    key=key,
+                    value=val,
+                    set_by="admin",
+                    updated_at=now,
+                )
+            )
 
     await session.commit()
 
@@ -192,6 +201,7 @@ async def save_system_settings(
     ]
 
     return templates.TemplateResponse(
-        request, "partials/system_config_editor.html",
+        request,
+        "partials/system_config_editor.html",
         {"settings": settings, "success": "System settings saved successfully."},
     )

@@ -57,23 +57,17 @@ async def admin_client() -> AsyncClient:
 class TestAdminAuthRequired:
     """Every admin route must reject unauthenticated requests."""
 
-    async def test_kill_switch_toggle_rejects_anonymous(
-        self, admin_client, seeded_admin_token
-    ):
+    async def test_kill_switch_toggle_rejects_anonymous(self, admin_client, seeded_admin_token):
         """POST /admin/kill-switch/toggle without a token → 401."""
         resp = await admin_client.post("/admin/kill-switch/toggle")
         assert resp.status_code == 401
 
-    async def test_api_keys_page_rejects_anonymous(
-        self, admin_client, seeded_admin_token
-    ):
+    async def test_api_keys_page_rejects_anonymous(self, admin_client, seeded_admin_token):
         """GET /admin/api-keys/ without a token → 401."""
         resp = await admin_client.get("/admin/api-keys/")
         assert resp.status_code == 401
 
-    async def test_dashboard_rejects_anonymous(
-        self, admin_client, seeded_admin_token
-    ):
+    async def test_dashboard_rejects_anonymous(self, admin_client, seeded_admin_token):
         """GET /admin/ without a token → 401."""
         resp = await admin_client.get("/admin/")
         assert resp.status_code == 401
@@ -128,9 +122,7 @@ class TestAdminLoginEndpoint:
         resp = await admin_client.get("/admin/login")
         assert resp.status_code == 200
 
-    async def test_login_accepts_valid_token_and_sets_cookie(
-        self, admin_client, seeded_admin_token
-    ):
+    async def test_login_accepts_valid_token_and_sets_cookie(self, admin_client, seeded_admin_token):
         """POST /admin/login with the correct token sets the admin_session cookie."""
         resp = await admin_client.post(
             "/admin/login",

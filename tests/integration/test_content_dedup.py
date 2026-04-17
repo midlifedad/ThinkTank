@@ -4,7 +4,6 @@ Tests URL normalization dedup (Layer 1), fingerprint dedup (Layer 2),
 and NULL fingerprint behavior.
 """
 
-import uuid
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -12,11 +11,11 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_content, create_job, create_source, create_thinker
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
 from thinktank.ingestion.fingerprint import compute_fingerprint
 from thinktank.ingestion.url_normalizer import normalize_url
 from thinktank.models.content import Content
-from tests.factories import create_content, create_job, create_source, create_thinker
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "rss"
 
@@ -42,9 +41,7 @@ def _make_httpx_mock(fixture_name: str):
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_url_normalization_dedup(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_url_normalization_dedup(mock_client_cls: MagicMock, session: AsyncSession):
     """Insert content with canonical_url. Feed with same URL + tracking params -> dedup catches it."""
     thinker = await create_thinker(session)
     source = await create_source(
@@ -86,9 +83,7 @@ async def test_url_normalization_dedup(
     await handle_fetch_podcast_feed(session, job)
 
     # Query all content for this source
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     content_rows = result.scalars().all()
 
     # Should have: 1 pre-existing + 2 new (quantum-a and quantum-b have different URLs,
@@ -103,10 +98,8 @@ async def test_url_normalization_dedup(
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_fingerprint_dedup(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
-    """Pre-insert content with fingerprint. Feed with different URL but same title+date+duration -> fingerprint catches it."""
+async def test_fingerprint_dedup(mock_client_cls: MagicMock, session: AsyncSession):
+    """Pre-insert content with fingerprint. Feed with different URL but same title/date/duration -> dedup catches it."""
     from datetime import datetime
 
     thinker = await create_thinker(session)
@@ -151,9 +144,7 @@ async def test_fingerprint_dedup(
 
     await handle_fetch_podcast_feed(session, job)
 
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     content_rows = result.scalars().all()
 
     # Pre-existing (quantum from other-platform) + climate episode = 2
@@ -196,9 +187,7 @@ async def test_null_fingerprint_not_deduped(session: AsyncSession):
     await session.commit()
 
     # Both rows should exist -- NULL fingerprints don't violate UNIQUE
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     content_rows = result.scalars().all()
     assert len(content_rows) == 2
 

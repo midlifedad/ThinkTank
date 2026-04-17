@@ -8,19 +8,18 @@ Anthropic API is mocked throughout -- no real LLM calls.
 import json
 import os
 import uuid
-from datetime import datetime, UTC
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_job
+from thinktank.agent.session import ChatMessage, chat_sessions
+from thinktank.agent.tools import execute_confirmed_action, execute_tool
 from thinktank.models.job import Job
 from thinktank.models.thinker import Thinker
-from thinktank.agent.session import ChatMessage, ChatSession, ChatSessionStore, chat_sessions
-from thinktank.agent.tools import execute_confirmed_action, execute_tool
-from tests.factories import create_job, create_thinker
 
 pytestmark = pytest.mark.anyio
 
@@ -58,9 +57,11 @@ def _clean_chat_sessions():
 
 def _make_mock_stream_generator(*events):
     """Create a mock async generator that yields event dicts."""
+
     async def mock_stream(session_id, user_message, db_session):
         for event in events:
             yield event
+
     return mock_stream
 
 
@@ -166,9 +167,7 @@ class TestChatConfirm:
         assert "Nassim Taleb" in result["message"]
 
         # Verify thinker was created in DB
-        thinker_result = await session.execute(
-            select(Thinker).where(Thinker.slug == "nassim-taleb")
-        )
+        thinker_result = await session.execute(select(Thinker).where(Thinker.slug == "nassim-taleb"))
         thinker = thinker_result.scalar_one_or_none()
         assert thinker is not None
         assert thinker.name == "Nassim Taleb"
@@ -283,18 +282,14 @@ class TestExecuteConfirmedAction:
         assert "Sam Harris" in result["message"]
 
         # Verify thinker exists
-        thinker_result = await session.execute(
-            select(Thinker).where(Thinker.slug == "sam-harris")
-        )
+        thinker_result = await session.execute(select(Thinker).where(Thinker.slug == "sam-harris"))
         thinker = thinker_result.scalar_one_or_none()
         assert thinker is not None
         assert thinker.tier == 3
         assert thinker.approval_status == "awaiting_llm"
 
         # Verify job was created
-        job_result = await session.execute(
-            select(Job).where(Job.job_type == "llm_approval_check")
-        )
+        job_result = await session.execute(select(Job).where(Job.job_type == "llm_approval_check"))
         job = job_result.scalar_one_or_none()
         assert job is not None
 

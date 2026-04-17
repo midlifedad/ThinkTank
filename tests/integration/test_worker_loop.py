@@ -12,10 +12,10 @@ import asyncio
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_job, create_system_config
 from thinktank.handlers.registry import JOB_HANDLERS, register_handler
 from thinktank.models.job import Job
 from thinktank.worker.loop import worker_loop
-from tests.factories import create_job, create_system_config
 
 
 @pytest.fixture(autouse=True)
@@ -54,7 +54,7 @@ class TestWorkerLoopLifecycle:
             # Wait for handler to be called or timeout
             try:
                 await asyncio.wait_for(handler_called.wait(), timeout=3.0)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
             # Give worker a moment to complete the job
             await asyncio.sleep(0.2)
@@ -69,9 +69,7 @@ class TestWorkerLoopLifecycle:
             reclaim_interval=600.0,  # Don't trigger during test
         )
 
-        loop_task = asyncio.create_task(
-            worker_loop(session_factory, settings=settings, shutdown_event=shutdown)
-        )
+        loop_task = asyncio.create_task(worker_loop(session_factory, settings=settings, shutdown_event=shutdown))
         stop_task = asyncio.create_task(stop_after_processing())
 
         await asyncio.gather(loop_task, stop_task)
@@ -111,7 +109,7 @@ class TestWorkerLoopLifecycle:
         async def stop_after_processing():
             try:
                 await asyncio.wait_for(handler_called.wait(), timeout=3.0)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
             await asyncio.sleep(0.2)
             shutdown.set()
@@ -125,9 +123,7 @@ class TestWorkerLoopLifecycle:
             reclaim_interval=600.0,
         )
 
-        loop_task = asyncio.create_task(
-            worker_loop(session_factory, settings=settings, shutdown_event=shutdown)
-        )
+        loop_task = asyncio.create_task(worker_loop(session_factory, settings=settings, shutdown_event=shutdown))
         stop_task = asyncio.create_task(stop_after_processing())
 
         await asyncio.gather(loop_task, stop_task)
@@ -152,9 +148,7 @@ class TestWorkerLoopLifecycle:
 
         # Set kill switch
         async with session_factory() as session:
-            await create_system_config(
-                session, key="workers_active", value=False
-            )
+            await create_system_config(session, key="workers_active", value=False)
             job = await create_job(session, job_type="kill_test_type", status="pending")
             job_id = job.id
             await session.commit()
@@ -174,9 +168,7 @@ class TestWorkerLoopLifecycle:
             reclaim_interval=600.0,
         )
 
-        loop_task = asyncio.create_task(
-            worker_loop(session_factory, settings=settings, shutdown_event=shutdown)
-        )
+        loop_task = asyncio.create_task(worker_loop(session_factory, settings=settings, shutdown_event=shutdown))
         stop_task = asyncio.create_task(stop_after_delay())
 
         await asyncio.gather(loop_task, stop_task)
@@ -217,9 +209,7 @@ class TestWorkerLoopLifecycle:
             reclaim_interval=600.0,
         )
 
-        loop_task = asyncio.create_task(
-            worker_loop(session_factory, settings=settings, shutdown_event=shutdown)
-        )
+        loop_task = asyncio.create_task(worker_loop(session_factory, settings=settings, shutdown_event=shutdown))
         stop_task = asyncio.create_task(stop_after_delay())
 
         await asyncio.gather(loop_task, stop_task)

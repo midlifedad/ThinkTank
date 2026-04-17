@@ -10,6 +10,7 @@ Spec reference: Section 8.6 (fallback and escalation).
 import structlog
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from thinktank.ingestion.config_reader import get_config_value
 from thinktank.models.review import LLMReview
 
@@ -56,10 +57,7 @@ async def escalate_timed_out_reviews(session: AsyncSession) -> int:
             context_snapshot={"job_id": str(job_id), "job_type": job_type},
             prompt_used="N/A - timeout escalation",
             decision="escalate_to_human",
-            decision_reasoning=(
-                f"LLM API unavailable for >{timeout_hours}h. "
-                "Escalated to human review."
-            ),
+            decision_reasoning=(f"LLM API unavailable for >{timeout_hours}h. Escalated to human review."),
         )
         session.add(review)
 

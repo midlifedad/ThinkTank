@@ -10,9 +10,9 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_job, create_thinker
 from thinktank.handlers.discover_thinker import handle_discover_thinker
 from thinktank.models.job import Job
-from tests.factories import create_job, create_thinker
 
 pytestmark = pytest.mark.anyio
 
@@ -37,13 +37,12 @@ async def test_skips_guest_discovery_when_podcastindex_unavailable(
     with patch.dict("os.environ", {}, clear=False):
         # Scrub both vars to force the disabled path
         import os
+
         os.environ.pop("PODCASTINDEX_API_KEY", None)
         os.environ.pop("PODCASTINDEX_API_SECRET", None)
         await handle_discover_thinker(session, trigger_job)
 
-    result = await session.execute(
-        select(Job).where(Job.job_type == "discover_guests_podcastindex")
-    )
+    result = await session.execute(select(Job).where(Job.job_type == "discover_guests_podcastindex"))
     assert result.scalars().all() == []
 
 
@@ -77,9 +76,7 @@ async def test_enqueues_guest_discovery_when_podcastindex_configured(
 
 async def test_skips_when_thinker_not_approved(session: AsyncSession):
     """Thinker in pending status -> no jobs enqueued regardless of creds."""
-    thinker = await create_thinker(
-        session, approval_status="pending_llm", active=True
-    )
+    thinker = await create_thinker(session, approval_status="pending_llm", active=True)
     trigger_job = await create_job(
         session,
         job_type="discover_thinker",
@@ -93,7 +90,5 @@ async def test_skips_when_thinker_not_approved(session: AsyncSession):
     ):
         await handle_discover_thinker(session, trigger_job)
 
-    result = await session.execute(
-        select(Job).where(Job.job_type == "discover_guests_podcastindex")
-    )
+    result = await session.execute(select(Job).where(Job.job_type == "discover_guests_podcastindex"))
     assert result.scalars().all() == []

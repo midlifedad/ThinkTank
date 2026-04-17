@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+
 from thinktank.models import Base
 
 TEST_DATABASE_URL = os.getenv(
@@ -38,10 +39,12 @@ async def engine():
         await conn.run_sync(Base.metadata.create_all)
         # Create GiST index for trigram similarity on candidate_thinkers.normalized_name
         # (SQLAlchemy create_all does not run Alembic migrations, so we add it explicitly)
-        await conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_candidate_thinkers_trgm "
-            "ON candidate_thinkers USING gist (normalized_name gist_trgm_ops)"
-        ))
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_candidate_thinkers_trgm "
+                "ON candidate_thinkers USING gist (normalized_name gist_trgm_ops)"
+            )
+        )
 
     yield eng
 
@@ -89,9 +92,7 @@ async def _cleanup_tables(engine):
             )
             existing_tables = [row[0] for row in result.fetchall()]
             if existing_tables:
-                await conn.execute(
-                    text(f"TRUNCATE {', '.join(existing_tables)} CASCADE")
-                )
+                await conn.execute(text(f"TRUNCATE {', '.join(existing_tables)} CASCADE"))
     except Exception:
         pass  # Tables may not exist (e.g., after migration downgrade tests)
 

@@ -6,12 +6,12 @@ from pathlib import Path
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.database import async_session_factory
 from thinktank.models.constants import (
     ERROR_CONTENT_STATUSES,
     HEALTHY_CONTENT_STATUSES,
     WARNING_CONTENT_STATUSES,
 )
-from thinktank.database import async_session_factory
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
