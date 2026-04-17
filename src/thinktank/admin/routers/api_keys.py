@@ -43,13 +43,15 @@ async def api_keys_page(request: Request):
     return templates.TemplateResponse(request, "api_keys.html")
 
 
-@router.get("/partials/list")
-async def api_keys_list_partial(
-    request: Request,
-    session: AsyncSession = Depends(get_session),
-):
-    """HTML fragment: list of API keys with masked values and status."""
-    keys_status = []
+async def _load_keys_status(session: AsyncSession) -> list[dict]:
+    """Session-only helper: build the list of API keys + masked values + metadata.
+
+    Extracted per ADMIN-REVIEW MD-06 so POST/DELETE handlers don't need to
+    call back into a Request-bound partial to re-render; they compose the
+    list here and feed it to the template themselves. Also keeps this
+    easily unit-testable without spinning up a FastAPI Request.
+    """
+    keys_status: list[dict] = []
     for key_def in MANAGED_KEYS:
         db_key = f"secret_{key_def['name']}"
         result = await session.execute(
@@ -67,7 +69,16 @@ async def api_keys_list_partial(
                 "updated_at": row[1] if row else None,
             }
         )
+    return keys_status
 
+
+@router.get("/partials/list")
+async def api_keys_list_partial(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """HTML fragment: list of API keys with masked values and status."""
+    keys_status = await _load_keys_status(session)
     return templates.TemplateResponse(
         request,
         "partials/api_keys_list.html",
@@ -116,8 +127,15 @@ async def set_api_key(
 
     await session.commit()
 
-    # Re-render the list
-    return await api_keys_list_partial(request, session)
+    # Re-render the list via the session-only helper (not the Request-bound
+    # partial) so the POST handler owns its response and doesn't depend on
+    # another route's internals.
+    keys_status = await _load_keys_status(session)
+    return templates.TemplateResponse(
+        request,
+        "partials/api_keys_list.html",
+        {"keys": keys_status},
+    )
 
 
 @router.post("/delete/{key_name}")
@@ -143,4 +161,9 @@ async def delete_api_key(
         await session.delete(existing)
         await session.commit()
 
-    return await api_keys_list_partial(request, session)
+    keys_status = await _load_keys_status(session)
+    return templates.TemplateResponse(
+        request,
+        "partials/api_keys_list.html",
+        {"keys": keys_status},
+    )
