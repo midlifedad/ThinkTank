@@ -22,6 +22,7 @@ from datetime import datetime
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from thinktank.handlers.registry import get_handler
+from thinktank.http_utils import RateLimitedError
 from thinktank.llm.escalation import escalate_timed_out_reviews
 from thinktank.llm.scheduled import run_daily_digest, run_health_check, run_weekly_audit
 from thinktank.llm.time_utils import seconds_until_next_monday_utc, seconds_until_next_utc_hour
@@ -282,6 +283,11 @@ async def _process_job(
             # Step 3: Handler failed
             error_category = categorize_error(exc)
             max_attempts = get_max_attempts(job.job_type)
+            # Honor upstream Retry-After on 429 so the next retry doesn't
+            # fire before the server asked us to (INTEGRATIONS-REVIEW M-02).
+            retry_after_seconds = (
+                exc.retry_after_seconds if isinstance(exc, RateLimitedError) else None
+            )
             logger.warning(
                 "job_failed",
                 job_id=str(job.id),
@@ -289,6 +295,7 @@ async def _process_job(
                 error=str(exc),
                 error_category=error_category.value,
                 worker_id=worker_id,
+                retry_after_seconds=retry_after_seconds,
             )
             async with session_factory() as session:
                 await fail_job(
@@ -297,6 +304,7 @@ async def _process_job(
                     str(exc),
                     error_category,
                     max_attempts=max_attempts,
+                    retry_after_seconds=retry_after_seconds,
                 )
             return
 

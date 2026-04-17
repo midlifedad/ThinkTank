@@ -12,6 +12,8 @@ import httpx
 import pydantic
 import sqlalchemy.exc
 
+from thinktank.http_utils import RateLimitedError
+
 
 class ErrorCategory(StrEnum):
     """Closed set of error categories for failed jobs.
@@ -63,6 +65,11 @@ def categorize_error(exc: Exception) -> ErrorCategory:
         return ErrorCategory.LLM_API_ERROR
     if isinstance(exc, pydantic.ValidationError):
         return ErrorCategory.LLM_PARSE_ERROR
+
+    # Upstream 429 with Retry-After parsed via http_utils — check before
+    # the generic httpx.HTTPStatusError branch so we keep the retry hint.
+    if isinstance(exc, RateLimitedError):
+        return ErrorCategory.RATE_LIMITED
 
     # httpx exceptions (check before generic Python exceptions)
     if isinstance(exc, httpx.HTTPStatusError):

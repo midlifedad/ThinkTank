@@ -11,6 +11,8 @@ from urllib.parse import urlparse
 import httpx
 import structlog
 
+from thinktank.http_utils import raise_for_status_with_backoff
+
 logger = structlog.get_logger(__name__)
 
 
@@ -73,7 +75,7 @@ async def fetch_existing_transcript(
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(transcript_url, timeout=30.0)
-            response.raise_for_status()
+            raise_for_status_with_backoff(response)
 
         text = _strip_html(response.text)
         if text:

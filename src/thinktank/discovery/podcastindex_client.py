@@ -12,6 +12,7 @@ import time
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.http_utils import raise_for_status_with_backoff
 from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
 
@@ -82,5 +83,5 @@ class PodcastIndexClient:
                 headers=headers,
                 timeout=30.0,
             )
-            response.raise_for_status()
+            raise_for_status_with_backoff(response)
             return response.json()
