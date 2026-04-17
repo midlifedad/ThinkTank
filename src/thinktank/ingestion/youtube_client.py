@@ -121,6 +121,13 @@ class YouTubeClient:
         Returns:
             List of video detail dicts from the API.
         """
+        # INTEGRATIONS-REVIEW M-05 (T6.15): defense-in-depth. An empty list
+        # already short-circuits the for-loop below, but the explicit guard
+        # documents the contract and protects against a future refactor that
+        # could accidentally send ``id=""`` to YouTube (HTTP 400, wasted quota).
+        if not video_ids:
+            return []
+
         results: list[dict] = []
         # Process in batches of 50
         for i in range(0, len(video_ids), 50):

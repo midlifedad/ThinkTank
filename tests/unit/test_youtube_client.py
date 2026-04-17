@@ -149,6 +149,19 @@ def test_get_video_details_batch(client, mock_youtube_service):
     assert ids == ["vid001", "vid002", "vid003"]
 
 
+def test_get_video_details_empty_list_no_api_call(client, mock_youtube_service):
+    """INTEGRATIONS-REVIEW M-05 (T6.15): empty video_ids must NOT make an
+    API call. Previously the for-loop range(0,0,50) was empty, but any
+    future refactor (or caller mistake) could send ``id=""`` to YouTube
+    which returns HTTP 400 and wastes a quota unit. Defense-in-depth guard.
+    """
+    results = client.get_video_details([])
+
+    assert results == []
+    assert client.quota_used == 0
+    mock_youtube_service.videos.return_value.list.assert_not_called()
+
+
 def test_get_video_details_multiple_batches(client, mock_youtube_service):
     """Videos split into batches of 50."""
     # Create 60 video IDs
