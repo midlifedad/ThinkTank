@@ -11,12 +11,7 @@ from httpx import AsyncClient
 
 from tests.factories import create_system_config
 
-pytestmark = [
-    pytest.mark.anyio,
-    pytest.mark.skip(
-        reason="asyncpg InterfaceError under client+session fixture interleaving — tracked in followup chore",
-    ),
-]
+pytestmark = pytest.mark.anyio
 
 
 class TestConfigEndpointContract:

@@ -98,23 +98,34 @@ async def _cleanup_tables(engine):
 
 
 @pytest.fixture
-async def client() -> AsyncGenerator[AsyncClient, None]:
-    """HTTP client for integration tests against the FastAPI app."""
-    # Override DATABASE_URL to use test database
-    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+async def client(session_factory) -> AsyncGenerator[AsyncClient, None]:
+    """HTTP client for API tests against the FastAPI app.
 
-    # Clear settings cache to pick up test URL
+    Overrides ``get_session`` so the app uses the test engine's
+    ``session_factory`` instead of its own module-level engine. This
+    prevents asyncpg ``InterfaceError: another operation is in progress``
+    and TRUNCATE deadlocks that occur when the app and tests hold
+    connections from separate pools against the same database.
+    """
+    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
     from thinktank.config import get_settings
 
     get_settings.cache_clear()
 
+    from thinktank.api.dependencies import get_session
     from thinktank.api.main import app
+
+    async def _override_get_session() -> AsyncGenerator[AsyncSession, None]:
+        async with session_factory() as s:
+            yield s
+
+    app.dependency_overrides[get_session] = _override_get_session
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
-    # Restore cache
+    app.dependency_overrides.pop(get_session, None)
     get_settings.cache_clear()
 
 
