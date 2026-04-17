@@ -34,6 +34,7 @@ from thinktank.ingestion.content_filter import (
 )
 from thinktank.ingestion.feed_parser import parse_feed
 from thinktank.ingestion.fingerprint import compute_fingerprint
+from thinktank.ingestion.podcast_person_parser import extract_podcast_persons
 from thinktank.ingestion.url_normalizer import normalize_url
 from thinktank.models.content import Content
 from thinktank.models.job import Job
@@ -126,9 +127,14 @@ async def handle_fetch_podcast_feed(
         response = await client.get(source.url, timeout=60.0)
         raise_for_status_with_backoff(response)
 
-    # h. Parse feed
+    # h. Parse feed + extract podcast:person tags keyed by episode GUID
     entries = parse_feed(response.text)
-    log.info("feed_parsed", entry_count=len(entries))
+    persons_by_guid = extract_podcast_persons(response.text)
+    log.info(
+        "feed_parsed",
+        entry_count=len(entries),
+        person_guid_count=len(persons_by_guid),
+    )
 
     # h2. Guest filtering setup: if this is a guest source, only keep episodes
     # where the thinker is mentioned in the title or description
@@ -149,6 +155,7 @@ async def handle_fetch_podcast_feed(
     # j. Process each entry
     inserted_content: list[Content] = []
     descriptions: dict[str, str] = {}
+    content_persons: dict[str, list[dict]] = {}
     skipped_count = 0
     dedup_count = 0
     guest_filtered_count = 0
@@ -225,6 +232,7 @@ async def handle_fetch_podcast_feed(
             url=entry.url,
             canonical_url=canonical,
             content_fingerprint=fp,
+            source_guid=entry.guid,
             title=entry.title,
             published_at=entry.published_at,
             duration_seconds=entry.duration_seconds,
@@ -237,6 +245,12 @@ async def handle_fetch_podcast_feed(
 
         # Collect description for attribution payload
         descriptions[str(content.id)] = entry.description or ""
+
+        # T6.7/T6.8: pre-compute per-episode podcast:person list keyed by
+        # content id so scan_episodes doesn't need to re-parse the raw XML
+        # or cross-pollinate people between episodes in the same batch.
+        if entry.guid and entry.guid in persons_by_guid:
+            content_persons[str(content.id)] = persons_by_guid[entry.guid]
 
     # Flush to get IDs assigned
     await session.flush()
@@ -258,7 +272,9 @@ async def handle_fetch_podcast_feed(
                 "content_ids": [str(c.id) for c in inserted_content],
                 "source_id": str(source_id),
                 "descriptions": descriptions,
-                "raw_xml": response.text,
+                # T6.8: pass pre-extracted per-episode persons dict instead
+                # of embedding the full RSS XML in the job payload.
+                "content_persons": content_persons,
             },
             priority=3,
             status="pending",

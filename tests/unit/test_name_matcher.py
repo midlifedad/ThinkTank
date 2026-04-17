@@ -105,6 +105,41 @@ class TestPartialNameNotMatched:
         )
         assert len(results) == 0
 
+    def test_word_boundary_rejects_substring_title(self):
+        """'Sam Harris' must NOT match 'Scam Harrison' (ME-01 false-positive)."""
+        thinker = _thinker("Sam Harris")
+        results = match_thinkers_in_text(
+            title="Scam Harrison investigates podcast fraud",
+            description="",
+            thinker_names=[thinker],
+            source_owner_name=None,
+        )
+        assert len(results) == 0
+
+    def test_word_boundary_rejects_substring_description(self):
+        """Substring appearing inside another word in description -> no match."""
+        thinker = _thinker("Dan Carlin")
+        results = match_thinkers_in_text(
+            title="",
+            description="Dangerfield Carlington hosts the episode",
+            thinker_names=[thinker],
+            source_owner_name=None,
+        )
+        assert len(results) == 0
+
+    def test_word_boundary_still_matches_adjacent_punctuation(self):
+        """Name followed by punctuation (comma, period, colon) still matches."""
+        thinker = _thinker("Sam Harris")
+        results = match_thinkers_in_text(
+            title="Guest: Sam Harris, on meditation.",
+            description="",
+            thinker_names=[thinker],
+            source_owner_name=None,
+        )
+        assert len(results) == 1
+        assert results[0]["role"] == "guest"
+        assert results[0]["confidence"] == 9
+
 
 class TestTitleMatchTakesPrecedence:
     def test_title_match_over_description(self):

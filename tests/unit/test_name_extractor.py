@@ -136,6 +136,23 @@ class TestExtractNamesValidation:
         """Names with more than 4 words should be rejected."""
         assert extract_names("with John James Robert William Smith", "") == []
 
+    @pytest.mark.parametrize(
+        "title",
+        [
+            "with John Of Smith",
+            "feat. Talks And Interviews",
+            "Interview: Advice Or Opinion",
+            "with Tips For Founders",
+            "feat. Letters From Home",
+            "Interview: Life In Boston",
+            "with Thoughts On Purpose",
+        ],
+        ids=["of", "and", "or", "for", "from", "in", "on"],
+    )
+    def test_preposition_conjunction_blocklist(self, title):
+        """Title Case phrases with 'of/and/or/for/from/in/on' are not names (M-03)."""
+        assert extract_names(title, "") == []
+
 
 class TestExtractNamesDescription:
     """Test scanning descriptions and deduplication."""

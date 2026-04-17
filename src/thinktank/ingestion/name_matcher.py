@@ -10,7 +10,17 @@ Attribution rules:
 - Title match takes precedence over description match (higher confidence wins)
 """
 
+import re
 import uuid
+
+
+def _name_pattern(name: str) -> re.Pattern[str]:
+    """Compile a case-insensitive word-boundary pattern for a full name.
+
+    Uses \\b anchors so "Sam Harris" does not match "Scam Harrison" and
+    "Dan" does not match "Dangerfield" (HANDLERS-REVIEW ME-01).
+    """
+    return re.compile(rf"\b{re.escape(name)}\b", re.IGNORECASE)
 
 
 def match_thinkers_in_text(
@@ -20,6 +30,9 @@ def match_thinkers_in_text(
     source_owner_name: str | None,
 ) -> list[dict]:
     """Match thinker names in episode title and description.
+
+    Uses word-boundary regex to prevent substring false-positives
+    (e.g. "sam harris" matching "Scam Harrison").
 
     Args:
         title: Episode title.
@@ -32,16 +45,15 @@ def match_thinkers_in_text(
         Each thinker appears at most once (highest confidence wins).
     """
     results: dict[uuid.UUID, dict] = {}
-    title_lower = title.lower()
-    desc_lower = description.lower()
+    title = title or ""
+    description = description or ""
 
     for thinker in thinker_names:
         thinker_id = thinker["id"]
         name = thinker["name"]
-        name_lower = name.lower()
 
-        # Check if this is the source owner
-        if source_owner_name and name_lower == source_owner_name.lower():
+        # Check if this is the source owner (exact equality, case-insensitive)
+        if source_owner_name and name.lower() == source_owner_name.lower():
             results[thinker_id] = {
                 "thinker_id": thinker_id,
                 "role": "primary",
@@ -49,8 +61,10 @@ def match_thinkers_in_text(
             }
             continue
 
-        # Check title (full name match, case-insensitive)
-        if name_lower in title_lower:
+        pattern = _name_pattern(name)
+
+        # Check title (word-boundary match, case-insensitive)
+        if pattern.search(title):
             results[thinker_id] = {
                 "thinker_id": thinker_id,
                 "role": "guest",
@@ -58,8 +72,8 @@ def match_thinkers_in_text(
             }
             continue
 
-        # Check description (full name match, case-insensitive)
-        if name_lower in desc_lower:
+        # Check description (word-boundary match, case-insensitive)
+        if pattern.search(description):
             results[thinker_id] = {
                 "thinker_id": thinker_id,
                 "role": "guest",

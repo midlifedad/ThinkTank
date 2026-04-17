@@ -97,6 +97,125 @@ class TestScanEpisodesForThinkersContract:
             assert attr.role == "primary"
             assert attr.confidence == 10
 
+    async def test_scan_host_source_also_tags_guest_thinkers_in_title(
+        self, session: AsyncSession
+    ):
+        """Host source: episodes should tag BOTH the host (primary) AND any guest
+        thinkers mentioned in the title (role='guest').
+
+        HANDLERS-REVIEW ME-02: previously the handler `continue`d after primary
+        attribution, so Lex (host) interviewing Jensen Huang (tracked thinker)
+        never produced a guest junction row for Jensen.
+        """
+        host = await create_thinker(session, name="Lex Fridman")
+        guest = await create_thinker(session, name="Jensen Huang")
+        source = await create_source(session)
+        await create_source_thinker(
+            session,
+            source_id=source.id,
+            thinker_id=host.id,
+            relationship_type="host",
+        )
+
+        episode = await create_content(
+            session,
+            source_id=source.id,
+            title="Jensen Huang: NVIDIA and the Future of AI",
+            status="cataloged",
+        )
+        unrelated = await create_content(
+            session,
+            source_id=source.id,
+            title="Solo ramble about life",
+            status="cataloged",
+        )
+
+        job = await create_job(
+            session,
+            job_type="scan_episodes_for_thinkers",
+            payload={
+                "content_ids": [str(episode.id), str(unrelated.id)],
+                "source_id": str(source.id),
+                "descriptions": {
+                    str(episode.id): "A conversation about accelerated computing.",
+                    str(unrelated.id): "Just thoughts.",
+                },
+            },
+        )
+        await session.commit()
+
+        await handle_scan_episodes_for_thinkers(session, job)
+
+        # Both episodes promoted (host source promotes everything)
+        await session.refresh(episode)
+        await session.refresh(unrelated)
+        assert episode.status == "pending"
+        assert unrelated.status == "pending"
+
+        # Episode featuring Jensen has BOTH a host primary row and a guest row
+        host_ct = await session.get(ContentThinker, (episode.id, host.id))
+        assert host_ct is not None
+        assert host_ct.role == "primary"
+        assert host_ct.confidence == 10
+
+        guest_ct = await session.get(ContentThinker, (episode.id, guest.id))
+        assert guest_ct is not None, (
+            "Guest thinker mentioned in title should get a junction row "
+            "even on host-owned sources"
+        )
+        assert guest_ct.role == "guest"
+        assert guest_ct.confidence == 9
+
+        # Unrelated episode only has host row (no spurious guest attribution)
+        unrelated_guest = await session.get(
+            ContentThinker, (unrelated.id, guest.id)
+        )
+        assert unrelated_guest is None
+
+    async def test_scan_host_source_does_not_tag_host_as_guest(
+        self, session: AsyncSession
+    ):
+        """Host source: if an episode title contains the HOST's name, the host
+        still appears as 'primary' only -- no duplicate 'guest' row."""
+        host = await create_thinker(session, name="Lex Fridman")
+        source = await create_source(session)
+        await create_source_thinker(
+            session,
+            source_id=source.id,
+            thinker_id=host.id,
+            relationship_type="host",
+        )
+
+        episode = await create_content(
+            session,
+            source_id=source.id,
+            title="Lex Fridman reflects on 500 episodes",
+            status="cataloged",
+        )
+
+        job = await create_job(
+            session,
+            job_type="scan_episodes_for_thinkers",
+            payload={
+                "content_ids": [str(episode.id)],
+                "source_id": str(source.id),
+                "descriptions": {str(episode.id): "Milestone reflection."},
+            },
+        )
+        await session.commit()
+
+        await handle_scan_episodes_for_thinkers(session, job)
+
+        result = await session.execute(
+            select(ContentThinker).where(
+                ContentThinker.content_id == episode.id,
+                ContentThinker.thinker_id == host.id,
+            )
+        )
+        rows = result.scalars().all()
+        assert len(rows) == 1
+        assert rows[0].role == "primary"
+
     async def test_scan_promotes_guest_source_matching_only(
         self, session: AsyncSession
     ):
@@ -195,6 +314,74 @@ class TestScanEpisodesForThinkersContract:
 
         await session.refresh(done_content)
         assert done_content.status == "done"
+
+    async def test_scan_persons_are_scoped_per_episode(
+        self, session: AsyncSession
+    ):
+        """HANDLERS-REVIEW ME-02 (T6.7): podcast:person entries must only
+        attach to the episode they actually belong to.
+
+        Given two episodes in the same batch with disjoint person lists
+        (Alice on ep1, Bob on ep2), the handler must produce:
+            ep1 -> Alice (not Bob)
+            ep2 -> Bob   (not Alice)
+
+        Previously the handler iterated every GUID's persons and attached
+        them to every episode in the batch.
+        """
+        alice = await create_thinker(session, name="Alice Anderson")
+        bob = await create_thinker(session, name="Bob Baker")
+        source = await create_source(session)
+
+        ep1 = await create_content(
+            session,
+            source_id=source.id,
+            title="Episode One: Deep Dive",
+            status="cataloged",
+        )
+        ep2 = await create_content(
+            session,
+            source_id=source.id,
+            title="Episode Two: Follow Up",
+            status="cataloged",
+        )
+
+        job = await create_job(
+            session,
+            job_type="scan_episodes_for_thinkers",
+            payload={
+                "content_ids": [str(ep1.id), str(ep2.id)],
+                "source_id": str(source.id),
+                "descriptions": {
+                    str(ep1.id): "No thinker names in description.",
+                    str(ep2.id): "Also no thinker names here.",
+                },
+                "content_persons": {
+                    str(ep1.id): [
+                        {"name": "Alice Anderson", "role": "guest"},
+                    ],
+                    str(ep2.id): [
+                        {"name": "Bob Baker", "role": "guest"},
+                    ],
+                },
+            },
+        )
+        await session.commit()
+
+        await handle_scan_episodes_for_thinkers(session, job)
+
+        ep1_alice = await session.get(ContentThinker, (ep1.id, alice.id))
+        ep1_bob = await session.get(ContentThinker, (ep1.id, bob.id))
+        ep2_alice = await session.get(ContentThinker, (ep2.id, alice.id))
+        ep2_bob = await session.get(ContentThinker, (ep2.id, bob.id))
+
+        assert ep1_alice is not None, "Alice should be attributed to ep1"
+        assert ep1_alice.confidence == 10
+        assert ep1_bob is None, "Bob must NOT leak onto ep1"
+
+        assert ep2_bob is not None, "Bob should be attributed to ep2"
+        assert ep2_bob.confidence == 10
+        assert ep2_alice is None, "Alice must NOT leak onto ep2"
 
     async def test_scan_creates_content_thinker_attribution(
         self, session: AsyncSession

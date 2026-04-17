@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from thinktank.models.job import Job
 from thinktank.models.source import Source, SourceThinker
 from thinktank.models.thinker import Thinker
+from thinktank.secrets import get_secret
 
 logger = structlog.get_logger(__name__)
 
@@ -66,27 +67,33 @@ async def handle_discover_thinker(
     now = _now()
     jobs_created = 0
 
-    # 1. Create guest discovery job (Podcast Index search) if none pending
-    existing_guest = await session.execute(
-        select(Job.id).where(
-            Job.job_type == "discover_guests_podcastindex",
-            Job.payload["thinker_id"].astext == str(thinker.id),
-            Job.status.in_(["pending", "running", "retrying"]),
+    # 1. Create guest discovery job only if PodcastIndex credentials are configured.
+    # Otherwise the downstream handler would fail-fast per job (wasting queue slots
+    # and alerting) — skip enqueue and log instead (HANDLERS-REVIEW ME-07).
+    podcastindex_key = await get_secret(session, "podcastindex_api_key")
+    if not podcastindex_key:
+        log.info("podcastindex_disabled", reason="missing_api_key")
+    else:
+        existing_guest = await session.execute(
+            select(Job.id).where(
+                Job.job_type == "discover_guests_podcastindex",
+                Job.payload["thinker_id"].astext == str(thinker.id),
+                Job.status.in_(["pending", "running", "retrying"]),
+            )
         )
-    )
-    if existing_guest.scalar_one_or_none() is None:
-        guest_job = Job(
-            id=uuid.uuid4(),
-            job_type="discover_guests_podcastindex",
-            payload={"thinker_id": str(thinker.id)},
-            priority=5,
-            status="pending",
-            attempts=0,
-            max_attempts=3,
-            created_at=now,
-        )
-        session.add(guest_job)
-        jobs_created += 1
+        if existing_guest.scalar_one_or_none() is None:
+            guest_job = Job(
+                id=uuid.uuid4(),
+                job_type="discover_guests_podcastindex",
+                payload={"thinker_id": str(thinker.id)},
+                priority=5,
+                status="pending",
+                attempts=0,
+                max_attempts=3,
+                created_at=now,
+            )
+            session.add(guest_job)
+            jobs_created += 1
 
     # 2. Create fetch jobs for approved, never-fetched sources linked via junction
     result = await session.execute(
