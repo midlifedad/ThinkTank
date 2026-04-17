@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from thinktank.models import Base
 
@@ -29,6 +30,12 @@ async def engine():
     eng = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
+        # NullPool = no connection caching. Required with the same-session
+        # client fixture: pooled asyncpg connections get bound to the anyio
+        # loop of the test that first used them, then explode at session
+        # teardown ("got Future attached to a different loop") when drop_all
+        # tries to reuse one from a dead loop.
+        poolclass=NullPool,
         connect_args={"server_settings": {"timezone": "UTC"}},
     )
 
