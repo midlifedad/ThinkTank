@@ -337,6 +337,54 @@ class TestRescanPromotesAfterNewThinker:
         assert ct.role == "guest"
         assert ct.confidence == 7
 
+    async def test_rescan_word_boundary_rejects_substring(
+        self, session: AsyncSession
+    ):
+        """Title 'Scam Harrison investigates' must NOT promote for thinker 'Sam Harris' (ME-01)."""
+        source = await create_source(session)
+
+        # Substring false-positive candidate — ILIKE would match but word-boundary rejects
+        false_positive = await create_content(
+            session,
+            source_id=source.id,
+            title="Scam Harrison investigates podcast fraud",
+            status="cataloged",
+        )
+        # Genuine match
+        true_positive = await create_content(
+            session,
+            source_id=source.id,
+            title="Guest: Sam Harris on meditation",
+            status="cataloged",
+        )
+
+        sam = await create_thinker(session, name="Sam Harris")
+        rescan_job = await create_job(
+            session,
+            job_type="rescan_cataloged_for_thinker",
+            payload={
+                "thinker_id": str(sam.id),
+                "thinker_name": "Sam Harris",
+            },
+        )
+        await session.commit()
+
+        await handle_rescan_cataloged_for_thinker(session, rescan_job)
+
+        await session.refresh(false_positive)
+        await session.refresh(true_positive)
+
+        assert false_positive.status == "cataloged", (
+            "Scam Harrison must NOT promote — substring false-positive"
+        )
+        assert true_positive.status == "pending"
+
+        # Only true positive got an attribution
+        ct_false = await session.get(ContentThinker, (false_positive.id, sam.id))
+        assert ct_false is None
+        ct_true = await session.get(ContentThinker, (true_positive.id, sam.id))
+        assert ct_true is not None
+
 
 class TestExistingPendingEpisodesNotDemoted:
     """Per D-05: existing pending episodes should not be affected by scan."""

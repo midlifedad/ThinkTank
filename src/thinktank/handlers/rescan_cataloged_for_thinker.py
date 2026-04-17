@@ -24,6 +24,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.ingestion.name_matcher import match_thinkers_in_text
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 from thinktank.models.thinker import Thinker
@@ -79,13 +80,27 @@ async def handle_rescan_cataloged_for_thinker(
         )
         return
 
-    # Query cataloged content matching thinker name in title (case-insensitive)
+    # Pre-filter via ILIKE to avoid scanning every cataloged row, then confirm
+    # each candidate with the shared word-boundary matcher so substrings like
+    # "Scam Harrison" don't poison rescan results (HANDLERS-REVIEW ME-01).
     stmt = select(Content).where(
         Content.status == "cataloged",
         Content.title.ilike(f"%{thinker_name}%"),
     )
     result = await session.execute(stmt)
-    matching_content = result.scalars().all()
+    candidates = result.scalars().all()
+
+    thinker_names_arg = [{"id": thinker_id, "name": thinker_name}]
+    matching_content = [
+        c
+        for c in candidates
+        if match_thinkers_in_text(
+            title=c.title or "",
+            description="",
+            thinker_names=thinker_names_arg,
+            source_owner_name=None,
+        )
+    ]
 
     promoted_count = 0
     now = _now()
@@ -116,6 +131,7 @@ async def handle_rescan_cataloged_for_thinker(
     log.info(
         "rescan_cataloged_for_thinker_complete",
         promoted_count=promoted_count,
-        total_matched=len(matching_content),
+        candidates_scanned=len(candidates),
+        matched_after_word_boundary=len(matching_content),
         thinker_name=thinker_name,
     )
