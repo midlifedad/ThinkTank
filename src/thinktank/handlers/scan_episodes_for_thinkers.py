@@ -125,31 +125,29 @@ async def handle_scan_episodes_for_thinkers(
         if content is None or content.status != "cataloged":
             continue
 
-        if is_host_source:
-            # Host-owned sources: promote ALL cataloged episodes
-            content.status = "pending"
-            for host_tid in host_thinker_ids:
-                existing = await session.get(
-                    ContentThinker, (content.id, host_tid)
-                )
-                if existing is None:
-                    session.add(
-                        ContentThinker(
-                            content_id=content.id,
-                            thinker_id=host_tid,
-                            role="primary",
-                            confidence=10,
-                            added_at=now,
-                        )
-                    )
-            promoted_count += 1
-            continue
-
-        # Guest sources: match thinker names in title/description
         description = descriptions.get(content_id_str, "")
-        matches = match_thinkers_in_text(
-            content.title, description, thinker_names, source_owner_name
-        )
+        host_id_set = set(host_thinker_ids)
+
+        if is_host_source:
+            # HANDLERS-REVIEW ME-02: Host-owned sources promote every cataloged
+            # episode AND still run guest matching so tracked thinkers
+            # mentioned in episode titles (e.g. Jensen Huang on Lex Fridman)
+            # get a guest junction row. Host IDs are excluded from the guest
+            # match set to avoid duplicate primary/guest rows for the host.
+            guest_thinker_names = [
+                t for t in thinker_names if t["id"] not in host_id_set
+            ]
+            matches = match_thinkers_in_text(
+                content.title,
+                description,
+                guest_thinker_names,
+                source_owner_name,
+            )
+        else:
+            # Guest sources: match thinker names in title/description
+            matches = match_thinkers_in_text(
+                content.title, description, thinker_names, source_owner_name
+            )
 
         # Also check podcast:person data for additional matches
         # Find the content's GUID-based person data (try content URL or title as key)
@@ -157,7 +155,9 @@ async def handle_scan_episodes_for_thinkers(
         # against thinker names for high-confidence matches
         if person_by_guid:
             thinker_name_lower_map = {
-                t["name"].lower(): t["id"] for t in thinker_names
+                t["name"].lower(): t["id"]
+                for t in thinker_names
+                if t["id"] not in host_id_set
             }
             matched_ids_from_text = {m["thinker_id"] for m in matches}
 
@@ -174,8 +174,28 @@ async def handle_scan_episodes_for_thinkers(
                             })
                             matched_ids_from_text.add(tid)
 
-        if matches:
+        # Promotion: host sources always promote; guest sources only promote
+        # when there is at least one match.
+        if is_host_source or matches:
             content.status = "pending"
+            promoted_count += 1
+
+            if is_host_source:
+                for host_tid in host_thinker_ids:
+                    existing = await session.get(
+                        ContentThinker, (content.id, host_tid)
+                    )
+                    if existing is None:
+                        session.add(
+                            ContentThinker(
+                                content_id=content.id,
+                                thinker_id=host_tid,
+                                role="primary",
+                                confidence=10,
+                                added_at=now,
+                            )
+                        )
+
             for match in matches:
                 thinker_id = match["thinker_id"]
                 existing = await session.get(
@@ -191,8 +211,7 @@ async def handle_scan_episodes_for_thinkers(
                             added_at=now,
                         )
                     )
-            promoted_count += 1
-        # If no matches: content stays "cataloged" (no action needed)
+        # Guest source with no matches: content stays "cataloged" (no action)
 
     # g. Commit all changes
     await session.commit()
