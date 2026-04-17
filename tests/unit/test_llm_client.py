@@ -142,3 +142,44 @@ class TestLLMClientReview:
 
         with pytest.raises(APIConnectionError):
             await client.review("sys", "usr", SampleResponse)
+
+    @pytest.mark.asyncio
+    async def test_raises_typed_error_when_no_tool_use_block(self, client):
+        """INTEGRATIONS-REVIEW M-02 (T6.11): when Claude returns only text
+        blocks (rare but possible on refusal/safety), the client previously
+        raised an uncaught ``StopIteration`` from ``next(...)``. It must
+        now raise a typed error (``ValueError`` or ``LLMClientError``)
+        that the worker can categorize.
+        """
+        text_block = MagicMock()
+        text_block.type = "text"
+        text_block.text = "I can't help with that."
+
+        usage = MagicMock()
+        usage.input_tokens = 50
+        usage.output_tokens = 10
+
+        response = MagicMock()
+        response.content = [text_block]
+        response.usage = usage
+
+        client._client.messages.create = AsyncMock(return_value=response)
+
+        with pytest.raises(ValueError, match="tool_use"):
+            await client.review("sys", "usr", SampleResponse)
+
+    @pytest.mark.asyncio
+    async def test_raises_typed_error_when_response_content_empty(self, client):
+        """Edge case: empty content list must not raise StopIteration."""
+        usage = MagicMock()
+        usage.input_tokens = 50
+        usage.output_tokens = 0
+
+        response = MagicMock()
+        response.content = []
+        response.usage = usage
+
+        client._client.messages.create = AsyncMock(return_value=response)
+
+        with pytest.raises(ValueError, match="tool_use"):
+            await client.review("sys", "usr", SampleResponse)

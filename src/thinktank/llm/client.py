@@ -89,8 +89,20 @@ class LLMClient:
             tool_choice={"type": "tool", "name": "structured_output"},
         )
 
-        # Find the tool_use content block and parse it
-        tool_use_block = next(block for block in response.content if block.type == "tool_use")
+        # Find the tool_use content block and parse it.
+        # INTEGRATIONS-REVIEW M-02 (T6.11): use ``next(iter, None)`` so a
+        # refusal / safety response that contains only text (or an empty
+        # content list) raises a typed ``ValueError`` instead of letting
+        # a raw ``StopIteration`` escape as ``RuntimeError``.
+        tool_use_block = next(
+            (block for block in response.content if block.type == "tool_use"),
+            None,
+        )
+        if tool_use_block is None:
+            raise ValueError(
+                "Claude response did not include a tool_use block "
+                "(possibly a refusal or safety response)"
+            )
         parsed_result = response_schema.model_validate(tool_use_block.input)
 
         duration_ms = int((time.monotonic() - start) * 1000)
