@@ -6,6 +6,7 @@ The agent can query the database and propose mutations for user confirmation.
 
 import json
 
+import structlog
 from fastapi import APIRouter, Depends, Form, HTTPException, Query
 from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,8 @@ from thinktank.agent.session import chat_sessions
 from thinktank.agent.stream import stream_agent_response
 from thinktank.agent.tools import execute_confirmed_action
 from thinktank.database import async_session_factory
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/admin/chat", tags=["chat"])
 
@@ -36,13 +39,27 @@ async def chat_send(
         new_session = True
 
     async def event_generator():
-        # Create a DB session that lives for the duration of streaming
-        async with async_session_factory() as db_session:
+        # Create a DB session that lives for the duration of streaming.
+        # Explicit try/except/finally with rollback guards against streaming
+        # errors leaving a pending transaction tied up in the session.
+        db_session = async_session_factory()
+        try:
             if new_session:
                 yield json.dumps({"type": "session_init", "session_id": session_id})
 
             async for event_data in stream_agent_response(session_id, message, db_session):
                 yield json.dumps(event_data)
+        except Exception as exc:
+            logger.warning(
+                "chat_stream_failed",
+                session_id=session_id,
+                error=str(exc),
+                exc_info=True,
+            )
+            await db_session.rollback()
+            yield json.dumps({"type": "error", "message": "Internal server error"})
+        finally:
+            await db_session.close()
 
     return EventSourceResponse(
         event_generator(),

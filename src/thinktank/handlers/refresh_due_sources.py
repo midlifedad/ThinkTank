@@ -22,7 +22,7 @@ import uuid
 from datetime import UTC, datetime
 
 import structlog
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.models.job import Job
@@ -49,10 +49,10 @@ async def handle_refresh_due_sources(
     """
     log = logger.bind(job_id=str(job.id))
 
-    # a. Query for due sources
+    # a. Query for due sources (id + source_type for job-type branching)
     result = await session.execute(
         text("""
-            SELECT id FROM sources
+            SELECT id, source_type FROM sources
             WHERE active = true
               AND approval_status = 'approved'
               AND (
@@ -61,16 +61,36 @@ async def handle_refresh_due_sources(
               )
         """)
     )
-    due_source_ids = [row[0] for row in result.fetchall()]
+    due_sources = [(row[0], row[1]) for row in result.fetchall()]
 
-    log.info("due_sources_found", count=len(due_source_ids))
+    log.info("due_sources_found", count=len(due_sources))
 
-    # b. Create fetch_podcast_feed job for each due source
+    # b. Create correct fetch job for each due source, skipping any that already
+    # have an in-flight job (pending/running/retrying) for the same source_id.
     now = _now()
-    for source_id in due_source_ids:
+    enqueued = 0
+    skipped = 0
+    for source_id, source_type in due_sources:
+        job_type = (
+            "fetch_youtube_channel"
+            if source_type == "youtube_channel"
+            else "fetch_podcast_feed"
+        )
+
+        existing = await session.execute(
+            select(Job.id).where(
+                Job.job_type == job_type,
+                Job.payload["source_id"].astext == str(source_id),
+                Job.status.in_(["pending", "running", "retrying"]),
+            )
+        )
+        if existing.scalar_one_or_none() is not None:
+            skipped += 1
+            continue
+
         fetch_job = Job(
             id=uuid.uuid4(),
-            job_type="fetch_podcast_feed",
+            job_type=job_type,
             payload={"source_id": str(source_id)},
             priority=2,
             status="pending",
@@ -79,8 +99,9 @@ async def handle_refresh_due_sources(
             created_at=now,
         )
         session.add(fetch_job)
+        enqueued += 1
 
     # d. Commit
     await session.commit()
 
-    log.info("fetch_jobs_created", count=len(due_source_ids))
+    log.info("fetch_jobs_created", enqueued=enqueued, skipped=skipped)

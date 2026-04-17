@@ -194,6 +194,37 @@ class TestSourceAdd:
         assert junc is not None
         assert junc.thinker_id == thinker.id
 
+    async def test_add_rejects_malformed_thinker_id(
+        self, admin_client, session: AsyncSession
+    ):
+        """POST add with malformed thinker_id returns 422 (HI-04)."""
+        response = await admin_client.post(
+            "/admin/sources/add",
+            data={
+                "name": "Bad Thinker Feed",
+                "url": "https://example.com/bad-thinker.xml",
+                "thinker_id": "not-a-uuid",
+                "source_type": "podcast_rss",
+            },
+        )
+        assert response.status_code == 422
+
+    async def test_add_rejects_missing_thinker_id(
+        self, admin_client, session: AsyncSession
+    ):
+        """POST add with UUID that doesn't exist as a thinker returns 422 (HI-04)."""
+        missing = uuid.uuid4()
+        response = await admin_client.post(
+            "/admin/sources/add",
+            data={
+                "name": "Missing Thinker Feed",
+                "url": "https://example.com/missing-thinker.xml",
+                "thinker_id": str(missing),
+                "source_type": "podcast_rss",
+            },
+        )
+        assert response.status_code == 422
+
     async def test_add_returns_success_message(
         self, admin_client, session: AsyncSession
     ):

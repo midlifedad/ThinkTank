@@ -156,18 +156,33 @@ async def add_source(
 
     session.add(source)
 
-    # Create junction row if thinker provided
+    # Create junction row if thinker provided. Reject malformed UUIDs and
+    # references to missing thinkers with 422 — silent-drop previously
+    # masked operator errors (ADMIN-REVIEW HI-04).
     if thinker_id:
         try:
             tid = uuid.UUID(thinker_id)
-            junction = SourceThinker(
-                source_id=source.id,
-                thinker_id=tid,
-                relationship_type="curated",
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid thinker_id: {thinker_id!r} is not a valid UUID",
+            ) from exc
+
+        thinker_exists = await session.execute(
+            select(Thinker.id).where(Thinker.id == tid).limit(1)
+        )
+        if thinker_exists.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid thinker_id: no thinker with id {tid}",
             )
-            session.add(junction)
-        except ValueError:
-            pass
+
+        junction = SourceThinker(
+            source_id=source.id,
+            thinker_id=tid,
+            relationship_type="curated",
+        )
+        session.add(junction)
 
     await session.commit()
 
