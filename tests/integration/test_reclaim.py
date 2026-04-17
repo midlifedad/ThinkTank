@@ -185,3 +185,56 @@ class TestReclaimStaleJobs:
         reclaimed = await reclaim_stale_jobs(session)
         assert len(reclaimed) == 1
         assert reclaimed[0]["id"] == stale.id
+
+    async def test_reclaim_backoff_is_capped_at_sixty_minutes(
+        self, session: AsyncSession
+    ):
+        """HANDLERS-REVIEW HI-06 (T6.3): backoff must match retry.calculate_backoff
+        (single source of truth), which caps at 60 minutes.
+
+        Previously reclaim.py used raw SQL ``POWER(2, attempts + 1)`` with no
+        cap, so a job with attempts=10 would be scheduled 2^11 = 2048 minutes
+        (~34 hours) in the future -- diverging from worker retry semantics.
+        """
+        from datetime import datetime, timedelta
+
+        from thinktank.queue.reclaim import reclaim_stale_jobs
+
+        await create_system_config(
+            session,
+            key="stale_job_timeout_minutes",
+            value={"value": 30},
+        )
+
+        # max_attempts is high so the job is still retryable; attempts=10
+        # triggers the uncapped SQL path (2^11 = 2048 minutes).
+        stale = await self._create_running_job_started_minutes_ago(
+            session, 35, attempts=10, max_attempts=20
+        )
+
+        await reclaim_stale_jobs(session)
+
+        result = await session.execute(
+            text(
+                "SELECT status, scheduled_at, "
+                "NOW() AS now_ts "
+                "FROM jobs WHERE id = :id"
+            ),
+            {"id": str(stale.id)},
+        )
+        row = result.fetchone()
+        assert row[0] == "retrying"
+        assert row[1] is not None
+
+        scheduled_at: datetime = row[1]
+        now_ts: datetime = row[2]
+        delta = scheduled_at - now_ts
+        # Expected: calculate_backoff(11) = min(2**11, 60) = 60 minutes.
+        # Allow small slop for clock drift between LOCALTIMESTAMP and the
+        # per-row UPDATE execution.
+        assert delta <= timedelta(minutes=60, seconds=5), (
+            f"Reclaim backoff should be capped at 60 minutes, got {delta}"
+        )
+        assert delta >= timedelta(minutes=59), (
+            f"Expected full 60-minute cap, got {delta}"
+        )
