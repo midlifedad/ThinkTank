@@ -40,7 +40,7 @@ async def reclaim_stale_jobs(session: AsyncSession) -> list[dict]:
     """Reclaim jobs stuck in 'running' state beyond the timeout.
 
     For each stale job:
-    - If attempts + 1 >= max_attempts: set status='failed', completed_at=LOCALTIMESTAMP
+    - If attempts + 1 >= max_attempts: set status='failed', completed_at=NOW()
     - Otherwise: set status='retrying', scheduled_at with exponential backoff
       from ``calculate_backoff`` (single source of truth with worker retry
       semantics, capped at 60 minutes).
@@ -50,7 +50,14 @@ async def reclaim_stale_jobs(session: AsyncSession) -> list[dict]:
     - attempts = attempts + 1
     - error = 'Reclaimed: exceeded stale_job_timeout_minutes'
     - error_category = 'worker_timeout'
-    - last_error_at = LOCALTIMESTAMP
+    - last_error_at = NOW()
+
+    HANDLERS LO-06: uses ``NOW()`` (TIMESTAMPTZ) rather than
+    ``LOCALTIMESTAMP``. The ``jobs.started_at / last_error_at / scheduled_at /
+    completed_at`` columns are TIMESTAMPTZ; comparing to LOCALTIMESTAMP
+    (timezone-less, server local time) silently shifts the stale window by
+    the host's UTC offset — so a DB in America/New_York reclaimed jobs 4–5
+    hours early. ``NOW()`` returns TIMESTAMPTZ and is timezone-safe.
 
     Args:
         session: Async database session.
@@ -69,7 +76,7 @@ async def reclaim_stale_jobs(session: AsyncSession) -> list[dict]:
         SELECT id, job_type, worker_id, attempts, max_attempts
         FROM jobs
         WHERE status = 'running'
-          AND started_at < LOCALTIMESTAMP - MAKE_INTERVAL(mins => :timeout_minutes)
+          AND started_at < NOW() - MAKE_INTERVAL(mins => :timeout_minutes)
         FOR UPDATE SKIP LOCKED
     """)
     candidates = (await session.execute(select_stmt, {"timeout_minutes": timeout_minutes})).fetchall()
@@ -82,8 +89,8 @@ async def reclaim_stale_jobs(session: AsyncSession) -> list[dict]:
             attempts = :new_attempts,
             error = 'Reclaimed: exceeded stale_job_timeout_minutes',
             error_category = 'worker_timeout',
-            last_error_at = LOCALTIMESTAMP,
-            scheduled_at = LOCALTIMESTAMP + MAKE_INTERVAL(mins => :backoff_minutes),
+            last_error_at = NOW(),
+            scheduled_at = NOW() + MAKE_INTERVAL(mins => :backoff_minutes),
             completed_at = NULL
         WHERE id = :id
     """)
@@ -94,9 +101,9 @@ async def reclaim_stale_jobs(session: AsyncSession) -> list[dict]:
             attempts = :new_attempts,
             error = 'Reclaimed: exceeded stale_job_timeout_minutes',
             error_category = 'worker_timeout',
-            last_error_at = LOCALTIMESTAMP,
+            last_error_at = NOW(),
             scheduled_at = NULL,
-            completed_at = LOCALTIMESTAMP
+            completed_at = NOW()
         WHERE id = :id
     """)
 

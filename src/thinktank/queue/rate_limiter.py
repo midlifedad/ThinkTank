@@ -68,13 +68,14 @@ async def check_and_acquire_rate_limit(
     lock_key = hash(api_name) & 0x7FFFFFFF
     await session.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": lock_key})
 
-    # Use PG's LOCALTIMESTAMP for cutoff to match server-default NOW()
-    # on the called_at column (both TIMESTAMP WITHOUT TIME ZONE).
-    # This avoids timezone mismatches between Python UTC and PG local time.
+    # HANDLERS LO-06: use NOW() (TIMESTAMPTZ) instead of LOCALTIMESTAMP
+    # (timezone-less server local time). The called_at column is TIMESTAMPTZ,
+    # so LOCALTIMESTAMP silently shifted the window by the host's UTC offset
+    # — a worker on a non-UTC host counted calls from the wrong window.
     count_stmt = text(
         "SELECT COUNT(*) FROM rate_limit_usage "
         "WHERE api_name = :api_name "
-        "AND called_at > LOCALTIMESTAMP - MAKE_INTERVAL(mins => :window_minutes)"
+        "AND called_at > NOW() - MAKE_INTERVAL(mins => :window_minutes)"
     )
     count_result = await session.execute(count_stmt, {"api_name": api_name, "window_minutes": window_minutes})
     current_count = count_result.scalar_one()
