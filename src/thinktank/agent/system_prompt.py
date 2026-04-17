@@ -31,7 +31,7 @@ DATABASE SCHEMA SUMMARY:
    max_attempts, error, error_category, last_error_at, worker_id, llm_review_id (FK->llm_reviews),
    scheduled_at, started_at, completed_at, created_at
    Job types: fetch_podcast_feed, fetch_youtube_channel, scan_episodes_for_thinkers,
-   rescan_cataloged_for_thinker, tag_content_thinkers, process_content, discover_thinker,
+   rescan_cataloged_for_thinker, process_content, discover_thinker,
    scan_for_candidates, discover_guests_podcastindex, llm_approval_check,
    refresh_due_sources, rollup_api_usage
 

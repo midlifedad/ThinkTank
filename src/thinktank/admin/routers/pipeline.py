@@ -34,13 +34,15 @@ ALLOWED_TRIGGER_TYPES = {
 KNOWN_JOB_TYPES = [
     "fetch_podcast_feed",
     "refresh_due_sources",
-    "tag_content_thinkers",
     "process_content",
     "llm_approval_check",
     "scan_for_candidates",
     "discover_thinker",
     "discover_guests_podcastindex",
     "rollup_api_usage",
+    "scan_episodes_for_thinkers",
+    "fetch_youtube_channel",
+    "rescan_cataloged_for_thinker",
 ]
 
 # Configurable scheduled tasks
