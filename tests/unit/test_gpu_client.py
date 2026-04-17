@@ -113,6 +113,73 @@ class TestSendToGpu:
         assert "files" in call_kwargs.kwargs or "files" in (call_kwargs.args[1] if len(call_kwargs.args) > 1 else {})
 
 
+class TestSendToGpuRateLimited:
+    """INTEGRATIONS H-04: 429/Retry-After must raise RateLimitedError, not
+    RuntimeError. The worker's fail_job path reads retry_after_seconds off
+    RateLimitedError and schedules the retry at the upstream's requested
+    delay; wrapping it as RuntimeError would lose that hint.
+    """
+
+    @pytest.mark.asyncio
+    @patch("thinktank.transcription.gpu_client.httpx.AsyncClient")
+    async def test_429_raises_rate_limited_error_with_retry_after(self, mock_client_cls, tmp_path):
+        from thinktank.http_utils import RateLimitedError
+        from thinktank.transcription.gpu_client import send_to_gpu
+
+        wav_path = str(tmp_path / "test.wav")
+        with open(wav_path, "wb") as f:
+            f.write(b"fake wav data")
+
+        mock_request = MagicMock()
+        mock_request.url = "http://gpu-worker:8000/transcribe"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {"Retry-After": "120"}
+        mock_response.request = mock_request
+
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        with pytest.raises(RateLimitedError) as exc_info:
+            await send_to_gpu(wav_path, gpu_url="http://gpu-worker:8000")
+
+        assert exc_info.value.retry_after_seconds == 120
+
+    @pytest.mark.asyncio
+    @patch("thinktank.transcription.gpu_client.httpx.AsyncClient")
+    async def test_429_without_retry_after_header(self, mock_client_cls, tmp_path):
+        """Missing Retry-After still surfaces as RateLimitedError (hint=None)."""
+        from thinktank.http_utils import RateLimitedError
+        from thinktank.transcription.gpu_client import send_to_gpu
+
+        wav_path = str(tmp_path / "test.wav")
+        with open(wav_path, "wb") as f:
+            f.write(b"fake wav data")
+
+        mock_request = MagicMock()
+        mock_request.url = "http://gpu-worker:8000/transcribe"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {}
+        mock_response.request = mock_request
+
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        with pytest.raises(RateLimitedError) as exc_info:
+            await send_to_gpu(wav_path, gpu_url="http://gpu-worker:8000")
+
+        assert exc_info.value.retry_after_seconds is None
+
+
 class TestTranscribeWithChunking:
     """Tests for transcribe_with_chunking (long audio > 60min)."""
 

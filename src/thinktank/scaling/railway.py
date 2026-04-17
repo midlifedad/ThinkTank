@@ -12,6 +12,7 @@ import httpx
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.http_utils import RateLimitedError, raise_for_status_with_backoff
 from thinktank.ingestion.config_reader import get_config_value
 from thinktank.queue.backpressure import get_queue_depth
 from thinktank.secrets import get_secret
@@ -77,7 +78,7 @@ async def scale_gpu_service(replicas: int, session: AsyncSession | None = None) 
                 headers={"Authorization": f"Bearer {api_key}"},
                 timeout=30.0,
             )
-            resp.raise_for_status()
+            raise_for_status_with_backoff(resp)
             data = resp.json()
 
             if "errors" in data:
@@ -96,11 +97,15 @@ async def scale_gpu_service(replicas: int, session: AsyncSession | None = None) 
 
     # INTEGRATIONS-REVIEW M-04 (T6.13): narrowed from bare ``except Exception``
     # so programming bugs (AttributeError, NameError, etc.) propagate instead
-    # of being silently swallowed as a scale failure.
-    except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError):
+    # of being silently swallowed as a scale failure. INTEGRATIONS H-04:
+    # RateLimitedError from raise_for_status_with_backoff is caught here so a
+    # 429/Retry-After is logged + returns False (the scaling loop retries on
+    # the next tick; there is no queue job to attach the hint to).
+    except (httpx.HTTPError, RateLimitedError, json.JSONDecodeError, KeyError, TypeError) as exc:
         logger.error(
             "railway_api_failed",
             replicas=replicas,
+            retry_after_seconds=getattr(exc, "retry_after_seconds", None),
             exc_info=True,
         )
         return False
@@ -153,7 +158,7 @@ async def get_gpu_replica_count(session: AsyncSession | None = None) -> int | No
                 headers={"Authorization": f"Bearer {api_key}"},
                 timeout=30.0,
             )
-            resp.raise_for_status()
+            raise_for_status_with_backoff(resp)
             data = resp.json()
 
             if "errors" in data:
@@ -169,9 +174,14 @@ async def get_gpu_replica_count(session: AsyncSession | None = None) -> int | No
 
     # INTEGRATIONS-REVIEW M-04 (T6.13): narrowed from bare ``except Exception``
     # so programming bugs propagate rather than masquerading as a missing
-    # replica count.
-    except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError):
-        logger.error("railway_query_failed", exc_info=True)
+    # replica count. INTEGRATIONS H-04: RateLimitedError is caught here so a
+    # 429/Retry-After is logged + returns None (scaling loop retries next tick).
+    except (httpx.HTTPError, RateLimitedError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        logger.error(
+            "railway_query_failed",
+            retry_after_seconds=getattr(exc, "retry_after_seconds", None),
+            exc_info=True,
+        )
         return None
 
 
