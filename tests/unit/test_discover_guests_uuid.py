@@ -39,8 +39,7 @@ async def test_invalid_thinker_id_is_logged_and_returns_cleanly(caplog):
     # session.get must NOT have been called with the bad string.
     get_calls = [c.args[1] for c in session.get.await_args_list]
     assert "not-a-valid-uuid" not in get_calls, (
-        "invalid thinker_id string was passed to session.get -- must be "
-        "caught and early-returned"
+        "invalid thinker_id string was passed to session.get -- must be caught and early-returned"
     )
 
     # No Source insert attempted.

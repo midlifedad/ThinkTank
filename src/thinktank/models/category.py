@@ -21,7 +21,7 @@ class Category(TimestampMixin, Base):
     id: Mapped[uuid_pk]
     slug: Mapped[str] = mapped_column(sa.Text, unique=True)
     name: Mapped[str] = mapped_column(sa.Text)
-    parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
         sa.ForeignKey("categories.id"),
         nullable=True,
     )
@@ -59,9 +59,7 @@ class ThinkerCategory(Base):
         primary_key=True,
     )
     relevance: Mapped[int] = mapped_column(sa.SmallInteger)
-    added_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
+    added_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
 
     # Relationship for eager-loading category names without N+1 queries.
     category: Mapped["Category"] = relationship()
@@ -87,9 +85,7 @@ class SourceCategory(Base):
         primary_key=True,
     )
     relevance: Mapped[int] = mapped_column(sa.SmallInteger)
-    added_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
+    added_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
 
     def __repr__(self) -> str:
         return f"<SourceCategory(source={self.source_id}, cat={self.category_id})>"

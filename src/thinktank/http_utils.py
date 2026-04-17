@@ -16,7 +16,7 @@ Source: INTEGRATIONS-REVIEW M-02.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 
 import httpx
@@ -79,8 +79,8 @@ def _parse_retry_after(raw: str | None) -> int | None:
         if when is None:
             return None
         if when.tzinfo is None:
-            when = when.replace(tzinfo=timezone.utc)
-        now = datetime.now(timezone.utc)
+            when = when.replace(tzinfo=UTC)
+        now = datetime.now(UTC)
         seconds = int((when - now).total_seconds())
 
     if seconds < 0:

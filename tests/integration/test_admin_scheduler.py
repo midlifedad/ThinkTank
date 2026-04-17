@@ -1,16 +1,16 @@
 """Integration tests for recurring task scheduler editor endpoints."""
 
 import os
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_system_config
 from thinktank.models.config_table import SystemConfig
 from thinktank.models.job import Job
-from tests.factories import create_system_config
 
 pytestmark = pytest.mark.anyio
 
@@ -65,9 +65,7 @@ class TestSchedulerPartial:
         assert 'value="6"' in response.text
         assert 'value="168"' in response.text
 
-    async def test_scheduler_shows_custom_config(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_scheduler_shows_custom_config(self, admin_client, session: AsyncSession):
         """Seeded system_config row overrides the default frequency."""
         await create_system_config(
             session,
@@ -101,17 +99,13 @@ class TestSchedulerSave:
 
         # Verify DB
         result = await session.execute(
-            select(SystemConfig.value).where(
-                SystemConfig.key == "scheduler_refresh_due_sources"
-            )
+            select(SystemConfig.value).where(SystemConfig.key == "scheduler_refresh_due_sources")
         )
         saved = result.scalar_one_or_none()
         assert saved is not None
         assert saved["frequency_hours"] == 4
 
-    async def test_save_frequency_creates_config(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_save_frequency_creates_config(self, admin_client, session: AsyncSession):
         """No existing row -- POST save creates new system_config row."""
         response = await admin_client.post(
             "/admin/pipeline/scheduler/scan_for_candidates/save",
@@ -120,18 +114,14 @@ class TestSchedulerSave:
         assert response.status_code == 200
 
         result = await session.execute(
-            select(SystemConfig.value).where(
-                SystemConfig.key == "scheduler_scan_for_candidates"
-            )
+            select(SystemConfig.value).where(SystemConfig.key == "scheduler_scan_for_candidates")
         )
         saved = result.scalar_one_or_none()
         assert saved is not None
         assert saved["frequency_hours"] == 12
         assert saved["enabled"] is True
 
-    async def test_save_frequency_updates_existing(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_save_frequency_updates_existing(self, admin_client, session: AsyncSession):
         """Seed existing row with frequency_hours=6, POST save with 2, verify updated."""
         await create_system_config(
             session,
@@ -188,9 +178,7 @@ class TestSchedulerToggle:
         )
         await session.commit()
 
-        response = await admin_client.post(
-            "/admin/pipeline/scheduler/refresh_due_sources/toggle"
-        )
+        response = await admin_client.post("/admin/pipeline/scheduler/refresh_due_sources/toggle")
         assert response.status_code == 200
 
         result = await session.execute(
@@ -219,9 +207,7 @@ class TestSchedulerToggle:
         )
         await session.commit()
 
-        response = await admin_client.post(
-            "/admin/pipeline/scheduler/scan_for_candidates/toggle"
-        )
+        response = await admin_client.post("/admin/pipeline/scheduler/scan_for_candidates/toggle")
         assert response.status_code == 200
 
         result = await session.execute(
@@ -233,19 +219,13 @@ class TestSchedulerToggle:
         assert saved is not None
         assert saved["enabled"] is False
 
-    async def test_toggle_creates_default_if_missing(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_toggle_creates_default_if_missing(self, admin_client, session: AsyncSession):
         """No existing config -- POST toggle creates with enabled=false (toggled from default true)."""
-        response = await admin_client.post(
-            "/admin/pipeline/scheduler/llm_health_check/toggle"
-        )
+        response = await admin_client.post("/admin/pipeline/scheduler/llm_health_check/toggle")
         assert response.status_code == 200
 
         result = await session.execute(
-            select(SystemConfig.value).where(
-                SystemConfig.key == "scheduler_llm_health_check"
-            )
+            select(SystemConfig.value).where(SystemConfig.key == "scheduler_llm_health_check")
         )
         saved = result.scalar_one_or_none()
         assert saved is not None
@@ -258,35 +238,25 @@ class TestSchedulerRunNow:
 
     async def test_run_now_creates_job(self, admin_client, session: AsyncSession):
         """POST run-now for refresh_due_sources creates a Job with correct payload."""
-        response = await admin_client.post(
-            "/admin/pipeline/scheduler/refresh_due_sources/run-now"
-        )
+        response = await admin_client.post("/admin/pipeline/scheduler/refresh_due_sources/run-now")
         assert response.status_code == 200
         assert "triggered" in response.text.lower()
 
         # Verify job in DB
         result = await session.execute(
-            select(Job)
-            .where(Job.job_type == "refresh_due_sources")
-            .execution_options(populate_existing=True)
+            select(Job).where(Job.job_type == "refresh_due_sources").execution_options(populate_existing=True)
         )
         job = result.scalar_one()
         assert job.status == "pending"
         assert job.payload["triggered_by"] == "admin_scheduler_run_now"
 
-    async def test_run_now_updates_last_run(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_run_now_updates_last_run(self, admin_client, session: AsyncSession):
         """POST run-now for scan_for_candidates sets last_run_at to approximately now."""
-        response = await admin_client.post(
-            "/admin/pipeline/scheduler/scan_for_candidates/run-now"
-        )
+        response = await admin_client.post("/admin/pipeline/scheduler/scan_for_candidates/run-now")
         assert response.status_code == 200
 
         result = await session.execute(
-            select(SystemConfig.value).where(
-                SystemConfig.key == "scheduler_scan_for_candidates"
-            )
+            select(SystemConfig.value).where(SystemConfig.key == "scheduler_scan_for_candidates")
         )
         saved = result.scalar_one_or_none()
         assert saved is not None
@@ -295,26 +265,18 @@ class TestSchedulerRunNow:
         last_run = datetime.fromisoformat(saved["last_run_at"])
         assert abs((last_run - _now()).total_seconds()) < 60
 
-    async def test_run_now_llm_task_no_job(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_run_now_llm_task_no_job(self, admin_client, session: AsyncSession):
         """POST run-now for llm_health_check creates NO job -- returns info message."""
-        response = await admin_client.post(
-            "/admin/pipeline/scheduler/llm_health_check/run-now"
-        )
+        response = await admin_client.post("/admin/pipeline/scheduler/llm_health_check/run-now")
         assert response.status_code == 200
         assert "LLM tasks run on their internal schedule" in response.text
 
         # Verify no job created
-        result = await session.execute(
-            select(Job).execution_options(populate_existing=True)
-        )
+        result = await session.execute(select(Job).execution_options(populate_existing=True))
         jobs = result.scalars().all()
         assert len(jobs) == 0
 
     async def test_run_now_invalid_task_key(self, admin_client):
         """POST run-now with unknown task key returns 404."""
-        response = await admin_client.post(
-            "/admin/pipeline/scheduler/nonexistent/run-now"
-        )
+        response = await admin_client.post("/admin/pipeline/scheduler/nonexistent/run-now")
         assert response.status_code == 404

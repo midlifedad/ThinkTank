@@ -3,9 +3,6 @@
 Tests reclaim_stale_jobs() with real timestamps and retry/fail logic.
 """
 
-import uuid
-
-import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,9 +12,7 @@ from tests.factories import create_job, create_system_config
 class TestReclaimStaleJobs:
     """Test reclaim_stale_jobs against real DB."""
 
-    async def _create_running_job_started_minutes_ago(
-        self, session: AsyncSession, minutes_ago: int, **overrides
-    ):
+    async def _create_running_job_started_minutes_ago(self, session: AsyncSession, minutes_ago: int, **overrides):
         """Helper: create a running job with started_at set via PG time.
 
         Uses LOCALTIMESTAMP to avoid timezone mismatch between Python UTC
@@ -31,10 +26,7 @@ class TestReclaimStaleJobs:
         )
         # Set started_at using PG's own clock for consistency with reclaim query
         await session.execute(
-            text(
-                "UPDATE jobs SET started_at = LOCALTIMESTAMP - MAKE_INTERVAL(mins => :mins) "
-                "WHERE id = :job_id"
-            ),
+            text("UPDATE jobs SET started_at = LOCALTIMESTAMP - MAKE_INTERVAL(mins => :mins) WHERE id = :job_id"),
             {"mins": minutes_ago, "job_id": str(job.id)},
         )
         await session.flush()
@@ -52,9 +44,7 @@ class TestReclaimStaleJobs:
         )
 
         # Create a job that started 35 minutes ago (past 30-min timeout)
-        stale_job = await self._create_running_job_started_minutes_ago(
-            session, 35, attempts=0, max_attempts=3
-        )
+        stale_job = await self._create_running_job_started_minutes_ago(session, 35, attempts=0, max_attempts=3)
 
         reclaimed = await reclaim_stale_jobs(session)
 
@@ -72,9 +62,7 @@ class TestReclaimStaleJobs:
         )
 
         # Create a job that started 25 minutes ago (within 30-min timeout)
-        await self._create_running_job_started_minutes_ago(
-            session, 25, attempts=0, max_attempts=3
-        )
+        await self._create_running_job_started_minutes_ago(session, 25, attempts=0, max_attempts=3)
 
         reclaimed = await reclaim_stale_jobs(session)
         assert len(reclaimed) == 0
@@ -89,16 +77,13 @@ class TestReclaimStaleJobs:
             value={"value": 30},
         )
 
-        stale_job = await self._create_running_job_started_minutes_ago(
-            session, 35, attempts=0, max_attempts=3
-        )
+        stale_job = await self._create_running_job_started_minutes_ago(session, 35, attempts=0, max_attempts=3)
 
         await reclaim_stale_jobs(session)
 
         # Re-read the job to check updated fields
         result = await session.execute(
-            text("SELECT status, worker_id, error_category, error, attempts "
-                 "FROM jobs WHERE id = :id"),
+            text("SELECT status, worker_id, error_category, error, attempts FROM jobs WHERE id = :id"),
             {"id": str(stale_job.id)},
         )
         row = result.fetchone()
@@ -119,9 +104,7 @@ class TestReclaimStaleJobs:
         )
 
         # Job with attempts=2, max_attempts=3: next attempt (3) >= max_attempts
-        stale_job = await self._create_running_job_started_minutes_ago(
-            session, 35, attempts=2, max_attempts=3
-        )
+        stale_job = await self._create_running_job_started_minutes_ago(session, 35, attempts=2, max_attempts=3)
 
         await reclaim_stale_jobs(session)
 
@@ -161,10 +144,7 @@ class TestReclaimStaleJobs:
         for status in ("pending", "done", "failed"):
             job = await create_job(session, status=status, attempts=0, max_attempts=3)
             await session.execute(
-                text(
-                    "UPDATE jobs SET started_at = LOCALTIMESTAMP - INTERVAL '2 hours' "
-                    "WHERE id = :id"
-                ),
+                text("UPDATE jobs SET started_at = LOCALTIMESTAMP - INTERVAL '2 hours' WHERE id = :id"),
                 {"id": str(job.id)},
             )
 
@@ -184,13 +164,9 @@ class TestReclaimStaleJobs:
         )
 
         # Stale job (35 min ago)
-        stale = await self._create_running_job_started_minutes_ago(
-            session, 35, attempts=0, max_attempts=3
-        )
+        stale = await self._create_running_job_started_minutes_ago(session, 35, attempts=0, max_attempts=3)
         # Fresh job (10 min ago)
-        await self._create_running_job_started_minutes_ago(
-            session, 10, attempts=0, max_attempts=3
-        )
+        await self._create_running_job_started_minutes_ago(session, 10, attempts=0, max_attempts=3)
 
         reclaimed = await reclaim_stale_jobs(session)
 
@@ -204,9 +180,7 @@ class TestReclaimStaleJobs:
         # No stale_job_timeout_minutes config -- should default to 30
 
         # Stale job (35 min ago, past default 30)
-        stale = await self._create_running_job_started_minutes_ago(
-            session, 35, attempts=0, max_attempts=3
-        )
+        stale = await self._create_running_job_started_minutes_ago(session, 35, attempts=0, max_attempts=3)
 
         reclaimed = await reclaim_stale_jobs(session)
         assert len(reclaimed) == 1

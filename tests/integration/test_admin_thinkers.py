@@ -1,7 +1,6 @@
 """Integration tests for thinker management: list, search, add, edit, toggle, and filter."""
 
 import os
-import uuid
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -20,6 +19,7 @@ async def _verify_thinker(session: AsyncSession, thinker_id):
         select(Thinker).where(Thinker.id == thinker_id).execution_options(populate_existing=True)
     )
     return result.scalar_one()
+
 
 pytestmark = pytest.mark.anyio
 
@@ -166,9 +166,7 @@ class TestThinkerAdd:
         # Verify in DB
         from thinktank.models.thinker import Thinker
 
-        result = await session.execute(
-            select(Thinker).where(Thinker.slug == "nassim-taleb")
-        )
+        result = await session.execute(select(Thinker).where(Thinker.slug == "nassim-taleb"))
         thinker = result.scalar_one_or_none()
         assert thinker is not None
         assert thinker.approval_status == "awaiting_llm"
@@ -184,9 +182,7 @@ class TestThinkerAdd:
 
         from thinktank.models.job import Job
 
-        result = await session.execute(
-            select(Job).where(Job.job_type == "llm_approval_check")
-        )
+        result = await session.execute(select(Job).where(Job.job_type == "llm_approval_check"))
         job = result.scalar_one_or_none()
         assert job is not None
         assert job.payload["entity_type"] == "thinker"
@@ -210,14 +206,10 @@ class TestThinkerAdd:
         from thinktank.models.category import ThinkerCategory
         from thinktank.models.thinker import Thinker
 
-        thinker_result = await session.execute(
-            select(Thinker).where(Thinker.slug == "richard-dawkins")
-        )
+        thinker_result = await session.execute(select(Thinker).where(Thinker.slug == "richard-dawkins"))
         thinker = thinker_result.scalar_one()
 
-        tc_result = await session.execute(
-            select(ThinkerCategory).where(ThinkerCategory.thinker_id == thinker.id)
-        )
+        tc_result = await session.execute(select(ThinkerCategory).where(ThinkerCategory.thinker_id == thinker.id))
         tcs = tc_result.scalars().all()
         assert len(tcs) == 1
         assert tcs[0].category_id == cat.id
@@ -269,9 +261,7 @@ class TestThinkerEdit:
         cat1 = await create_category(session, name="Cat1", slug="cat1")
         cat2 = await create_category(session, name="Cat2", slug="cat2")
         thinker = await create_thinker(session, name="Cat Thinker", slug="cat-thinker", tier=1)
-        await create_thinker_category(
-            session, thinker_id=thinker.id, category_id=cat1.id, relevance=5
-        )
+        await create_thinker_category(session, thinker_id=thinker.id, category_id=cat1.id, relevance=5)
         await session.commit()
 
         # Edit to replace cat1 with cat2
@@ -290,7 +280,8 @@ class TestThinkerEdit:
         from thinktank.models.category import ThinkerCategory
 
         tc_result = await session.execute(
-            select(ThinkerCategory).where(ThinkerCategory.thinker_id == thinker.id)
+            select(ThinkerCategory)
+            .where(ThinkerCategory.thinker_id == thinker.id)
             .execution_options(populate_existing=True)
         )
         tcs = tc_result.scalars().all()
@@ -315,9 +306,7 @@ class TestThinkerToggle:
 
     async def test_toggle_reactivates(self, admin_client, session: AsyncSession):
         """POST toggle on inactive thinker sets active=True."""
-        thinker = await create_thinker(
-            session, name="Toggle Inactive", slug="toggle-inactive", active=False
-        )
+        thinker = await create_thinker(session, name="Toggle Inactive", slug="toggle-inactive", active=False)
         await session.commit()
 
         response = await admin_client.post(f"/admin/thinkers/{thinker.id}/toggle-active")
@@ -337,8 +326,11 @@ class TestThinkerToggle:
             bio="Important bio",
             active=True,
         )
-        source = await create_source(
-            session, thinker_id=thinker.id, name="Preserved Source", url="https://example.com/preserved.xml"
+        await create_source(
+            session,
+            thinker_id=thinker.id,
+            name="Preserved Source",
+            url="https://example.com/preserved.xml",
         )
         await session.commit()
 
@@ -354,9 +346,7 @@ class TestThinkerToggle:
         assert updated.bio == "Important bio"
 
         # Sources still linked
-        source_result = await session.execute(
-            select(Source).where(Source.thinker_id == thinker.id)
-        )
+        source_result = await session.execute(select(Source).where(Source.thinker_id == thinker.id))
         sources = source_result.scalars().all()
         assert len(sources) == 1
         assert sources[0].name == "Preserved Source"

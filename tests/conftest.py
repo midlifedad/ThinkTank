@@ -11,12 +11,31 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
+
 from thinktank.models import Base
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
     "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
 )
+
+
+@pytest.fixture(scope="session")
+def anyio_backend() -> str:
+    """Pin anyio to a single session-wide asyncio loop.
+
+    Without this, anyio's default ``anyio_backend`` fixture is function-
+    scoped and spins up a fresh event loop per test. That loop dies at
+    end-of-test, but any asyncpg connection opened during the test stays
+    attached to it -- then the ``async with session_factory()`` teardown
+    in our ``session`` fixture runs the rollback on a different loop and
+    blows up with "got Future attached to a different loop".
+
+    Matching pytest-asyncio's session-scope loop means fixtures and tests
+    share one loop so connections stay on that loop for their full life.
+    """
+    return "asyncio"
 
 
 @pytest.fixture(scope="session")
@@ -28,6 +47,12 @@ async def engine():
     eng = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
+        # NullPool = no connection caching. Required with the same-session
+        # client fixture: pooled asyncpg connections get bound to the anyio
+        # loop of the test that first used them, then explode at session
+        # teardown ("got Future attached to a different loop") when drop_all
+        # tries to reuse one from a dead loop.
+        poolclass=NullPool,
         connect_args={"server_settings": {"timezone": "UTC"}},
     )
 
@@ -38,10 +63,12 @@ async def engine():
         await conn.run_sync(Base.metadata.create_all)
         # Create GiST index for trigram similarity on candidate_thinkers.normalized_name
         # (SQLAlchemy create_all does not run Alembic migrations, so we add it explicitly)
-        await conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS ix_candidate_thinkers_trgm "
-            "ON candidate_thinkers USING gist (normalized_name gist_trgm_ops)"
-        ))
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_candidate_thinkers_trgm "
+                "ON candidate_thinkers USING gist (normalized_name gist_trgm_ops)"
+            )
+        )
 
     yield eng
 
@@ -63,9 +90,23 @@ async def session(session_factory) -> AsyncGenerator[AsyncSession, None]:
 
     Each test gets its own session. Tables are truncated
     after each test for isolation.
+
+    Teardown swallows cross-loop RuntimeError: a known
+    pytest-asyncio+anyio+asyncpg quirk on CI where a pooled
+    asyncpg connection bound to a dead per-test loop explodes
+    during ``AsyncSession.close()`` rollback. By the time we get
+    here the test body has already passed; ``engine.dispose()``
+    at session end reclaims the connections. Harmless to ignore.
     """
-    async with session_factory() as session:
-        yield session
+    sess = session_factory()
+    try:
+        yield sess
+    finally:
+        try:
+            await sess.close()
+        except RuntimeError as e:
+            if "different loop" not in str(e):
+                raise
 
 
 @pytest.fixture
@@ -89,31 +130,45 @@ async def _cleanup_tables(engine):
             )
             existing_tables = [row[0] for row in result.fetchall()]
             if existing_tables:
-                await conn.execute(
-                    text(f"TRUNCATE {', '.join(existing_tables)} CASCADE")
-                )
+                await conn.execute(text(f"TRUNCATE {', '.join(existing_tables)} CASCADE"))
     except Exception:
         pass  # Tables may not exist (e.g., after migration downgrade tests)
 
 
 @pytest.fixture
-async def client() -> AsyncGenerator[AsyncClient, None]:
-    """HTTP client for integration tests against the FastAPI app."""
-    # Override DATABASE_URL to use test database
-    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+async def client(session_factory) -> AsyncGenerator[AsyncClient, None]:
+    """HTTP client for API tests against the FastAPI app.
 
-    # Clear settings cache to pick up test URL
+    Overrides ``get_session`` so the app uses the test engine's
+    ``session_factory`` (with NullPool) instead of its own module-level
+    engine. Each request opens a fresh AsyncSession on a fresh asyncpg
+    connection inside the request's own event loop -- no pool race, no
+    cross-loop Future errors.
+
+    We deliberately do NOT yield the test's ``session`` fixture here:
+    pytest-asyncio runs async fixtures on the session-wide loop but
+    anyio tests run on a per-test loop, so sharing a single AsyncSession
+    between fixture and test crosses loops and explodes on close.
+    """
+    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
     from thinktank.config import get_settings
 
     get_settings.cache_clear()
 
+    from thinktank.api.dependencies import get_session
     from thinktank.api.main import app
+
+    async def _override_get_session() -> AsyncGenerator[AsyncSession, None]:
+        async with session_factory() as s:
+            yield s
+
+    app.dependency_overrides[get_session] = _override_get_session
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
-    # Restore cache
+    app.dependency_overrides.pop(get_session, None)
     get_settings.cache_clear()
 
 

@@ -4,13 +4,10 @@ Spec reference: Section 7.1.
 All yt-dlp and httpx calls are mocked -- no external I/O.
 """
 
-import io
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-
 # --- Helpers ---
+
 
 def _vtt_content(word_count: int) -> str:
     """Generate a VTT string with approximately `word_count` words.
@@ -65,9 +62,7 @@ class TestExtractYoutubeCaptions:
         mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
         mock_ydl_cls.return_value.__exit__ = MagicMock(return_value=False)
         mock_ydl.extract_info.return_value = {
-            "requested_subtitles": {
-                "en": {"url": "https://example.com/subs.vtt", "ext": "vtt"}
-            }
+            "requested_subtitles": {"en": {"url": "https://example.com/subs.vtt", "ext": "vtt"}}
         }
 
         # Mock httpx.get to return VTT content
@@ -106,9 +101,7 @@ class TestExtractYoutubeCaptions:
         mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
         mock_ydl_cls.return_value.__exit__ = MagicMock(return_value=False)
         mock_ydl.extract_info.return_value = {
-            "requested_subtitles": {
-                "en": {"url": "https://example.com/short.vtt", "ext": "vtt"}
-            }
+            "requested_subtitles": {"en": {"url": "https://example.com/short.vtt", "ext": "vtt"}}
         }
 
         vtt = _vtt_content(50)
@@ -139,15 +132,12 @@ class TestExtractYoutubeCaptions:
     @patch("thinktank.transcription.captions.YoutubeDL")
     def test_vtt_parsing_strips_timing_and_deduplicates(self, mock_ydl_cls, mock_httpx):
         """VTT content with timestamps and duplicate lines yields clean text."""
-        from thinktank.transcription.captions import extract_youtube_captions
 
         mock_ydl = MagicMock()
         mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
         mock_ydl_cls.return_value.__exit__ = MagicMock(return_value=False)
         mock_ydl.extract_info.return_value = {
-            "requested_subtitles": {
-                "en": {"url": "https://example.com/dups.vtt", "ext": "vtt"}
-            }
+            "requested_subtitles": {"en": {"url": "https://example.com/dups.vtt", "ext": "vtt"}}
         }
 
         # VTT with 3 unique lines (will be < 100 words, so returns None -- that's expected)

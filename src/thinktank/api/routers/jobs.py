@@ -1,12 +1,11 @@
 """Job queue status endpoint."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import JobStatusResponse
-
 from thinktank.models.job import Job
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
@@ -18,10 +17,7 @@ async def get_job_status(
 ) -> JobStatusResponse:
     """Get aggregated job queue status with counts by type and status, plus recent errors."""
     # Counts by type: {job_type: {status: count}}
-    type_query = (
-        select(Job.job_type, Job.status, func.count().label("cnt"))
-        .group_by(Job.job_type, Job.status)
-    )
+    type_query = select(Job.job_type, Job.status, func.count().label("cnt")).group_by(Job.job_type, Job.status)
     type_result = await session.execute(type_query)
     by_type: dict[str, dict[str, int]] = {}
     for row in type_result.all():
@@ -31,10 +27,7 @@ async def get_job_status(
         by_type[job_type][status] = cnt
 
     # Counts by status: {status: count}
-    status_query = (
-        select(Job.status, func.count().label("cnt"))
-        .group_by(Job.status)
-    )
+    status_query = select(Job.status, func.count().label("cnt")).group_by(Job.status)
     status_result = await session.execute(status_query)
     by_status: dict[str, int] = {}
     for row in status_result.all():

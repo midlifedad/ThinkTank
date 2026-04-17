@@ -9,8 +9,8 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.ingestion.trigram import find_similar_candidates, find_similar_thinkers
 from tests.factories import create_candidate_thinker, create_thinker
+from thinktank.ingestion.trigram import find_similar_candidates, find_similar_thinkers
 
 pytestmark = pytest.mark.anyio
 
@@ -75,6 +75,7 @@ async def test_candidate_appearance_incremented(session: AsyncSession):
     await session.refresh(candidate)
     candidate.appearance_count += 1
     from datetime import UTC, datetime
+
     candidate.last_seen_at = datetime.now(UTC)
     await session.commit()
 
@@ -99,11 +100,7 @@ async def test_threshold_respected(session: AsyncSession):
 async def test_gist_index_used(session: AsyncSession):
     """Verify the GiST index exists on candidate_thinkers.normalized_name."""
     result = await session.execute(
-        text(
-            "SELECT indexname FROM pg_indexes "
-            "WHERE tablename = 'candidate_thinkers' "
-            "AND indexname LIKE '%trgm%'"
-        )
+        text("SELECT indexname FROM pg_indexes WHERE tablename = 'candidate_thinkers' AND indexname LIKE '%trgm%'")
     )
     indexes = [row[0] for row in result.fetchall()]
     assert len(indexes) >= 1

@@ -13,8 +13,6 @@ Covers:
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 from thinktank.discovery.quota import (
     check_daily_quota,
     get_pending_candidate_count,
@@ -117,9 +115,7 @@ class TestCheckDailyQuota:
         ) as mock_get_config:
             can_continue, count, limit = await check_daily_quota(mock_session)
 
-            mock_get_config.assert_called_once_with(
-                mock_session, "max_candidates_per_day", 20
-            )
+            mock_get_config.assert_called_once_with(mock_session, "max_candidates_per_day", 20)
 
         assert can_continue is True
         assert limit == 50

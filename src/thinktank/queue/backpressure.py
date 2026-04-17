@@ -67,9 +67,7 @@ async def _get_threshold(session: AsyncSession) -> int:
     Returns:
         The threshold value, or _DEFAULT_MAX_PENDING if not configured.
     """
-    stmt = select(SystemConfig.value).where(
-        SystemConfig.key == "max_pending_transcriptions"
-    )
+    stmt = select(SystemConfig.value).where(SystemConfig.key == "max_pending_transcriptions")
     result = await session.execute(stmt)
     row = result.scalar_one_or_none()
 

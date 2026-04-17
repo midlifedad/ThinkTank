@@ -36,9 +36,7 @@ def load_model():
     # Lazy import to avoid errors on CPU-only machines
     import nemo.collections.asr as nemo_asr
 
-    _model = nemo_asr.models.EncDecRNNTBPEModel.from_pretrained(
-        model_name="nvidia/parakeet-tdt-1.1b"
-    )
+    _model = nemo_asr.models.EncDecRNNTBPEModel.from_pretrained(model_name="nvidia/parakeet-tdt-1.1b")
     _model.eval()
 
     elapsed = time.monotonic() - start

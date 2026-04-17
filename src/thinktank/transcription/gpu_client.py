@@ -8,7 +8,6 @@ Spec reference: Section 7.3 (Parakeet via GPU worker).
 
 import asyncio
 import os
-from uuid import uuid4
 
 import httpx
 import structlog
@@ -65,17 +64,11 @@ async def send_to_gpu(
             return text
 
     except httpx.TimeoutException as exc:
-        raise RuntimeError(
-            f"GPU transcription timeout for {wav_path}: {exc}"
-        ) from exc
+        raise RuntimeError(f"GPU transcription timeout for {wav_path}: {exc}") from exc
     except httpx.HTTPStatusError as exc:
-        raise RuntimeError(
-            f"GPU transcription HTTP error for {wav_path}: {exc.response.status_code}"
-        ) from exc
+        raise RuntimeError(f"GPU transcription HTTP error for {wav_path}: {exc.response.status_code}") from exc
     except Exception as exc:
-        raise RuntimeError(
-            f"GPU transcription failed for {wav_path}: {exc}"
-        ) from exc
+        raise RuntimeError(f"GPU transcription failed for {wav_path}: {exc}") from exc
 
 
 async def transcribe_with_chunking(

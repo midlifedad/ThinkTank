@@ -28,9 +28,7 @@ async def test_thinker_added_at_roundtrips_aware_utc(session: AsyncSession):
     await session.refresh(thinker)
 
     assert thinker.added_at is not None
-    assert thinker.added_at.tzinfo is not None, (
-        "Expected timezone-aware datetime after migration 007"
-    )
+    assert thinker.added_at.tzinfo is not None, "Expected timezone-aware datetime after migration 007"
     # UTC offset must be zero.
     assert thinker.added_at.utcoffset().total_seconds() == 0
 
@@ -76,9 +74,7 @@ async def test_aware_datetime_insert_roundtrips_unchanged(session: AsyncSession)
     source = await create_source(session)
     await session.commit()
     published = datetime(2026, 4, 1, 12, 30, 0, tzinfo=UTC)
-    content = await create_content(
-        session, source_id=source.id, published_at=published
-    )
+    content = await create_content(session, source_id=source.id, published_at=published)
     await session.commit()
     await session.refresh(content)
 

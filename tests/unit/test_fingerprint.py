@@ -73,9 +73,7 @@ class TestDurationBucketing:
     def test_close_durations_same_fingerprint(self, d1, d2):
         fp1 = compute_fingerprint("Same Episode", datetime(2025, 1, 1), d1)
         fp2 = compute_fingerprint("Same Episode", datetime(2025, 1, 1), d2)
-        assert fp1 == fp2, (
-            f"Durations {d1} and {d2} should fingerprint identically"
-        )
+        assert fp1 == fp2, f"Durations {d1} and {d2} should fingerprint identically"
 
     def test_different_buckets_differ(self):
         """Durations that bucket to different 10s boundaries still differ."""
@@ -100,9 +98,7 @@ class TestTitleWhitespaceNormalization:
     def test_whitespace_variants_same_fingerprint(self, t1, t2):
         fp1 = compute_fingerprint(t1, datetime(2025, 1, 1), 100)
         fp2 = compute_fingerprint(t2, datetime(2025, 1, 1), 100)
-        assert fp1 == fp2, (
-            f"Titles {t1!r} and {t2!r} should fingerprint identically"
-        )
+        assert fp1 == fp2, f"Titles {t1!r} and {t2!r} should fingerprint identically"
 
     def test_whitespace_only_title_returns_none(self):
         """A title that is only whitespace should be treated as empty."""

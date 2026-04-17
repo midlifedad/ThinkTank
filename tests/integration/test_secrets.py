@@ -99,9 +99,7 @@ async def test_get_secret_empty_dict_value_falls_back_to_env(
     assert result == "from-env"
 
 
-async def test_get_secret_returns_none_when_nothing_set(
-    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_get_secret_returns_none_when_nothing_set(session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
     """No DB row and no env var -> None."""
     monkeypatch.delenv("NEVER_SET", raising=False)
 

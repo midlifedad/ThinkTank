@@ -7,14 +7,10 @@ prevention.
 Uses real PostgreSQL database with factory-generated test data.
 """
 
-import uuid
-
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
-from thinktank.models.content import ContentThinker
 from tests.factories import (
     create_content,
     create_job,
@@ -22,6 +18,8 @@ from tests.factories import (
     create_source_thinker,
     create_thinker,
 )
+from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
+from thinktank.models.content import ContentThinker
 
 pytestmark = pytest.mark.anyio
 
@@ -30,9 +28,7 @@ async def test_source_owner_tagged_primary(session: AsyncSession):
     """Source owner is tagged as role='primary' with confidence=10."""
     owner = await create_thinker(session, name="Alice Owner")
     source = await create_source(session, thinker_id=owner.id)
-    await create_source_thinker(
-        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
-    )
+    await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
     content = await create_content(
         session,
         source_id=source.id,
@@ -52,9 +48,7 @@ async def test_source_owner_tagged_primary(session: AsyncSession):
 
     await handle_tag_content_thinkers(session, job)
 
-    result = await session.execute(
-        select(ContentThinker).where(ContentThinker.content_id == content.id)
-    )
+    result = await session.execute(select(ContentThinker).where(ContentThinker.content_id == content.id))
     attributions = result.scalars().all()
 
     # Source owner should be tagged
@@ -69,9 +63,7 @@ async def test_title_match_tagged_guest(session: AsyncSession):
     owner = await create_thinker(session, name="Podcast Host")
     guest = await create_thinker(session, name="John Smith")
     source = await create_source(session, thinker_id=owner.id)
-    await create_source_thinker(
-        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
-    )
+    await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
     content = await create_content(
         session,
         source_id=source.id,
@@ -107,9 +99,7 @@ async def test_description_match_tagged_guest(session: AsyncSession):
     owner = await create_thinker(session, name="Podcast Host")
     guest = await create_thinker(session, name="Jane Doe")
     source = await create_source(session, thinker_id=owner.id)
-    await create_source_thinker(
-        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
-    )
+    await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
     content = await create_content(
         session,
         source_id=source.id,
@@ -122,9 +112,7 @@ async def test_description_match_tagged_guest(session: AsyncSession):
         payload={
             "content_ids": [str(content.id)],
             "source_id": str(source.id),
-            "descriptions": {
-                str(content.id): "In this episode we talk with Jane Doe about AI."
-            },
+            "descriptions": {str(content.id): "In this episode we talk with Jane Doe about AI."},
         },
     )
     await session.commit()
@@ -145,11 +133,9 @@ async def test_description_match_tagged_guest(session: AsyncSession):
 async def test_no_match_only_primary(session: AsyncSession):
     """Content with no thinker names in title/desc -> only source owner attribution."""
     owner = await create_thinker(session, name="Solo Host")
-    other = await create_thinker(session, name="Unrelated Thinker")
+    await create_thinker(session, name="Unrelated Thinker")
     source = await create_source(session, thinker_id=owner.id)
-    await create_source_thinker(
-        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
-    )
+    await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
     content = await create_content(
         session,
         source_id=source.id,
@@ -169,9 +155,7 @@ async def test_no_match_only_primary(session: AsyncSession):
 
     await handle_tag_content_thinkers(session, job)
 
-    result = await session.execute(
-        select(ContentThinker).where(ContentThinker.content_id == content.id)
-    )
+    result = await session.execute(select(ContentThinker).where(ContentThinker.content_id == content.id))
     attributions = result.scalars().all()
 
     # Only the source owner should be attributed
@@ -186,9 +170,7 @@ async def test_multiple_thinkers_matched(session: AsyncSession):
     guest1 = await create_thinker(session, name="Alice Walker")
     guest2 = await create_thinker(session, name="Bob Martin")
     source = await create_source(session, thinker_id=owner.id)
-    await create_source_thinker(
-        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
-    )
+    await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
     content = await create_content(
         session,
         source_id=source.id,
@@ -208,9 +190,7 @@ async def test_multiple_thinkers_matched(session: AsyncSession):
 
     await handle_tag_content_thinkers(session, job)
 
-    result = await session.execute(
-        select(ContentThinker).where(ContentThinker.content_id == content.id)
-    )
+    result = await session.execute(select(ContentThinker).where(ContentThinker.content_id == content.id))
     attributions = result.scalars().all()
 
     assert len(attributions) == 3  # owner (primary) + 2 guests
@@ -228,9 +208,7 @@ async def test_skipped_content_not_attributed(session: AsyncSession):
     """Content with status='skipped' -> no ContentThinker rows created."""
     owner = await create_thinker(session, name="Host Name")
     source = await create_source(session, thinker_id=owner.id)
-    await create_source_thinker(
-        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
-    )
+    await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
     content = await create_content(
         session,
         source_id=source.id,
@@ -251,20 +229,16 @@ async def test_skipped_content_not_attributed(session: AsyncSession):
 
     await handle_tag_content_thinkers(session, job)
 
-    result = await session.execute(
-        select(ContentThinker).where(ContentThinker.content_id == content.id)
-    )
+    result = await session.execute(select(ContentThinker).where(ContentThinker.content_id == content.id))
     assert len(result.scalars().all()) == 0
 
 
 async def test_duplicate_attribution_prevented(session: AsyncSession):
     """Running handler twice on same content -> no duplicate ContentThinker rows."""
     owner = await create_thinker(session, name="Repeat Host")
-    guest = await create_thinker(session, name="Repeat Guest")
+    await create_thinker(session, name="Repeat Guest")
     source = await create_source(session, thinker_id=owner.id)
-    await create_source_thinker(
-        session, source_id=source.id, thinker_id=owner.id, relationship_type="host"
-    )
+    await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
     content = await create_content(
         session,
         source_id=source.id,
@@ -288,9 +262,7 @@ async def test_duplicate_attribution_prevented(session: AsyncSession):
     # First run
     await handle_tag_content_thinkers(session, job1)
 
-    result = await session.execute(
-        select(ContentThinker).where(ContentThinker.content_id == content.id)
-    )
+    result = await session.execute(select(ContentThinker).where(ContentThinker.content_id == content.id))
     first_count = len(result.scalars().all())
     assert first_count == 2  # owner + guest
 
@@ -304,8 +276,6 @@ async def test_duplicate_attribution_prevented(session: AsyncSession):
 
     await handle_tag_content_thinkers(session, job2)
 
-    result = await session.execute(
-        select(ContentThinker).where(ContentThinker.content_id == content.id)
-    )
+    result = await session.execute(select(ContentThinker).where(ContentThinker.content_id == content.id))
     second_count = len(result.scalars().all())
     assert second_count == 2  # No duplicates

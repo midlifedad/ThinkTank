@@ -8,24 +8,7 @@ Tests verify:
 """
 
 import uuid
-from datetime import datetime, timezone
 
-from thinktank.models import (
-    ApiUsage,
-    CandidateThinker,
-    Category,
-    Content,
-    ContentThinker,
-    Job,
-    LLMReview,
-    RateLimitUsage,
-    Source,
-    SystemConfig,
-    Thinker,
-    ThinkerCategory,
-    ThinkerMetrics,
-    ThinkerProfile,
-)
 from tests.factories import (
     make_api_usage,
     make_candidate_thinker,
@@ -42,7 +25,22 @@ from tests.factories import (
     make_thinker_metrics,
     make_thinker_profile,
 )
-
+from thinktank.models import (
+    ApiUsage,
+    CandidateThinker,
+    Category,
+    Content,
+    ContentThinker,
+    Job,
+    LLMReview,
+    RateLimitUsage,
+    Source,
+    SystemConfig,
+    Thinker,
+    ThinkerCategory,
+    ThinkerMetrics,
+    ThinkerProfile,
+)
 
 # ---------- Category ----------
 
@@ -373,7 +371,9 @@ class TestAllFactoriesUniqueIDs:
 
     def test_content_unique(self):
         sid, oid = uuid.uuid4(), uuid.uuid4()
-        assert make_content(source_id=sid, source_owner_id=oid).id != make_content(source_id=sid, source_owner_id=oid).id
+        first = make_content(source_id=sid, source_owner_id=oid).id
+        second = make_content(source_id=sid, source_owner_id=oid).id
+        assert first != second
 
     def test_job_unique(self):
         assert make_job().id != make_job().id

@@ -1,7 +1,6 @@
 """Thinker CRUD endpoints."""
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
@@ -9,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import PaginatedResponse, ThinkerCreate, ThinkerResponse, ThinkerUpdate
-
 from thinktank.models.thinker import Thinker
 
 router = APIRouter(prefix="/api/thinkers", tags=["thinkers"])
@@ -19,9 +17,9 @@ router = APIRouter(prefix="/api/thinkers", tags=["thinkers"])
 async def list_thinkers(
     page: int = Query(default=1, ge=1),
     size: int = Query(default=20, ge=1, le=100),
-    tier: Optional[int] = Query(default=None),
-    status: Optional[str] = Query(default=None),
-    category_id: Optional[uuid.UUID] = Query(default=None),
+    tier: int | None = Query(default=None),
+    status: str | None = Query(default=None),
+    category_id: uuid.UUID | None = Query(default=None),
     session: AsyncSession = Depends(get_session),
 ) -> PaginatedResponse[ThinkerResponse]:
     """List thinkers with optional filters and pagination."""

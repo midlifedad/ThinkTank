@@ -65,13 +65,15 @@ def extract_podcast_persons(xml_content: str) -> dict[str, list[dict]]:
             if not name:
                 continue
 
-            persons.append({
-                "name": name,
-                "role": (person_el.get("role") or "host").lower(),
-                "group": (person_el.get("group") or "cast").lower(),
-                "href": person_el.get("href"),
-                "img": person_el.get("img"),
-            })
+            persons.append(
+                {
+                    "name": name,
+                    "role": (person_el.get("role") or "host").lower(),
+                    "group": (person_el.get("group") or "cast").lower(),
+                    "href": person_el.get("href"),
+                    "img": person_el.get("img"),
+                }
+            )
 
         if persons:
             result[guid] = persons

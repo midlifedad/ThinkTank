@@ -26,9 +26,7 @@ def _load_fixture(name: str) -> dict:
 @pytest.fixture
 def mock_youtube_service():
     """Create a mock YouTube API service."""
-    with patch(
-        "googleapiclient.discovery.build"
-    ) as mock_build:
+    with patch("googleapiclient.discovery.build") as mock_build:
         service = MagicMock()
         mock_build.return_value = service
         yield service
@@ -104,13 +102,7 @@ def test_get_uploads_playlist_id_uc_prefix(client):
 def test_get_uploads_playlist_id_no_uc_prefix(client, mock_youtube_service):
     """Falls back to API call when prefix doesn't match."""
     mock_youtube_service.channels.return_value.list.return_value.execute.return_value = {
-        "items": [
-            {
-                "contentDetails": {
-                    "relatedPlaylists": {"uploads": "UUfallback_playlist"}
-                }
-            }
-        ]
+        "items": [{"contentDetails": {"relatedPlaylists": {"uploads": "UUfallback_playlist"}}}]
     }
 
     result = client.get_uploads_playlist_id("CHabc123")
@@ -120,9 +112,7 @@ def test_get_uploads_playlist_id_no_uc_prefix(client, mock_youtube_service):
 
 def test_get_uploads_playlist_id_not_found(client, mock_youtube_service):
     """Raises ValueError when channel not found via API."""
-    mock_youtube_service.channels.return_value.list.return_value.execute.return_value = {
-        "items": []
-    }
+    mock_youtube_service.channels.return_value.list.return_value.execute.return_value = {"items": []}
 
     with pytest.raises(ValueError, match="Channel not found"):
         client.get_uploads_playlist_id("CHnonexistent")
@@ -134,9 +124,7 @@ def test_get_uploads_playlist_id_not_found(client, mock_youtube_service):
 def test_list_playlist_videos_returns_items(client, mock_youtube_service):
     """Mock API returns items, quota incremented by 1."""
     fixture = _load_fixture("playlist_items_page1.json")
-    mock_youtube_service.playlistItems.return_value.list.return_value.execute.return_value = (
-        fixture
-    )
+    mock_youtube_service.playlistItems.return_value.list.return_value.execute.return_value = fixture
 
     result = client.list_playlist_videos("UUtest123")
     assert len(result["items"]) == 3
@@ -150,9 +138,7 @@ def test_list_playlist_videos_returns_items(client, mock_youtube_service):
 def test_get_video_details_batch(client, mock_youtube_service):
     """Mock API with fixture data, assert duration_seconds parsed correctly."""
     fixture = _load_fixture("video_details_batch.json")
-    mock_youtube_service.videos.return_value.list.return_value.execute.return_value = (
-        fixture
-    )
+    mock_youtube_service.videos.return_value.list.return_value.execute.return_value = fixture
 
     results = client.get_video_details(["vid001", "vid002", "vid003"])
     assert len(results) == 3
@@ -190,12 +176,8 @@ def test_fetch_all_channel_videos_single_page(client, mock_youtube_service):
     playlist_fixture = _load_fixture("playlist_items_page1.json")
     details_fixture = _load_fixture("video_details_batch.json")
 
-    mock_youtube_service.playlistItems.return_value.list.return_value.execute.return_value = (
-        playlist_fixture
-    )
-    mock_youtube_service.videos.return_value.list.return_value.execute.return_value = (
-        details_fixture
-    )
+    mock_youtube_service.playlistItems.return_value.list.return_value.execute.return_value = playlist_fixture
+    mock_youtube_service.videos.return_value.list.return_value.execute.return_value = details_fixture
 
     results = client.fetch_all_channel_videos("UCtest123channel")
 
@@ -279,9 +261,7 @@ def test_fetch_all_channel_videos_pagination(client, mock_youtube_service):
             },
         ]
     }
-    mock_youtube_service.videos.return_value.list.return_value.execute.return_value = (
-        details_response
-    )
+    mock_youtube_service.videos.return_value.list.return_value.execute.return_value = details_response
 
     results = client.fetch_all_channel_videos("UCpaginated")
 
@@ -299,6 +279,7 @@ def test_fetch_all_channel_videos_pagination(client, mock_youtube_service):
 
 def test_fetch_all_channel_videos_max_pages(client, mock_youtube_service):
     """Stops after max_pages even if more pages available."""
+
     # Each page has a nextPageToken, simulating infinite pagination
     def make_page():
         return {

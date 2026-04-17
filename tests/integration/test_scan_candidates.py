@@ -15,10 +15,6 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.discovery.quota import check_daily_quota
-from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
-from thinktank.models.candidate import CandidateThinker
-from thinktank.models.job import Job
 from tests.factories import (
     create_candidate_thinker,
     create_content,
@@ -27,6 +23,10 @@ from tests.factories import (
     create_system_config,
     create_thinker,
 )
+from thinktank.discovery.quota import check_daily_quota
+from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
+from thinktank.models.candidate import CandidateThinker
+from thinktank.models.job import Job
 
 pytestmark = pytest.mark.anyio
 
@@ -69,9 +69,7 @@ async def test_scan_creates_candidates(session: AsyncSession):
 
     await handle_scan_for_candidates(session, job)
 
-    result = await session.execute(
-        select(CandidateThinker)
-    )
+    result = await session.execute(select(CandidateThinker))
     candidates = result.scalars().all()
 
     # Should have extracted at least the guest names
@@ -109,9 +107,7 @@ async def test_scan_skips_existing_thinkers(session: AsyncSession):
     await handle_scan_for_candidates(session, job)
 
     # No CandidateThinker should be created for "John Smith"
-    count = await session.scalar(
-        select(func.count()).select_from(CandidateThinker)
-    )
+    count = await session.scalar(select(func.count()).select_from(CandidateThinker))
     assert count == 0
 
 
@@ -174,9 +170,7 @@ async def test_quota_pause(session: AsyncSession):
     ):
         await handle_scan_for_candidates(session, job)
 
-    count = await session.scalar(
-        select(func.count()).select_from(CandidateThinker)
-    )
+    count = await session.scalar(select(func.count()).select_from(CandidateThinker))
     assert count == 0
 
 
@@ -205,9 +199,7 @@ async def test_quota_triggers_review(session: AsyncSession):
         await handle_scan_for_candidates(session, job)
 
     # Check for llm_approval_check job
-    result = await session.execute(
-        select(Job).where(Job.job_type == "llm_approval_check")
-    )
+    result = await session.execute(select(Job).where(Job.job_type == "llm_approval_check"))
     review_jobs = result.scalars().all()
     assert len(review_jobs) >= 1
 
@@ -241,9 +233,7 @@ async def test_cascade_pause_pending_queue(session: AsyncSession):
     ):
         await handle_scan_for_candidates(session, job)
 
-    count = await session.scalar(
-        select(func.count()).select_from(CandidateThinker)
-    )
+    count = await session.scalar(select(func.count()).select_from(CandidateThinker))
     assert count == 0
 
 
@@ -287,9 +277,7 @@ class TestConcurrentDailyQuota:
         results = await asyncio.gather(*[check_and_insert(i) for i in range(2)])
 
         # Exactly one worker should see can_continue=True and insert
-        assert sum(1 for r in results if r) == 1, (
-            f"Expected exactly 1 worker to pass the quota check, got {results}"
-        )
+        assert sum(1 for r in results if r) == 1, f"Expected exactly 1 worker to pass the quota check, got {results}"
 
         # DB should hold exactly 3 candidates (2 pre-seeded + 1 new), never 4
         async with session_factory() as check:

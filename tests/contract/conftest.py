@@ -28,40 +28,38 @@ async def _auto_cleanup(_cleanup_tables):
 
 
 @pytest.fixture(autouse=True)
-def _auto_admin_auth_override(request):
-    """Bypass require_admin — but only for tests that use admin_client.
+def _auto_admin_auth_override(request, session_factory):
+    """Bypass require_admin and override get_session for admin_client tests.
 
-    This avoids importing the admin app for pure API contract tests,
-    which would otherwise force the shared ``thinktank.database.engine``
-    to be created before the ``client`` fixture has a chance to point
-    DATABASE_URL at the test database.
-
-    IMPORTANT: when this autouse fires it MUST ensure DATABASE_URL is
-    pointed at the test database BEFORE importing ``thinktank.admin.main``.
-    Otherwise the module-level ``thinktank.database.engine`` is bound to
-    whatever URL settings happen to hold at import time (potentially the
-    production default) and every subsequent test that uses the shared
-    session factory hits the wrong database.
+    Mirrors the integration conftest override. See that file for full
+    rationale. Summary: without the ``get_session`` override, the admin
+    app's module-level engine and the test engine race on the same DB,
+    causing asyncpg ``InterfaceError`` and TRUNCATE deadlocks.
     """
     if "admin_client" not in request.fixturenames:
         yield
         return
 
-    # Point DATABASE_URL at the test DB and invalidate the settings cache
-    # BEFORE importing admin.main, so the shared engine binds correctly.
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
     from thinktank.config import get_settings
 
     get_settings.cache_clear()
 
     from thinktank.admin.auth import require_admin
+    from thinktank.admin.dependencies import get_session
     from thinktank.admin.main import app as admin_app
 
     async def _fake_require_admin() -> str:
         return "admin"
 
+    async def _override_get_session():
+        async with session_factory() as s:
+            yield s
+
     admin_app.dependency_overrides[require_admin] = _fake_require_admin
+    admin_app.dependency_overrides[get_session] = _override_get_session
     try:
         yield
     finally:
         admin_app.dependency_overrides.pop(require_admin, None)
+        admin_app.dependency_overrides.pop(get_session, None)

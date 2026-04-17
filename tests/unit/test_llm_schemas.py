@@ -16,7 +16,6 @@ from thinktank.llm.schemas import (
     WeeklyAuditResponse,
 )
 
-
 # ---------- ThinkerApprovalResponse ----------
 
 

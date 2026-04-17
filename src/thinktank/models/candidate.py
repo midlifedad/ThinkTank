@@ -5,7 +5,6 @@ Spec reference: Section 3.9 (candidate_thinkers).
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -23,32 +22,26 @@ class CandidateThinker(Base):
     name: Mapped[str] = mapped_column(sa.Text)
     normalized_name: Mapped[str] = mapped_column(sa.Text)
     appearance_count: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("1"))
-    first_seen_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
-    last_seen_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
-    sample_urls: Mapped[Optional[list[str]]] = mapped_column(
+    first_seen_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
+    last_seen_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
+    sample_urls: Mapped[list[str] | None] = mapped_column(
         ARRAY(sa.Text),
         nullable=True,
     )
-    inferred_categories: Mapped[Optional[list[str]]] = mapped_column(
+    inferred_categories: Mapped[list[str] | None] = mapped_column(
         ARRAY(sa.Text),
         nullable=True,
     )
-    suggested_twitter: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    suggested_youtube: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
+    suggested_twitter: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    suggested_youtube: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     status: Mapped[str] = mapped_column(sa.Text, server_default="pending_llm")
-    llm_review_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    llm_review_id: Mapped[uuid.UUID | None] = mapped_column(
         sa.ForeignKey("llm_reviews.id"),
         nullable=True,
     )
-    reviewed_by: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    reviewed_at: Mapped[Optional[datetime]] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
-    thinker_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    reviewed_by: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    thinker_id: Mapped[uuid.UUID | None] = mapped_column(
         sa.ForeignKey("thinkers.id", ondelete="SET NULL"),
         nullable=True,
     )

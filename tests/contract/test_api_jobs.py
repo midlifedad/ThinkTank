@@ -20,7 +20,13 @@ class TestJobsEndpointContract:
         """GET /api/jobs/status returns 200 with by_type, by_status, recent_errors."""
         await create_job(session, job_type="discover_thinker", status="pending")
         await create_job(session, job_type="discover_thinker", status="done")
-        await create_job(session, job_type="fetch_podcast_feed", status="failed", error="Timeout", error_category="network")
+        await create_job(
+            session,
+            job_type="fetch_podcast_feed",
+            status="failed",
+            error="Timeout",
+            error_category="network",
+        )
         await session.commit()
 
         resp = await client.get("/api/jobs/status")

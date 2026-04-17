@@ -6,10 +6,6 @@ Tests verify:
 3. get_settings() returns a Settings instance
 """
 
-import os
-
-import pytest
-
 
 class TestSettingsDefaults:
     """Verify Settings() returns correct default values without env vars."""

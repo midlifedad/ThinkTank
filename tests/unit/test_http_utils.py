@@ -8,16 +8,15 @@ Source: INTEGRATIONS-REVIEW M-02.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from email.utils import format_datetime
-from unittest.mock import MagicMock
 
 import httpx
 import pytest
 
 from thinktank.http_utils import (
-    RateLimitedError,
     _MAX_RETRY_AFTER_SECONDS,
+    RateLimitedError,
     _parse_retry_after,
     raise_for_status_with_backoff,
 )
@@ -55,7 +54,7 @@ class TestParseRetryAfter:
         assert _parse_retry_after(str(_MAX_RETRY_AFTER_SECONDS + 999)) == _MAX_RETRY_AFTER_SECONDS
 
     def test_parses_http_date(self) -> None:
-        future = datetime.now(timezone.utc) + timedelta(seconds=60)
+        future = datetime.now(UTC) + timedelta(seconds=60)
         header = format_datetime(future, usegmt=True)
         parsed = _parse_retry_after(header)
         # Allow a few seconds of drift from the now() in _parse_retry_after.
@@ -63,7 +62,7 @@ class TestParseRetryAfter:
         assert 55 <= parsed <= 65
 
     def test_past_http_date_clamps_to_zero(self) -> None:
-        past = datetime.now(timezone.utc) - timedelta(hours=1)
+        past = datetime.now(UTC) - timedelta(hours=1)
         header = format_datetime(past, usegmt=True)
         assert _parse_retry_after(header) == 0
 

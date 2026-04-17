@@ -29,9 +29,7 @@ async def get_config_value(session: AsyncSession, key: str, default: Any) -> Any
     Returns:
         The JSONB value stored for the key, or default if not found.
     """
-    result = await session.execute(
-        select(SystemConfig.value).where(SystemConfig.key == key)
-    )
+    result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == key))
     row = result.scalar_one_or_none()
     return row if row is not None else default
 

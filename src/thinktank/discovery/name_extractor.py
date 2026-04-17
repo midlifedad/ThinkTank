@@ -46,12 +46,32 @@ _GUEST_PATTERNS = [
 # Words that indicate the match is not a person name. Includes common
 # English prepositions and conjunctions so Title Case phrases like
 # "University Of Chicago" or "Talks And Interviews" are rejected.
-_BLOCKLIST = frozenset({
-    "the", "inc", "llc", "university", "foundation", "institute",
-    "network", "podcast", "show", "episode", "series", "season",
-    "part", "chapter", "volume",
-    "of", "and", "or", "for", "from", "in", "on",
-})
+_BLOCKLIST = frozenset(
+    {
+        "the",
+        "inc",
+        "llc",
+        "university",
+        "foundation",
+        "institute",
+        "network",
+        "podcast",
+        "show",
+        "episode",
+        "series",
+        "season",
+        "part",
+        "chapter",
+        "volume",
+        "of",
+        "and",
+        "or",
+        "for",
+        "from",
+        "in",
+        "on",
+    }
+)
 
 
 def _looks_like_person_name(name: str) -> bool:

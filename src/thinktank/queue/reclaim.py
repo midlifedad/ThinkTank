@@ -22,9 +22,7 @@ async def _get_stale_timeout(session: AsyncSession) -> int:
     Returns:
         Timeout in minutes, or _DEFAULT_STALE_TIMEOUT_MINUTES if not configured.
     """
-    stmt = select(SystemConfig.value).where(
-        SystemConfig.key == "stale_job_timeout_minutes"
-    )
+    stmt = select(SystemConfig.value).where(SystemConfig.key == "stale_job_timeout_minutes")
     result = await session.execute(stmt)
     row = result.scalar_one_or_none()
 

@@ -56,9 +56,7 @@ class TestConfigEndpointContract:
         assert resp.status_code == 404
         assert "detail" in resp.json()
 
-    async def test_put_config_creates_entry(
-        self, client: AsyncClient, authed_admin_headers
-    ):
+    async def test_put_config_creates_entry(self, client: AsyncClient, authed_admin_headers):
         """PUT /api/config/{key} creates a new config entry (auth required)."""
         payload = {"value": {"rate": 100}, "set_by": "test"}
         resp = await client.put(
@@ -72,9 +70,7 @@ class TestConfigEndpointContract:
         assert body["value"] == {"rate": 100}
         assert body["set_by"] == "test"
 
-    async def test_put_config_updates_existing(
-        self, client: AsyncClient, session, authed_admin_headers
-    ):
+    async def test_put_config_updates_existing(self, client: AsyncClient, session, authed_admin_headers):
         """PUT /api/config/{key} updates an existing config entry (auth required)."""
         await create_system_config(session, key="update_key", value={"old": True}, set_by="seed")
         await session.commit()
@@ -100,9 +96,7 @@ class TestConfigPutRequiresAuth:
     a live credential to a value they control).
     """
 
-    async def test_put_rejects_anonymous(
-        self, client: AsyncClient, seeded_admin_token
-    ):
+    async def test_put_rejects_anonymous(self, client: AsyncClient, seeded_admin_token):
         """PUT /api/config/{key} without a bearer token → 401.
 
         The admin token IS configured (via ``seeded_admin_token``) so
@@ -113,9 +107,7 @@ class TestConfigPutRequiresAuth:
         resp = await client.put("/api/config/some_key", json=payload)
         assert resp.status_code == 401
 
-    async def test_put_rejects_wrong_token(
-        self, client: AsyncClient, seeded_admin_token
-    ):
+    async def test_put_rejects_wrong_token(self, client: AsyncClient, seeded_admin_token):
         """PUT /api/config/{key} with a wrong bearer token → 401."""
         payload = {"value": {"x": 1}, "set_by": "anon"}
         resp = await client.put(
@@ -125,9 +117,7 @@ class TestConfigPutRequiresAuth:
         )
         assert resp.status_code == 401
 
-    async def test_put_accepts_valid_token(
-        self, client: AsyncClient, authed_admin_headers
-    ):
+    async def test_put_accepts_valid_token(self, client: AsyncClient, authed_admin_headers):
         """PUT /api/config/{key} with a valid bearer token succeeds."""
         payload = {"value": {"ok": True}, "set_by": "admin"}
         resp = await client.put(
@@ -138,9 +128,7 @@ class TestConfigPutRequiresAuth:
         assert resp.status_code == 200
         assert resp.json()["value"] == {"ok": True}
 
-    async def test_put_fails_closed_without_admin_token_configured(
-        self, client: AsyncClient
-    ):
+    async def test_put_fails_closed_without_admin_token_configured(self, client: AsyncClient):
         """PUT returns 500 (not 200) if no admin token is configured at all.
 
         Defence-in-depth: a deployment that forgets to seed
@@ -162,9 +150,7 @@ class TestConfigSecretRedaction:
 
     async def test_list_config_excludes_secret_keys(self, client: AsyncClient, session):
         """GET /api/config omits every row whose key starts with 'secret_'."""
-        await create_system_config(
-            session, key="workers_active", value=True, set_by="seed"
-        )
+        await create_system_config(session, key="workers_active", value=True, set_by="seed")
         await create_system_config(
             session,
             key="secret_anthropic_api_key",
@@ -206,9 +192,7 @@ class TestConfigSecretRedaction:
         assert resp.status_code == 403
         assert "rw-redacted" not in resp.text
 
-    async def test_get_config_rejects_secret_key_even_when_missing(
-        self, client: AsyncClient
-    ):
+    async def test_get_config_rejects_secret_key_even_when_missing(self, client: AsyncClient):
         """GET /api/config/secret_* returns 403 even for nonexistent secret keys.
 
         Prevents using 404 vs 403 response codes as an oracle for which

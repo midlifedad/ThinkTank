@@ -8,6 +8,7 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from thinktank.llm.schemas import (
     CandidateReviewResponse,
     SourceApprovalResponse,
@@ -40,9 +41,7 @@ class TestHandlerDispatchesThinkerApproval:
         job = _make_job("thinker_approval", str(target_id))
 
         mock_context = {"proposed_thinker": {"name": "Test"}}
-        mock_result = ThinkerApprovalResponse(
-            decision="approved", reasoning="Valid thinker"
-        )
+        mock_result = ThinkerApprovalResponse(decision="approved", reasoning="Valid thinker")
 
         session = AsyncMock()
         # Make session.flush() and session.commit() awaitable
@@ -59,9 +58,7 @@ class TestHandlerDispatchesThinkerApproval:
                 "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
                 return_value=("system", "user"),
             ),
-            patch(
-                "thinktank.handlers.llm_approval_check._llm_client"
-            ) as mock_client,
+            patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch(
                 "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,
@@ -89,9 +86,7 @@ class TestHandlerDispatchesSourceApproval:
         job = _make_job("source_approval", str(target_id))
 
         mock_context = {"source": {"name": "Test Source"}}
-        mock_result = SourceApprovalResponse(
-            decision="approved", reasoning="Valid source", approved_backfill_days=90
-        )
+        mock_result = SourceApprovalResponse(decision="approved", reasoning="Valid source", approved_backfill_days=90)
 
         session = AsyncMock()
         session.flush = AsyncMock()
@@ -107,9 +102,7 @@ class TestHandlerDispatchesSourceApproval:
                 "thinktank.handlers.llm_approval_check.build_source_approval_prompt",
                 return_value=("system", "user"),
             ),
-            patch(
-                "thinktank.handlers.llm_approval_check._llm_client"
-            ) as mock_client,
+            patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch(
                 "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,
@@ -132,14 +125,10 @@ class TestHandlerDispatchesCandidateReview:
 
         target_id = uuid.uuid4()
         candidate_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
-        job = _make_job(
-            "candidate_review", str(target_id), candidate_ids=candidate_ids
-        )
+        job = _make_job("candidate_review", str(target_id), candidate_ids=candidate_ids)
 
         mock_context = {"candidates": []}
-        mock_result = CandidateReviewResponse(
-            decision="approved", reasoning="Valid candidate", tier=2
-        )
+        mock_result = CandidateReviewResponse(decision="approved", reasoning="Valid candidate", tier=2)
 
         session = AsyncMock()
         session.flush = AsyncMock()
@@ -155,9 +144,7 @@ class TestHandlerDispatchesCandidateReview:
                 "thinktank.handlers.llm_approval_check.build_candidate_review_prompt",
                 return_value=("system", "user"),
             ),
-            patch(
-                "thinktank.handlers.llm_approval_check._llm_client"
-            ) as mock_client,
+            patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch(
                 "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,
@@ -206,9 +193,7 @@ class TestHandlerCreatesAuditTrail:
                 "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
                 return_value=("system_prompt_text", "user_prompt_text"),
             ),
-            patch(
-                "thinktank.handlers.llm_approval_check._llm_client"
-            ) as mock_client,
+            patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch(
                 "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,
@@ -247,14 +232,10 @@ class TestHandlerCallsApplyDecision:
 
         target_id = uuid.uuid4()
         pending_job_id = uuid.uuid4()
-        job = _make_job(
-            "thinker_approval", str(target_id), pending_job_id=str(pending_job_id)
-        )
+        job = _make_job("thinker_approval", str(target_id), pending_job_id=str(pending_job_id))
 
         mock_context = {"proposed_thinker": {"name": "Test"}}
-        mock_result = ThinkerApprovalResponse(
-            decision="approved", reasoning="Valid thinker"
-        )
+        mock_result = ThinkerApprovalResponse(decision="approved", reasoning="Valid thinker")
 
         session = AsyncMock()
         session.flush = AsyncMock()
@@ -271,9 +252,7 @@ class TestHandlerCallsApplyDecision:
                 "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
                 return_value=("system", "user"),
             ),
-            patch(
-                "thinktank.handlers.llm_approval_check._llm_client"
-            ) as mock_client,
+            patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch(
                 "thinktank.handlers.llm_approval_check.apply_decision",
                 new_callable=AsyncMock,

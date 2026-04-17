@@ -6,7 +6,7 @@ All datetimes are timezone-naive per project convention.
 
 import uuid
 from datetime import datetime
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -42,10 +42,10 @@ class ThinkerResponse(BaseModel):
     approval_status: str
     active: bool
     added_at: datetime
-    primary_affiliation: Optional[str] = None
-    twitter_handle: Optional[str] = None
-    wikipedia_url: Optional[str] = None
-    personal_site: Optional[str] = None
+    primary_affiliation: str | None = None
+    twitter_handle: str | None = None
+    wikipedia_url: str | None = None
+    personal_site: str | None = None
 
 
 class ThinkerCreate(BaseModel):
@@ -60,16 +60,16 @@ class ThinkerCreate(BaseModel):
 class ThinkerUpdate(BaseModel):
     """Thinker update request. All fields optional."""
 
-    name: Optional[str] = None
-    slug: Optional[str] = None
-    tier: Optional[int] = None
-    bio: Optional[str] = None
-    approval_status: Optional[str] = None
-    active: Optional[bool] = None
-    primary_affiliation: Optional[str] = None
-    twitter_handle: Optional[str] = None
-    wikipedia_url: Optional[str] = None
-    personal_site: Optional[str] = None
+    name: str | None = None
+    slug: str | None = None
+    tier: int | None = None
+    bio: str | None = None
+    approval_status: str | None = None
+    active: bool | None = None
+    primary_affiliation: str | None = None
+    twitter_handle: str | None = None
+    wikipedia_url: str | None = None
+    personal_site: str | None = None
 
 
 # ---------- Source schemas ----------
@@ -81,7 +81,7 @@ class SourceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    thinker_id: Optional[uuid.UUID] = None
+    thinker_id: uuid.UUID | None = None
     source_type: str
     name: str
     url: str
@@ -101,13 +101,13 @@ class ContentResponse(BaseModel):
 
     id: uuid.UUID
     source_id: uuid.UUID
-    source_owner_id: Optional[uuid.UUID] = None
+    source_owner_id: uuid.UUID | None = None
     title: str
     content_type: str
     status: str
     canonical_url: str
-    duration_seconds: Optional[int] = None
-    published_at: Optional[datetime] = None
+    duration_seconds: int | None = None
+    published_at: datetime | None = None
     discovered_at: datetime
 
 

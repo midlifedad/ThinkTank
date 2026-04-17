@@ -7,16 +7,14 @@ Verifies:
 - Registered handler receives correct session and job arguments
 """
 
-import uuid
 from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.handlers.base import JobHandler
+from tests.factories import make_job
 from thinktank.handlers.registry import JOB_HANDLERS, get_handler, register_handler
 from thinktank.models.job import Job
-from tests.factories import make_job
 
 
 @pytest.fixture(autouse=True)

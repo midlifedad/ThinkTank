@@ -83,19 +83,13 @@ class YouTubeClient:
 
         # Fallback: channels.list API call (3 quota units)
         self._quota_used += 3
-        response = (
-            self._youtube.channels()
-            .list(part="contentDetails", id=channel_id)
-            .execute()
-        )
+        response = self._youtube.channels().list(part="contentDetails", id=channel_id).execute()
         items = response.get("items", [])
         if not items:
             raise ValueError(f"Channel not found: {channel_id}")
         return items[0]["contentDetails"]["relatedPlaylists"]["uploads"]
 
-    def list_playlist_videos(
-        self, playlist_id: str, page_token: str | None = None
-    ) -> dict:
+    def list_playlist_videos(self, playlist_id: str, page_token: str | None = None) -> dict:
         """Fetch a page of videos from a playlist.
 
         Uses playlistItems.list -- 1 quota unit per call.
@@ -140,9 +134,7 @@ class YouTubeClient:
             results.extend(response.get("items", []))
         return results
 
-    def fetch_all_channel_videos(
-        self, channel_id: str, max_pages: int = 100
-    ) -> list[dict]:
+    def fetch_all_channel_videos(self, channel_id: str, max_pages: int = 100) -> list[dict]:
         """Fetch ALL videos from a channel with details.
 
         Paginates through uploads playlist, batches video detail calls.
@@ -224,9 +216,7 @@ class YouTubeClient:
                 {
                     "video_id": video_id,
                     "title": detail_snippet.get("title", snippet.get("title", "")),
-                    "description": detail_snippet.get(
-                        "description", snippet.get("description", "")
-                    ),
+                    "description": detail_snippet.get("description", snippet.get("description", "")),
                     "published_at": snippet.get("publishedAt", ""),
                     "duration_iso": duration_iso,
                     "duration_seconds": duration_seconds,

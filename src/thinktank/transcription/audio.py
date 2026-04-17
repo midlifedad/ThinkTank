@@ -10,7 +10,7 @@ Spec reference: Sections 7.3, TRANS-03, TRANS-05.
 import asyncio
 import os
 import tempfile
-from typing import Callable
+from collections.abc import Callable
 from uuid import uuid4
 
 import structlog
@@ -103,14 +103,10 @@ async def convert_to_wav(input_path: str, tmp_dir: str) -> str:
     )
 
     try:
-        _, stderr = await asyncio.wait_for(
-            proc.communicate(), timeout=_FFMPEG_TIMEOUT_SECONDS
-        )
-    except asyncio.TimeoutError:
+        _, stderr = await asyncio.wait_for(proc.communicate(), timeout=_FFMPEG_TIMEOUT_SECONDS)
+    except TimeoutError as err:
         proc.kill()
-        raise RuntimeError(
-            f"ffmpeg conversion timeout after {_FFMPEG_TIMEOUT_SECONDS}s for {input_path}"
-        )
+        raise RuntimeError(f"ffmpeg conversion timeout after {_FFMPEG_TIMEOUT_SECONDS}s for {input_path}") from err
 
     if proc.returncode != 0:
         error_msg = stderr.decode()[:500] if stderr else "unknown error"

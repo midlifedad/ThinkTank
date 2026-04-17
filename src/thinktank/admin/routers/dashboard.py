@@ -11,13 +11,14 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.models.config_table import SystemConfig
 from thinktank.admin.dependencies import get_session, get_templates
+from thinktank.models.config_table import SystemConfig
 
 
 def _utcnow() -> datetime:
     """Timezone-aware UTC now, matching TIMESTAMPTZ columns (migration 007)."""
     return datetime.now(UTC)
+
 
 router = APIRouter(prefix="/admin", tags=["dashboard"])
 templates = get_templates()
@@ -49,7 +50,9 @@ async def queue_depth_partial(
         pivot[job_type][status] = cnt
 
     return templates.TemplateResponse(
-        request, "partials/queue_depth.html", {"pivot": pivot},
+        request,
+        "partials/queue_depth.html",
+        {"pivot": pivot},
     )
 
 
@@ -77,7 +80,9 @@ async def error_log_partial(
         for r in rows
     ]
     return templates.TemplateResponse(
-        request, "partials/error_log.html", {"errors": errors},
+        request,
+        "partials/error_log.html",
+        {"errors": errors},
     )
 
 
@@ -90,23 +95,18 @@ async def source_health_partial(
     total_result = await session.execute(text("SELECT COUNT(*) FROM sources"))
     total = total_result.scalar() or 0
 
-    approved_result = await session.execute(
-        text("SELECT COUNT(*) FROM sources WHERE approval_status = 'approved'")
-    )
+    approved_result = await session.execute(text("SELECT COUNT(*) FROM sources WHERE approval_status = 'approved'"))
     approved = approved_result.scalar() or 0
 
-    errored_result = await session.execute(
-        text("SELECT COUNT(*) FROM sources WHERE error_count > 0")
-    )
+    errored_result = await session.execute(text("SELECT COUNT(*) FROM sources WHERE error_count > 0"))
     errored = errored_result.scalar() or 0
 
-    inactive_result = await session.execute(
-        text("SELECT COUNT(*) FROM sources WHERE active = false")
-    )
+    inactive_result = await session.execute(text("SELECT COUNT(*) FROM sources WHERE active = false"))
     inactive = inactive_result.scalar() or 0
 
     return templates.TemplateResponse(
-        request, "partials/source_health.html",
+        request,
+        "partials/source_health.html",
         {"total": total, "approved": approved, "errored": errored, "inactive": inactive},
     )
 
@@ -117,9 +117,7 @@ async def gpu_status_partial(
     session: AsyncSession = Depends(get_session),
 ):
     """HTML fragment: GPU scaling status from system_config."""
-    result = await session.execute(
-        text("SELECT value FROM system_config WHERE key = 'gpu_service_status'")
-    )
+    result = await session.execute(text("SELECT value FROM system_config WHERE key = 'gpu_service_status'"))
     row = result.fetchone()
     if row:
         gpu_data = row[0]
@@ -130,7 +128,8 @@ async def gpu_status_partial(
         last_scale = None
 
     return templates.TemplateResponse(
-        request, "partials/gpu_status.html",
+        request,
+        "partials/gpu_status.html",
         {"status": status, "last_scale": last_scale},
     )
 
@@ -148,9 +147,7 @@ async def rate_limits_partial(
     }
 
     # Try to load custom limits from system_config
-    config_result = await session.execute(
-        text("SELECT value FROM system_config WHERE key = 'rate_limits'")
-    )
+    config_result = await session.execute(text("SELECT value FROM system_config WHERE key = 'rate_limits'"))
     config_row = config_result.fetchone()
     if config_row and isinstance(config_row[0], dict):
         for api, limit in config_row[0].items():
@@ -174,16 +171,20 @@ async def rate_limits_partial(
             color = "yellow"
         else:
             color = "red"
-        gauges.append({
-            "api_name": api_name,
-            "current": current,
-            "limit": limit,
-            "pct": min(pct, 100),
-            "color": color,
-        })
+        gauges.append(
+            {
+                "api_name": api_name,
+                "current": current,
+                "limit": limit,
+                "pct": min(pct, 100),
+                "color": color,
+            }
+        )
 
     return templates.TemplateResponse(
-        request, "partials/rate_limits.html", {"gauges": gauges},
+        request,
+        "partials/rate_limits.html",
+        {"gauges": gauges},
     )
 
 
@@ -211,7 +212,9 @@ async def cost_tracker_partial(
         for r in rows
     ]
     return templates.TemplateResponse(
-        request, "partials/cost_tracker.html", {"costs": costs},
+        request,
+        "partials/cost_tracker.html",
+        {"costs": costs},
     )
 
 
@@ -227,9 +230,7 @@ async def health_summary_partial(
 ):
     """HTML fragment: system health indicators (workers, DB, error rate)."""
     # Worker status from system_config
-    result = await session.execute(
-        select(SystemConfig.value).where(SystemConfig.key == "workers_active")
-    )
+    result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == "workers_active"))
     row = result.scalar_one_or_none()
     workers_active = True  # default to active if not set
     if row is not None:
@@ -244,10 +245,7 @@ async def health_summary_partial(
 
     # Error rate: failed jobs in the last hour
     error_result = await session.execute(
-        text(
-            "SELECT COUNT(*) FROM jobs "
-            "WHERE status = 'failed' AND created_at > NOW() - INTERVAL '1 hour'"
-        )
+        text("SELECT COUNT(*) FROM jobs WHERE status = 'failed' AND created_at > NOW() - INTERVAL '1 hour'")
     )
     error_count = error_result.scalar() or 0
 
@@ -268,9 +266,7 @@ async def kill_switch_partial(
     session: AsyncSession = Depends(get_session),
 ):
     """HTML fragment: kill switch toggle showing current worker state."""
-    result = await session.execute(
-        select(SystemConfig.value).where(SystemConfig.key == "workers_active")
-    )
+    result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == "workers_active"))
     row = result.scalar_one_or_none()
     workers_active = True  # default to active if not set
     if row is not None:
@@ -289,9 +285,7 @@ async def kill_switch_toggle(
     session: AsyncSession = Depends(get_session),
 ):
     """Toggle the global kill switch (workers_active config) and re-render partial."""
-    result = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == "workers_active")
-    )
+    result = await session.execute(select(SystemConfig).where(SystemConfig.key == "workers_active"))
     config = result.scalar_one_or_none()
 
     if config is not None:
@@ -317,9 +311,7 @@ async def kill_switch_toggle(
     await session.commit()
 
     # Re-read to get the committed state
-    result = await session.execute(
-        select(SystemConfig.value).where(SystemConfig.key == "workers_active")
-    )
+    result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == "workers_active"))
     row = result.scalar_one_or_none()
     workers_active = bool(row) if row is not None else False
 
@@ -338,12 +330,7 @@ async def activity_feed_partial(
     """HTML fragment: last 50 recent jobs sorted by activity time."""
     from thinktank.models.job import Job
 
-    result = await session.execute(
-        select(Job)
-        .where(Job.status != "pending")
-        .order_by(Job.created_at.desc())
-        .limit(50)
-    )
+    result = await session.execute(select(Job).where(Job.status != "pending").order_by(Job.created_at.desc()).limit(50))
     jobs = result.scalars().all()
 
     return templates.TemplateResponse(
@@ -359,9 +346,7 @@ async def pending_approvals_partial(
     session: AsyncSession = Depends(get_session),
 ):
     """HTML fragment: count of pending LLM reviews awaiting decision."""
-    result = await session.execute(
-        text("SELECT COUNT(*) FROM llm_reviews WHERE decision IS NULL")
-    )
+    result = await session.execute(text("SELECT COUNT(*) FROM llm_reviews WHERE decision IS NULL"))
     pending_count = result.scalar() or 0
 
     return templates.TemplateResponse(

@@ -6,7 +6,6 @@ and conform to the JobHandler protocol (async callable taking session + job).
 
 import inspect
 
-import pytest
 from thinktank.handlers.registry import get_handler
 
 

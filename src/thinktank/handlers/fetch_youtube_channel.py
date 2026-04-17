@@ -71,9 +71,7 @@ def _parse_published_at(published_at_str: str) -> datetime | None:
         return None
 
 
-async def handle_fetch_youtube_channel(
-    session: AsyncSession, job: Job
-) -> None:
+async def handle_fetch_youtube_channel(session: AsyncSession, job: Job) -> None:
     """Fetch and catalog videos from a YouTube channel.
 
     Pipeline:
@@ -120,12 +118,8 @@ async def handle_fetch_youtube_channel(
         return
 
     # d. Read global config values
-    global_min_duration = await get_config_value(
-        session, "min_duration_seconds", 600
-    )
-    global_skip_patterns = await get_config_value(
-        session, "skip_title_patterns", _YOUTUBE_SKIP_PATTERNS
-    )
+    global_min_duration = await get_config_value(session, "min_duration_seconds", 600)
+    global_skip_patterns = await get_config_value(session, "skip_title_patterns", _YOUTUBE_SKIP_PATTERNS)
 
     # e. Compute effective filter config from source overrides
     effective_min_duration, effective_skip_patterns = get_source_filter_config(
@@ -133,8 +127,7 @@ async def handle_fetch_youtube_channel(
     )
 
     # Merge YouTube-specific skip patterns
-    yt_patterns_set = set(p.lower() for p in _YOUTUBE_SKIP_PATTERNS)
-    existing_set = set(p.lower() for p in effective_skip_patterns)
+    existing_set = {p.lower() for p in effective_skip_patterns}
     for pattern in _YOUTUBE_SKIP_PATTERNS:
         if pattern.lower() not in existing_set:
             effective_skip_patterns.append(pattern)
@@ -145,9 +138,7 @@ async def handle_fetch_youtube_channel(
         raise ValueError("YouTube API key not configured in system_config")
 
     # g. Check rate limit
-    rate_ok = await check_and_acquire_rate_limit(
-        session, "youtube", str(job.id)
-    )
+    rate_ok = await check_and_acquire_rate_limit(session, "youtube", str(job.id))
     if not rate_ok:
         raise ValueError("YouTube API rate limited")
 
@@ -160,8 +151,7 @@ async def handle_fetch_youtube_channel(
             channel_id = match.group(1)
     if not channel_id:
         raise ValueError(
-            f"Cannot determine channel ID for source {source_id}: "
-            f"no external_id and URL does not contain channel ID"
+            f"Cannot determine channel ID for source {source_id}: no external_id and URL does not contain channel ID"
         )
 
     # i. Determine backfill vs incremental mode
@@ -192,9 +182,7 @@ async def handle_fetch_youtube_channel(
         canonical = normalize_url(url)
 
         # Layer 1: URL dedup
-        url_exists = await session.execute(
-            select(Content.id).where(Content.canonical_url == canonical).limit(1)
-        )
+        url_exists = await session.execute(select(Content.id).where(Content.canonical_url == canonical).limit(1))
         if url_exists.scalar_one_or_none() is not None:
             dedup_count += 1
             continue
@@ -204,11 +192,7 @@ async def handle_fetch_youtube_channel(
 
         # Layer 2: Fingerprint dedup
         if fp is not None:
-            fp_exists = await session.execute(
-                select(Content.id)
-                .where(Content.content_fingerprint == fp)
-                .limit(1)
-            )
+            fp_exists = await session.execute(select(Content.id).where(Content.content_fingerprint == fp).limit(1))
             if fp_exists.scalar_one_or_none() is not None:
                 log.debug(
                     "fingerprint_alias_detected",
@@ -219,13 +203,12 @@ async def handle_fetch_youtube_channel(
                 continue
 
         # Determine status based on filtering
-        if should_skip_by_duration(duration_seconds, effective_min_duration):
-            status = "skipped"
-            skipped_count += 1
-        elif should_skip_by_title(title, effective_skip_patterns):
-            status = "skipped"
-            skipped_count += 1
-        elif category_id in SKIP_CATEGORY_IDS:
+        skip_video = (
+            should_skip_by_duration(duration_seconds, effective_min_duration)
+            or should_skip_by_title(title, effective_skip_patterns)
+            or category_id in SKIP_CATEGORY_IDS
+        )
+        if skip_video:
             status = "skipped"
             skipped_count += 1
         else:
@@ -273,10 +256,7 @@ async def handle_fetch_youtube_channel(
             payload={
                 "content_ids": [str(c.id) for c in non_skipped],
                 "source_id": str(source_id),
-                "descriptions": {
-                    str(c.id): descriptions.get(str(c.id), "")
-                    for c in non_skipped
-                },
+                "descriptions": {str(c.id): descriptions.get(str(c.id), "") for c in non_skipped},
             },
             priority=3,
             status="pending",

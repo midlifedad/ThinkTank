@@ -4,8 +4,6 @@ Spec reference: Section 7.3 (Parakeet via GPU worker).
 All httpx calls and file I/O mocked -- no external services.
 """
 
-import asyncio
-import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -73,9 +71,7 @@ class TestSendToGpu:
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_response.raise_for_status = MagicMock(
-            side_effect=httpx.HTTPStatusError(
-                "Server Error", request=MagicMock(), response=mock_response
-            )
+            side_effect=httpx.HTTPStatusError("Server Error", request=MagicMock(), response=mock_response)
         )
 
         mock_client = AsyncMock()

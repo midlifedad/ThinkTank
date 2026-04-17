@@ -34,9 +34,7 @@ _TRACKING_PARAMS = {
     "gclid",
 }
 
-_YOUTUBE_VIDEO_RE = re.compile(
-    r"(?:youtube\.com/watch\?.*v=|youtu\.be/|youtube\.com/embed/)([a-zA-Z0-9_-]{11})"
-)
+_YOUTUBE_VIDEO_RE = re.compile(r"(?:youtube\.com/watch\?.*v=|youtu\.be/|youtube\.com/embed/)([a-zA-Z0-9_-]{11})")
 
 # Podcast tracker prefixes. Each entry matches a scheme+host+path prefix and
 # strips it, leaving the inner URL. The inner URL may itself be
@@ -67,7 +65,7 @@ def _strip_tracker_prefix(url: str) -> str:
     match = _TRACKER_PREFIX_RE.match(url)
     if not match:
         return url
-    remainder = url[match.end():]
+    remainder = url[match.end() :]
     # Re-add scheme if the wrapped URL was stored scheme-less.
     if not remainder.startswith(("http://", "https://")):
         remainder = "https://" + remainder
@@ -102,20 +100,14 @@ def normalize_url(url: str) -> str:
 
     # YouTube canonicalization -- must check against the (possibly rewritten)
     # URL so m./music. variants are caught after host normalization.
-    rewritten = urlunparse(
-        (scheme, netloc, parsed.path, parsed.params, parsed.query, "")
-    )
+    rewritten = urlunparse((scheme, netloc, parsed.path, parsed.params, parsed.query, ""))
     yt_match = _YOUTUBE_VIDEO_RE.search(rewritten)
     if yt_match:
         return f"https://youtube.com/watch?v={yt_match.group(1)}"
 
     # Strip tracking params, sort remaining
     query_params = parse_qs(parsed.query, keep_blank_values=False)
-    filtered = {
-        k: v
-        for k, v in query_params.items()
-        if k.lower() not in _TRACKING_PARAMS
-    }
+    filtered = {k: v for k, v in query_params.items() if k.lower() not in _TRACKING_PARAMS}
     # Sort params for deterministic output
     new_query = urlencode(sorted(filtered.items()), doseq=True)
 

@@ -19,6 +19,13 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import (
+    create_content,
+    create_job,
+    create_source,
+    create_source_thinker,
+    create_thinker,
+)
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
 from thinktank.handlers.rescan_cataloged_for_thinker import (
     handle_rescan_cataloged_for_thinker,
@@ -28,13 +35,6 @@ from thinktank.handlers.scan_episodes_for_thinkers import (
 )
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
-from tests.factories import (
-    create_content,
-    create_job,
-    create_source,
-    create_source_thinker,
-    create_thinker,
-)
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "rss"
 
@@ -103,9 +103,7 @@ class TestFullPipelineGuestSourceEfficiency:
     """
 
     @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-    async def test_full_pipeline_guest_source_efficiency(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_full_pipeline_guest_source_efficiency(self, mock_client_cls: MagicMock, session: AsyncSession):
         # Setup: create an approved thinker
         sam = await create_thinker(session, name="Sam Harris")
 
@@ -120,17 +118,25 @@ class TestFullPipelineGuestSourceEfficiency:
 
         # Build RSS feed: 2 episodes mention Sam Harris, 8 do not
         episodes = [
-            {"title": "Sam Harris on Consciousness", "guid": "ep-sam-1",
-             "description": "Deep conversation with Sam Harris about free will."},
-            {"title": "Interview with Sam Harris", "guid": "ep-sam-2",
-             "description": "Sam Harris discusses meditation and mindfulness."},
+            {
+                "title": "Sam Harris on Consciousness",
+                "guid": "ep-sam-1",
+                "description": "Deep conversation with Sam Harris about free will.",
+            },
+            {
+                "title": "Interview with Sam Harris",
+                "guid": "ep-sam-2",
+                "description": "Sam Harris discusses meditation and mindfulness.",
+            },
         ]
         for i in range(8):
-            episodes.append({
-                "title": f"Unrelated Topic Number {i + 1}",
-                "guid": f"ep-unrelated-{i}",
-                "description": f"Discussion about topic {i + 1} with no guest overlap.",
-            })
+            episodes.append(
+                {
+                    "title": f"Unrelated Topic Number {i + 1}",
+                    "guid": f"ep-unrelated-{i}",
+                    "description": f"Discussion about topic {i + 1} with no guest overlap.",
+                }
+            )
 
         xml = _build_rss_feed(episodes)
         mock_client_cls.return_value = _mock_httpx_for_xml(xml)
@@ -146,9 +152,7 @@ class TestFullPipelineGuestSourceEfficiency:
         await handle_fetch_podcast_feed(session, fetch_job)
 
         # Verify: 10 content rows, all with status='cataloged'
-        result = await session.execute(
-            select(Content).where(Content.source_id == source.id)
-        )
+        result = await session.execute(select(Content).where(Content.source_id == source.id))
         all_content = result.scalars().all()
         non_skipped = [c for c in all_content if c.status != "skipped"]
         assert len(non_skipped) == 10, f"Expected 10 cataloged, got {len(non_skipped)}"
@@ -156,9 +160,7 @@ class TestFullPipelineGuestSourceEfficiency:
             assert c.status == "cataloged", f"Expected cataloged, got {c.status} for '{c.title}'"
 
         # Step 2: Load the scan_episodes_for_thinkers job from the jobs table
-        scan_result = await session.execute(
-            select(Job).where(Job.job_type == "scan_episodes_for_thinkers")
-        )
+        scan_result = await session.execute(select(Job).where(Job.job_type == "scan_episodes_for_thinkers"))
         scan_job = scan_result.scalar_one()
 
         await handle_scan_episodes_for_thinkers(session, scan_job)
@@ -183,9 +185,7 @@ class TestFullPipelineGuestSourceEfficiency:
         assert len(still_cataloged) == 8, f"Expected 8 cataloged, got {len(still_cataloged)}"
 
         # Verify: ContentThinker rows created for promoted episodes
-        ct_result = await session.execute(
-            select(ContentThinker).where(ContentThinker.thinker_id == sam.id)
-        )
+        ct_result = await session.execute(select(ContentThinker).where(ContentThinker.thinker_id == sam.id))
         attributions = ct_result.scalars().all()
         assert len(attributions) == 2
 
@@ -200,9 +200,7 @@ class TestFullPipelineHostSourceAllPromoted:
     """Host source: ALL cataloged episodes promoted regardless of title content."""
 
     @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-    async def test_full_pipeline_host_source_all_promoted(
-        self, mock_client_cls: MagicMock, session: AsyncSession
-    ):
+    async def test_full_pipeline_host_source_all_promoted(self, mock_client_cls: MagicMock, session: AsyncSession):
         # Setup: create thinker and host source
         lex = await create_thinker(session, name="Lex Fridman")
         source = await create_source(
@@ -251,9 +249,7 @@ class TestFullPipelineHostSourceAllPromoted:
         assert len(cataloged) == 5
 
         # Step 2: scan_episodes_for_thinkers
-        scan_result = await session.execute(
-            select(Job).where(Job.job_type == "scan_episodes_for_thinkers")
-        )
+        scan_result = await session.execute(select(Job).where(Job.job_type == "scan_episodes_for_thinkers"))
         scan_job = scan_result.scalar_one()
 
         await handle_scan_episodes_for_thinkers(session, scan_job)
@@ -269,9 +265,7 @@ class TestFullPipelineHostSourceAllPromoted:
         assert len(pending) == 5, f"Expected 5 pending (host), got {len(pending)}"
 
         # Verify: ContentThinker rows with role=primary, confidence=10
-        ct_result = await session.execute(
-            select(ContentThinker).where(ContentThinker.thinker_id == lex.id)
-        )
+        ct_result = await session.execute(select(ContentThinker).where(ContentThinker.thinker_id == lex.id))
         attributions = ct_result.scalars().all()
         assert len(attributions) == 5
         for attr in attributions:
@@ -282,9 +276,7 @@ class TestFullPipelineHostSourceAllPromoted:
 class TestRescanPromotesAfterNewThinker:
     """After adding a new thinker, rescan promotes previously-cataloged episodes."""
 
-    async def test_rescan_promotes_after_new_thinker(
-        self, session: AsyncSession
-    ):
+    async def test_rescan_promotes_after_new_thinker(self, session: AsyncSession):
         # Setup: create source and 5 cataloged content items
         source = await create_source(session)
 
@@ -337,9 +329,7 @@ class TestRescanPromotesAfterNewThinker:
         assert ct.role == "guest"
         assert ct.confidence == 7
 
-    async def test_rescan_word_boundary_rejects_substring(
-        self, session: AsyncSession
-    ):
+    async def test_rescan_word_boundary_rejects_substring(self, session: AsyncSession):
         """Title 'Scam Harrison investigates' must NOT promote for thinker 'Sam Harris' (ME-01)."""
         source = await create_source(session)
 
@@ -374,9 +364,7 @@ class TestRescanPromotesAfterNewThinker:
         await session.refresh(false_positive)
         await session.refresh(true_positive)
 
-        assert false_positive.status == "cataloged", (
-            "Scam Harrison must NOT promote — substring false-positive"
-        )
+        assert false_positive.status == "cataloged", "Scam Harrison must NOT promote — substring false-positive"
         assert true_positive.status == "pending"
 
         # Only true positive got an attribution
@@ -389,9 +377,7 @@ class TestRescanPromotesAfterNewThinker:
 class TestExistingPendingEpisodesNotDemoted:
     """Per D-05: existing pending episodes should not be affected by scan."""
 
-    async def test_existing_pending_episodes_not_demoted(
-        self, session: AsyncSession
-    ):
+    async def test_existing_pending_episodes_not_demoted(self, session: AsyncSession):
         # Setup: create source and mixed-status content
         thinker = await create_thinker(session, name="Test Thinker For D05")
         source = await create_source(session)

@@ -13,6 +13,7 @@ import uuid
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from thinktank.llm.client import LLMClient
 from thinktank.llm.decisions import apply_decision
 from thinktank.llm.prompts import (
@@ -110,11 +111,7 @@ async def handle_llm_approval_check(session: AsyncSession, job: Job) -> None:
     # 4. Build context
     if review_type == "candidate_review":
         raw_candidate_ids = job.payload.get("candidate_ids")
-        candidate_ids = (
-            [uuid.UUID(cid) for cid in raw_candidate_ids]
-            if raw_candidate_ids
-            else None
-        )
+        candidate_ids = [uuid.UUID(cid) for cid in raw_candidate_ids] if raw_candidate_ids else None
         context = await snapshot_builder(session, candidate_ids=candidate_ids)
     else:
         context = await snapshot_builder(session, target_id)
@@ -151,9 +148,7 @@ async def handle_llm_approval_check(session: AsyncSession, job: Job) -> None:
     pending_job_id = uuid.UUID(raw_pending_job_id) if raw_pending_job_id else None
 
     # 9. Apply decision
-    await apply_decision(
-        session, review_type, target_id, pending_job_id, result, review.id
-    )
+    await apply_decision(session, review_type, target_id, pending_job_id, result, review.id)
 
     # 10. Commit
     await session.commit()

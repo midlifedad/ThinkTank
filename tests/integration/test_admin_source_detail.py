@@ -53,9 +53,7 @@ class TestSourceDetail:
             name="Detail Source Feed",
             url="https://example.com/detail-feed.xml",
         )
-        await create_source_thinker(
-            session, source_id=source.id, thinker_id=thinker.id, relationship_type="host"
-        )
+        await create_source_thinker(session, source_id=source.id, thinker_id=thinker.id, relationship_type="host")
         await session.commit()
 
         response = await admin_client.get(f"/admin/sources/{source.id}")
@@ -101,15 +99,11 @@ class TestSourceEpisodes:
         )
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/sources/{source.id}/partials/episodes"
-        )
+        response = await admin_client.get(f"/admin/sources/{source.id}/partials/episodes")
         assert response.status_code == 200
         assert "No episodes found" in response.text
 
-    async def test_episodes_partial_shows_content(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_episodes_partial_shows_content(self, admin_client, session: AsyncSession):
         """GET episodes partial with seeded content shows both titles."""
         thinker = await create_thinker(session, name="Eps Thinker", slug="eps-thinker")
         source = await create_source(
@@ -132,9 +126,7 @@ class TestSourceEpisodes:
         )
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/sources/{source.id}/partials/episodes"
-        )
+        response = await admin_client.get(f"/admin/sources/{source.id}/partials/episodes")
         assert response.status_code == 200
         assert "Episode Alpha" in response.text
         assert "Episode Beta" in response.text
@@ -154,15 +146,11 @@ class TestSourceErrors:
         )
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/sources/{source.id}/partials/errors"
-        )
+        response = await admin_client.get(f"/admin/sources/{source.id}/partials/errors")
         assert response.status_code == 200
         assert "No errors found" in response.text
 
-    async def test_errors_partial_shows_failed_jobs(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_errors_partial_shows_failed_jobs(self, admin_client, session: AsyncSession):
         """GET errors partial with a failed fetch job shows the error message."""
         thinker = await create_thinker(session, name="Err Thinker", slug="err-thinker")
         source = await create_source(
@@ -181,8 +169,6 @@ class TestSourceErrors:
         )
         await session.commit()
 
-        response = await admin_client.get(
-            f"/admin/sources/{source.id}/partials/errors"
-        )
+        response = await admin_client.get(f"/admin/sources/{source.id}/partials/errors")
         assert response.status_code == 200
         assert "Connection timeout" in response.text

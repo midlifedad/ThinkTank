@@ -12,9 +12,7 @@ from typing import Any
 import structlog
 
 
-def _rename_level_to_log_level(
-    logger: Any, method_name: str, event_dict: dict[str, Any]
-) -> dict[str, Any]:
+def _rename_level_to_log_level(logger: Any, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
     """Rename 'level' key to 'log_level' for spec compliance.
 
     structlog's add_log_level produces 'level' in some processor chains.

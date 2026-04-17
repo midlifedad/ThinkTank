@@ -94,9 +94,7 @@ class TestPendingPartial:
 
     async def test_timeout_highlight(self, admin_client, session: AsyncSession):
         # Set timeout to 2 hours
-        await create_system_config(
-            session, key="llm_timeout_hours", value=2, set_by="test"
-        )
+        await create_system_config(session, key="llm_timeout_hours", value=2, set_by="test")
         # Create a review from 3 hours ago (should be timed out)
         await create_llm_review(
             session,
@@ -180,9 +178,7 @@ class TestOverride:
         assert review.overridden_at is not None
 
     async def test_override_applies_to_thinker(self, admin_client, session: AsyncSession):
-        thinker = await create_thinker(
-            session, approval_status="pending_llm"
-        )
+        thinker = await create_thinker(session, approval_status="pending_llm")
         review = await create_llm_review(
             session,
             review_type="thinker_approval",
@@ -209,9 +205,7 @@ class TestOverride:
 
     async def test_override_applies_to_source(self, admin_client, session: AsyncSession):
         thinker = await create_thinker(session)
-        source = await create_source(
-            session, thinker_id=thinker.id, approval_status="pending_llm"
-        )
+        source = await create_source(session, thinker_id=thinker.id, approval_status="pending_llm")
         review = await create_llm_review(
             session,
             review_type="source_approval",
@@ -279,9 +273,7 @@ class TestCategoriesPage:
         assert response.status_code == 200
         assert "Technology" in response.text
 
-    async def test_delete_category_with_children_returns_400(
-        self, admin_client, session: AsyncSession
-    ):
+    async def test_delete_category_with_children_returns_400(self, admin_client, session: AsyncSession):
         parent = await create_category(session, name="Parent", slug="parent-cat")
         await create_category(session, name="Child", slug="child-cat", parent_id=parent.id)
         await session.commit()

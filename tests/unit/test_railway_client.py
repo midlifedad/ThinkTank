@@ -151,9 +151,7 @@ class TestManageGpuScaling:
     @patch("thinktank.scaling.railway.get_gpu_replica_count")
     @patch("thinktank.scaling.railway.get_config_value")
     @patch("thinktank.scaling.railway.get_queue_depth")
-    async def test_manage_gpu_scaling_scale_up(
-        self, mock_depth, mock_config, mock_replicas, mock_scale
-    ):
+    async def test_manage_gpu_scaling_scale_up(self, mock_depth, mock_config, mock_replicas, mock_scale):
         """Scales up when queue depth > threshold and replicas=0."""
         from thinktank.scaling.railway import manage_gpu_scaling
 
@@ -175,9 +173,7 @@ class TestManageGpuScaling:
     @patch("thinktank.scaling.railway.get_gpu_replica_count")
     @patch("thinktank.scaling.railway.get_config_value")
     @patch("thinktank.scaling.railway.get_queue_depth")
-    async def test_manage_gpu_scaling_scale_down(
-        self, mock_depth, mock_config, mock_replicas, mock_scale
-    ):
+    async def test_manage_gpu_scaling_scale_down(self, mock_depth, mock_config, mock_replicas, mock_scale):
         """Scales down when queue depth=0 and idle time exceeds timeout."""
         from thinktank.scaling.railway import manage_gpu_scaling
 
@@ -202,9 +198,7 @@ class TestManageGpuScaling:
     @patch("thinktank.scaling.railway.get_gpu_replica_count")
     @patch("thinktank.scaling.railway.get_config_value")
     @patch("thinktank.scaling.railway.get_queue_depth")
-    async def test_manage_gpu_scaling_no_action(
-        self, mock_depth, mock_config, mock_replicas, mock_scale
-    ):
+    async def test_manage_gpu_scaling_no_action(self, mock_depth, mock_config, mock_replicas, mock_scale):
         """No scaling action when queue depth=0 but idle time < timeout."""
         from thinktank.scaling.railway import manage_gpu_scaling
 
@@ -227,9 +221,7 @@ class TestManageGpuScaling:
     @patch("thinktank.scaling.railway.get_gpu_replica_count")
     @patch("thinktank.scaling.railway.get_config_value")
     @patch("thinktank.scaling.railway.get_queue_depth")
-    async def test_manage_gpu_scaling_start_idle_timer(
-        self, mock_depth, mock_config, mock_replicas, mock_scale
-    ):
+    async def test_manage_gpu_scaling_start_idle_timer(self, mock_depth, mock_config, mock_replicas, mock_scale):
         """Starts idle timer when queue depth first reaches 0."""
         from thinktank.scaling.railway import manage_gpu_scaling
 

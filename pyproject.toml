@@ -36,6 +36,7 @@ dev = [
 test = [
     "pytest>=8.0",
     "pytest-asyncio>=0.25.0",
+    "pytest-timeout>=2.3.0",
 ]
 lint = [
     "ruff>=0.15.3",
@@ -47,6 +48,8 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_test_loop_scope = "session"
 asyncio_default_fixture_loop_scope = "session"
+timeout = 120
+timeout_method = "thread"
 
 [tool.ruff]
 target-version = "py312"
@@ -55,7 +58,22 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "A", "SIM", "TCH"]
-ignore = ["B008"]  # Allow Depends() in function defaults (standard FastAPI pattern)
+ignore = [
+    "B008",   # Allow Depends() in function defaults (standard FastAPI pattern)
+    "TC001",  # Stylistic: don't require moving app imports to TYPE_CHECKING blocks
+    "TC002",  # Stylistic: don't require moving third-party imports to TYPE_CHECKING blocks
+    "TC003",  # Stylistic: don't require moving stdlib imports to TYPE_CHECKING blocks
+    "SIM102", # Stylistic: allow nested ifs for readability
+    "SIM105", # Stylistic: allow try/except/pass over contextlib.suppress
+    "SIM108", # Stylistic: allow if/else blocks over ternary
+    "SIM401", # Stylistic: allow if/else over dict.get with default
+    "N806",   # Stylistic: allow UPPER_SNAKE in function-local constants
+    "UP046",  # Stylistic: allow Generic base class syntax
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/thinktank/agent/system_prompt.py" = ["E501"]  # Prompt templates contain long prose lines
+"src/thinktank/admin/routers/pipeline.py" = ["E501"]  # Inline HTML/SQL strings
 
 [tool.ruff.format]
 quote-style = "double"

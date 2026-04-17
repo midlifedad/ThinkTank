@@ -29,9 +29,7 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-async def handle_discover_thinker(
-    session: AsyncSession, job: Job
-) -> None:
+async def handle_discover_thinker(session: AsyncSession, job: Job) -> None:
     """Orchestrate discovery for an approved thinker.
 
     1. Validate thinker is approved and active

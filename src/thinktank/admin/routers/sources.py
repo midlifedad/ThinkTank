@@ -7,20 +7,19 @@ page with health summary, episodes list, and error history.
 
 import re
 import uuid
-from datetime import datetime, UTC
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from thinktank.admin.dependencies import get_session, get_templates
 from thinktank.models.content import Content
 from thinktank.models.job import Job
 from thinktank.models.review import LLMReview
 from thinktank.models.source import Source, SourceThinker
 from thinktank.models.thinker import Thinker
-from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin/sources", tags=["sources"])
 templates = get_templates()
@@ -28,16 +27,14 @@ templates = get_templates()
 
 async def _build_source_list(
     session: AsyncSession,
-    thinker_id: Optional[str] = None,
-    status: Optional[str] = None,
-    source_type: Optional[str] = None,
+    thinker_id: str | None = None,
+    status: str | None = None,
+    source_type: str | None = None,
 ) -> list[dict]:
     """Build source list with associated thinker names via junction, applying filters."""
     # Eager-load source_thinkers.thinker so thinker names are available on each
     # Source row without triggering a per-row SELECT.
-    stmt = select(Source).options(
-        selectinload(Source.source_thinkers).selectinload(SourceThinker.thinker)
-    )
+    stmt = select(Source).options(selectinload(Source.source_thinkers).selectinload(SourceThinker.thinker))
 
     if thinker_id and thinker_id != "all":
         try:
@@ -59,22 +56,22 @@ async def _build_source_list(
     sources = []
     for source in source_rows:
         # Thinker names are eager-loaded via source_thinkers -> thinker.
-        thinker_names = [
-            st.thinker.name for st in source.source_thinkers if st.thinker is not None
-        ]
+        thinker_names = [st.thinker.name for st in source.source_thinkers if st.thinker is not None]
 
-        sources.append({
-            "id": str(source.id),
-            "name": source.name,
-            "url": source.url,
-            "source_type": source.source_type,
-            "approval_status": source.approval_status,
-            "thinker_names": ", ".join(thinker_names) if thinker_names else "—",
-            "error_count": source.error_count,
-            "last_fetched": source.last_fetched,
-            "item_count": source.item_count,
-            "active": source.active,
-        })
+        sources.append(
+            {
+                "id": str(source.id),
+                "name": source.name,
+                "url": source.url,
+                "source_type": source.source_type,
+                "approval_status": source.approval_status,
+                "thinker_names": ", ".join(thinker_names) if thinker_names else "—",
+                "error_count": source.error_count,
+                "last_fetched": source.last_fetched,
+                "item_count": source.item_count,
+                "active": source.active,
+            }
+        )
 
     return sources
 
@@ -98,14 +95,12 @@ async def source_page(
 async def source_list_partial(
     request: Request,
     session: AsyncSession = Depends(get_session),
-    thinker_id: Optional[str] = None,
-    status: Optional[str] = None,
-    source_type: Optional[str] = None,
+    thinker_id: str | None = None,
+    status: str | None = None,
+    source_type: str | None = None,
 ):
     """HTML fragment: filterable source table."""
-    sources = await _build_source_list(
-        session, thinker_id=thinker_id, status=status, source_type=source_type
-    )
+    sources = await _build_source_list(session, thinker_id=thinker_id, status=status, source_type=source_type)
     return templates.TemplateResponse(
         request,
         "partials/source_list.html",
@@ -168,9 +163,7 @@ async def add_source(
                 detail=f"Invalid thinker_id: {thinker_id!r} is not a valid UUID",
             ) from exc
 
-        thinker_exists = await session.execute(
-            select(Thinker.id).where(Thinker.id == tid).limit(1)
-        )
+        thinker_exists = await session.execute(select(Thinker.id).where(Thinker.id == tid).limit(1))
         if thinker_exists.scalar_one_or_none() is None:
             raise HTTPException(
                 status_code=422,
@@ -368,9 +361,7 @@ async def source_detail(
         .join(SourceThinker, SourceThinker.thinker_id == Thinker.id)
         .where(SourceThinker.source_id == source_id)
     )
-    associated_thinkers = [
-        {"name": r[0], "relationship_type": r[1]} for r in thinker_result.all()
-    ]
+    associated_thinkers = [{"name": r[0], "relationship_type": r[1]} for r in thinker_result.all()]
     thinker_name = associated_thinkers[0]["name"] if associated_thinkers else "—"
 
     return templates.TemplateResponse(

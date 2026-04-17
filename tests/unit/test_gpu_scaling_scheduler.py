@@ -9,8 +9,6 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 
 def _make_session_factory():
     """Create a mock session factory that works with `async with session_factory() as s:`."""

@@ -32,26 +32,24 @@ async def _auto_cleanup(_cleanup_tables):
 
 
 @pytest.fixture(autouse=True)
-def _auto_admin_auth_override(request):
-    """Bypass require_admin for integration tests that use admin_client.
+def _auto_admin_auth_override(request, session_factory):
+    """Bypass require_admin and override get_session for admin_client tests.
 
-    Pre-existing admin integration tests were written before auth
-    existed; they should continue to run as if the caller were
-    authenticated. The dedicated auth suite
-    (``tests/integration/test_admin_auth.py``) exercises the real
-    dependency and must opt out of this override.
+    Two overrides:
 
-    Only fires when the test actually uses ``admin_client``. This avoids
-    importing the admin app for non-admin integration tests, which
-    would force the shared ``thinktank.database.engine`` to be created
-    before the client fixture can point DATABASE_URL at the test DB.
+    1. ``require_admin`` → returns "admin" so pre-existing admin integration
+       tests (written before auth existed) still run. The dedicated auth
+       suite (``test_admin_auth.py``) opts out to exercise the real dep.
 
-    IMPORTANT: when this autouse fires it MUST ensure DATABASE_URL is
-    pointed at the test database BEFORE importing ``thinktank.admin.main``.
-    Otherwise the module-level ``thinktank.database.engine`` is bound to
-    whatever URL settings happen to hold at import time (potentially the
-    production default), and every subsequent test that uses the shared
-    session factory hits the wrong database.
+    2. ``get_session`` → yields from the test ``session_factory`` so the
+       admin app shares the test engine's connection pool. Without this,
+       the app's module-level engine and the test engine race on the same
+       database, producing asyncpg ``InterfaceError`` and TRUNCATE
+       deadlocks at fixture teardown.
+
+    Both overrides only fire when the test actually uses ``admin_client``
+    (detected via ``request.fixturenames``) to avoid importing the admin
+    app for tests that don't need it.
     """
     # Opt out for the dedicated auth suite -- it needs the real dep.
     if "test_admin_auth" in request.node.nodeid:
@@ -62,21 +60,26 @@ def _auto_admin_auth_override(request):
         yield
         return
 
-    # Point DATABASE_URL at the test DB and invalidate the settings cache
-    # BEFORE importing admin.main, so the shared engine binds correctly.
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
     from thinktank.config import get_settings
 
     get_settings.cache_clear()
 
     from thinktank.admin.auth import require_admin
+    from thinktank.admin.dependencies import get_session
     from thinktank.admin.main import app as admin_app
 
     async def _fake_require_admin() -> str:
         return "admin"
 
+    async def _override_get_session():
+        async with session_factory() as s:
+            yield s
+
     admin_app.dependency_overrides[require_admin] = _fake_require_admin
+    admin_app.dependency_overrides[get_session] = _override_get_session
     try:
         yield
     finally:
         admin_app.dependency_overrides.pop(require_admin, None)
+        admin_app.dependency_overrides.pop(get_session, None)

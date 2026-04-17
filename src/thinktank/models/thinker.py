@@ -5,7 +5,7 @@ Spec references: Section 3.2 (thinkers), Section 3.4 (thinker_profiles), Section
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -28,23 +28,19 @@ class Thinker(Base):
     slug: Mapped[str] = mapped_column(sa.Text, unique=True)
     tier: Mapped[int] = mapped_column(sa.SmallInteger)
     bio: Mapped[str] = mapped_column(sa.Text)
-    primary_affiliation: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    twitter_handle: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    wikipedia_url: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
-    personal_site: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
+    primary_affiliation: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    twitter_handle: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    wikipedia_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    personal_site: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     approval_status: Mapped[str] = mapped_column(sa.Text, server_default="pending_llm")
-    approved_backfill_days: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
-    approved_source_types: Mapped[Optional[list[str]]] = mapped_column(
+    approved_backfill_days: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    approved_source_types: Mapped[list[str] | None] = mapped_column(
         ARRAY(sa.Text),
         nullable=True,
     )
     active: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.text("true"))
-    added_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
-    last_refreshed: Mapped[Optional[datetime]] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
+    added_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
+    last_refreshed: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
     # Relationships. passive_deletes=True tells SQLAlchemy to rely on the
     # DB-level ON DELETE CASCADE / SET NULL configured in migration 005
@@ -79,16 +75,12 @@ class ThinkerProfile(Base):
     __tablename__ = "thinker_profiles"
 
     id: Mapped[uuid_pk]
-    thinker_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("thinkers.id", ondelete="CASCADE")
-    )
+    thinker_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("thinkers.id", ondelete="CASCADE"))
     education: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
     positions_held: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
     notable_works: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
     awards: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
-    updated_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
+    updated_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
 
     # Relationships
     thinker: Mapped["Thinker"] = relationship(back_populates="profiles")
@@ -103,18 +95,14 @@ class ThinkerMetrics(Base):
     __tablename__ = "thinker_metrics"
 
     id: Mapped[uuid_pk]
-    thinker_id: Mapped[uuid.UUID] = mapped_column(
-        sa.ForeignKey("thinkers.id", ondelete="CASCADE")
-    )
+    thinker_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("thinkers.id", ondelete="CASCADE"))
     platform: Mapped[str] = mapped_column(sa.Text)
     handle: Mapped[str] = mapped_column(sa.Text)
     followers: Mapped[int] = mapped_column(sa.BigInteger)
     avg_views: Mapped[int] = mapped_column(sa.BigInteger)
     post_count: Mapped[int] = mapped_column(sa.Integer)
     verified: Mapped[bool] = mapped_column(sa.Boolean)
-    snapshotted_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
+    snapshotted_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
 
     # Relationships
     thinker: Mapped["Thinker"] = relationship(back_populates="metrics")

@@ -9,6 +9,7 @@ from enum import StrEnum
 import anthropic
 import pydantic
 import pytest
+
 from thinktank.queue.errors import ErrorCategory, categorize_error
 
 

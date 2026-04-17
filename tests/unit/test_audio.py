@@ -5,9 +5,7 @@ yt-dlp, ffmpeg subprocess, and GPU client calls are mocked.
 Cleanup tests create real temp files and verify deletion.
 """
 
-import asyncio
 import os
-import tempfile
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -71,9 +69,7 @@ class TestDownloadAudio:
             inst = MagicMock()
             inst.__enter__ = MagicMock(return_value=inst)
             inst.__exit__ = MagicMock(return_value=False)
-            inst.download = MagicMock(
-                side_effect=Exception("Download failed: video unavailable")
-            )
+            inst.download = MagicMock(side_effect=Exception("Download failed: video unavailable"))
             return inst
 
         mock_ydl_cls.side_effect = failing_init
@@ -139,7 +135,7 @@ class TestConvertToWav:
         open(input_path, "w").close()
 
         mock_proc = AsyncMock()
-        mock_proc.communicate = AsyncMock(side_effect=asyncio.TimeoutError())
+        mock_proc.communicate = AsyncMock(side_effect=TimeoutError())
         mock_proc.kill = MagicMock()
         mock_create_proc.return_value = mock_proc
 
@@ -209,9 +205,9 @@ class TestTempFileCleanup:
                 new_callable=AsyncMock,
                 return_value=str(wav_file),
             ),
+            pytest.raises(RuntimeError, match="GPU service"),
         ):
-            with pytest.raises(RuntimeError, match="GPU service"):
-                await transcribe_via_gpu("https://example.com/video", tmp_dir, failing_gpu_fn)
+            await transcribe_via_gpu("https://example.com/video", tmp_dir, failing_gpu_fn)
 
         # Verify cleanup happened even on failure
         assert not audio_file.exists(), "Audio file should be deleted after failure"

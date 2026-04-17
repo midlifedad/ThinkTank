@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from thinktank.admin.auth import require_admin
 from thinktank.api.dependencies import get_session
 from thinktank.api.schemas import ConfigResponse, ConfigUpdate
-
 from thinktank.models.config_table import SystemConfig
 
 router = APIRouter(prefix="/api/config", tags=["config"])
@@ -33,11 +32,7 @@ async def list_config(
     """
     result = await session.execute(select(SystemConfig))
     configs = result.scalars().all()
-    return [
-        ConfigResponse.model_validate(c)
-        for c in configs
-        if not c.key.startswith(_SECRET_KEY_PREFIX)
-    ]
+    return [ConfigResponse.model_validate(c) for c in configs if not c.key.startswith(_SECRET_KEY_PREFIX)]
 
 
 @router.get("/{key}", response_model=ConfigResponse)
@@ -78,18 +73,22 @@ async def upsert_config(
     See ADMIN-REVIEW CR-02 follow-up.
     """
     now = datetime.now()  # noqa: DTZ005 -- timezone-naive per project convention
-    stmt = insert(SystemConfig).values(
-        key=key,
-        value=body.value,
-        set_by=body.set_by,
-        updated_at=now,
-    ).on_conflict_do_update(
-        index_elements=["key"],
-        set_=dict(
+    stmt = (
+        insert(SystemConfig)
+        .values(
+            key=key,
             value=body.value,
             set_by=body.set_by,
             updated_at=now,
-        ),
+        )
+        .on_conflict_do_update(
+            index_elements=["key"],
+            set_=dict(
+                value=body.value,
+                set_by=body.set_by,
+                updated_at=now,
+            ),
+        )
     )
     await session.execute(stmt)
     await session.commit()

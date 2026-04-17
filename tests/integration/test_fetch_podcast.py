@@ -6,7 +6,6 @@ content insertion, source updates, and tag job creation.
 Uses mocked httpx to return RSS fixture XML.
 """
 
-import uuid
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -14,11 +13,10 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_job, create_source, create_thinker
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
 from thinktank.models.content import Content
 from thinktank.models.job import Job
-from thinktank.models.source import Source
-from tests.factories import create_job, create_source, create_system_config, create_thinker
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "rss"
 
@@ -72,9 +70,7 @@ async def test_basic_feed_poll(mock_client_cls: MagicMock, session: AsyncSession
     await handle_fetch_podcast_feed(session, job)
 
     # Verify content rows
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     content_rows = result.scalars().all()
     assert len(content_rows) == 3
 
@@ -92,9 +88,7 @@ async def test_basic_feed_poll(mock_client_cls: MagicMock, session: AsyncSession
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_duplicate_poll_no_new_rows(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_duplicate_poll_no_new_rows(mock_client_cls: MagicMock, session: AsyncSession):
     """Polling same feed twice -> second poll inserts 0 new rows (URL dedup)."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
@@ -117,9 +111,7 @@ async def test_duplicate_poll_no_new_rows(
     # First poll
     await handle_fetch_podcast_feed(session, job1)
 
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     first_count = len(result.scalars().all())
     assert first_count == 3
 
@@ -139,17 +131,13 @@ async def test_duplicate_poll_no_new_rows(
     # Second poll
     await handle_fetch_podcast_feed(session, job2)
 
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     second_count = len(result.scalars().all())
     assert second_count == 3  # No new rows
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_unapproved_source_skipped(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_unapproved_source_skipped(mock_client_cls: MagicMock, session: AsyncSession):
     """Source with approval_status='pending_llm' -> no content, no error."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
@@ -171,9 +159,7 @@ async def test_unapproved_source_skipped(
     # Should not raise, just return
     await handle_fetch_podcast_feed(session, job)
 
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     assert len(result.scalars().all()) == 0
 
     # httpx should NOT have been called
@@ -181,9 +167,7 @@ async def test_unapproved_source_skipped(
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_inactive_source_skipped(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_inactive_source_skipped(mock_client_cls: MagicMock, session: AsyncSession):
     """Source with active=False -> no content inserted."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
@@ -204,16 +188,12 @@ async def test_inactive_source_skipped(
 
     await handle_fetch_podcast_feed(session, job)
 
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     assert len(result.scalars().all()) == 0
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_short_episodes_skipped(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_short_episodes_skipped(mock_client_cls: MagicMock, session: AsyncSession):
     """Short episodes get status='skipped', long episode gets 'pending'."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_short_episodes.xml")
 
@@ -235,9 +215,7 @@ async def test_short_episodes_skipped(
 
     await handle_fetch_podcast_feed(session, job)
 
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     content_rows = result.scalars().all()
     assert len(content_rows) == 3
 
@@ -252,9 +230,7 @@ async def test_short_episodes_skipped(
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_skip_title_patterns(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_skip_title_patterns(mock_client_cls: MagicMock, session: AsyncSession):
     """Trailer, Best of, and Announcement episodes get status='skipped'."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_skip_titles.xml")
 
@@ -276,9 +252,7 @@ async def test_skip_title_patterns(
 
     await handle_fetch_podcast_feed(session, job)
 
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     content_rows = result.scalars().all()
     assert len(content_rows) == 4
 
@@ -291,9 +265,7 @@ async def test_skip_title_patterns(
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_source_last_fetched_updated(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_source_last_fetched_updated(mock_client_cls: MagicMock, session: AsyncSession):
     """After successful poll, source.last_fetched is set and item_count matches."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
@@ -325,9 +297,7 @@ async def test_source_last_fetched_updated(
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_backfill_then_incremental(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_backfill_then_incremental(mock_client_cls: MagicMock, session: AsyncSession):
     """First poll: backfill_complete set True. Second poll: incremental, no new rows."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
@@ -367,16 +337,12 @@ async def test_backfill_then_incremental(
 
     # Should have same 3 rows (no new content in incremental mode since
     # all entries have published_at <= last_fetched)
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     assert len(result.scalars().all()) == 3
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_tag_job_enqueued_with_descriptions(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_tag_job_enqueued_with_descriptions(mock_client_cls: MagicMock, session: AsyncSession):
     """After successful poll, tag_content_thinkers job has content_ids, source_id, and descriptions."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
@@ -399,9 +365,7 @@ async def test_tag_job_enqueued_with_descriptions(
     await handle_fetch_podcast_feed(session, job)
 
     # Phase 13: fetch_podcast_feed now chains to scan_episodes_for_thinkers
-    result = await session.execute(
-        select(Job).where(Job.job_type == "scan_episodes_for_thinkers")
-    )
+    result = await session.execute(select(Job).where(Job.job_type == "scan_episodes_for_thinkers"))
     scan_jobs = result.scalars().all()
     assert len(scan_jobs) == 1
 
@@ -431,9 +395,7 @@ async def test_tag_job_enqueued_with_descriptions(
 
 
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
-async def test_per_source_duration_override(
-    mock_client_cls: MagicMock, session: AsyncSession
-):
+async def test_per_source_duration_override(mock_client_cls: MagicMock, session: AsyncSession):
     """Source with min_duration_override=300, feed has 400s episode -> NOT skipped."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_short_episodes.xml")
 
@@ -456,9 +418,7 @@ async def test_per_source_duration_override(
 
     await handle_fetch_podcast_feed(session, job)
 
-    result = await session.execute(
-        select(Content).where(Content.source_id == source.id)
-    )
+    result = await session.execute(select(Content).where(Content.source_id == source.id))
     content_rows = result.scalars().all()
     by_title = {c.title: c for c in content_rows}
 

@@ -13,18 +13,17 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.models.constants import (
-    ALLOWED_CONTENT_STATUSES,
-    ALLOWED_JOB_STATUSES,
-    ALLOWED_SOURCE_APPROVAL_STATUSES,
-)
 from tests.factories import (
     create_content,
     create_job,
     create_source,
     create_thinker,
 )
-
+from thinktank.models.constants import (
+    ALLOWED_CONTENT_STATUSES,
+    ALLOWED_JOB_STATUSES,
+    ALLOWED_SOURCE_APPROVAL_STATUSES,
+)
 
 # ---------- Content.status ----------
 
@@ -48,15 +47,11 @@ async def test_invalid_content_status_raises(session: AsyncSession):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("status", ALLOWED_CONTENT_STATUSES)
-async def test_valid_content_status_accepted(
-    session: AsyncSession, status: str
-):
+async def test_valid_content_status_accepted(session: AsyncSession, status: str):
     """Every value in ALLOWED_CONTENT_STATUSES inserts successfully."""
     thinker = await create_thinker(session)
     source = await create_source(session, thinker_id=thinker.id)
-    content = await create_content(
-        session, source_id=source.id, status=status
-    )
+    content = await create_content(session, source_id=source.id, status=status)
     await session.commit()
     assert content.status == status
 
@@ -75,9 +70,7 @@ async def test_invalid_source_approval_status_raises(session: AsyncSession):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("status", ALLOWED_SOURCE_APPROVAL_STATUSES)
-async def test_valid_source_approval_status_accepted(
-    session: AsyncSession, status: str
-):
+async def test_valid_source_approval_status_accepted(session: AsyncSession, status: str):
     """Every value in ALLOWED_SOURCE_APPROVAL_STATUSES inserts successfully."""
     source = await create_source(session, approval_status=status)
     await session.commit()
@@ -98,9 +91,7 @@ async def test_invalid_job_status_raises(session: AsyncSession):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("status", ALLOWED_JOB_STATUSES)
-async def test_valid_job_status_accepted(
-    session: AsyncSession, status: str
-):
+async def test_valid_job_status_accepted(session: AsyncSession, status: str):
     """Every value in ALLOWED_JOB_STATUSES inserts successfully."""
     job = await create_job(session, status=status)
     await session.commit()

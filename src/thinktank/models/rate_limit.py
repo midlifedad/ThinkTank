@@ -15,16 +15,12 @@ class RateLimitUsage(Base):
     """Sliding-window rate limit coordination between concurrent workers."""
 
     __tablename__ = "rate_limit_usage"
-    __table_args__ = (
-        sa.Index("ix_rate_limit_usage_window", "api_name", "called_at"),
-    )
+    __table_args__ = (sa.Index("ix_rate_limit_usage_window", "api_name", "called_at"),)
 
     id: Mapped[uuid_pk]
     api_name: Mapped[str] = mapped_column(sa.Text)
     worker_id: Mapped[str] = mapped_column(sa.Text)
-    called_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
-    )
+    called_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
 
     def __repr__(self) -> str:
         return f"<RateLimitUsage(api={self.api_name!r}, worker={self.worker_id!r})>"

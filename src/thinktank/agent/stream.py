@@ -11,10 +11,10 @@ from collections.abc import AsyncGenerator
 from anthropic import AsyncAnthropic
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.secrets import get_secret
 from thinktank.agent.session import ChatMessage, chat_sessions
 from thinktank.agent.system_prompt import build_chat_system_prompt
 from thinktank.agent.tools import AGENT_TOOLS, execute_tool
+from thinktank.secrets import get_secret
 
 
 async def stream_agent_response(
@@ -86,11 +86,13 @@ async def stream_agent_response(
             # Extract tool use blocks from the final message
             for block in final_message.content:
                 if block.type == "tool_use":
-                    tool_use_blocks.append({
-                        "id": block.id,
-                        "name": block.name,
-                        "input": block.input,
-                    })
+                    tool_use_blocks.append(
+                        {
+                            "id": block.id,
+                            "name": block.name,
+                            "input": block.input,
+                        }
+                    )
 
             # Record assistant message in session
             if full_text:
@@ -129,20 +131,24 @@ async def stream_agent_response(
                     proposal_id = str(uuid.uuid4())
                     proposal = tool_result["proposal"]
                     chat_sessions.add_proposal(session_id, proposal_id, proposal)
-                    yield _sse_event({
-                        "type": "proposal",
-                        "proposal_id": proposal_id,
-                        "action_type": proposal["action_type"],
-                        "target": proposal["target"],
-                        "details": proposal["details"],
-                        "explanation": proposal["explanation"],
-                    })
+                    yield _sse_event(
+                        {
+                            "type": "proposal",
+                            "proposal_id": proposal_id,
+                            "action_type": proposal["action_type"],
+                            "target": proposal["target"],
+                            "details": proposal["details"],
+                            "explanation": proposal["explanation"],
+                        }
+                    )
                 elif tool_name == "query_database":
-                    yield _sse_event({
-                        "type": "tool_result",
-                        "tool": "query_database",
-                        "result": tool_result,
-                    })
+                    yield _sse_event(
+                        {
+                            "type": "tool_result",
+                            "tool": "query_database",
+                            "result": tool_result,
+                        }
+                    )
 
                 # Record tool result in session
                 result_str = json.dumps(tool_result)

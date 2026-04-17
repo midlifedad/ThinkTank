@@ -10,26 +10,9 @@ Tests verify:
 import uuid
 
 import pytest
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.models import (
-    ApiUsage,
-    CandidateThinker,
-    Category,
-    Content,
-    ContentThinker,
-    Job,
-    LLMReview,
-    RateLimitUsage,
-    Source,
-    SystemConfig,
-    Thinker,
-    ThinkerCategory,
-    ThinkerMetrics,
-    ThinkerProfile,
-)
 from tests.factories import (
     create_api_usage,
     create_candidate_thinker,
@@ -46,7 +29,22 @@ from tests.factories import (
     create_thinker_metrics,
     create_thinker_profile,
 )
-
+from thinktank.models import (
+    ApiUsage,
+    CandidateThinker,
+    Category,
+    Content,
+    ContentThinker,
+    Job,
+    LLMReview,
+    RateLimitUsage,
+    Source,
+    SystemConfig,
+    Thinker,
+    ThinkerCategory,
+    ThinkerMetrics,
+    ThinkerProfile,
+)
 
 # ---------- Category ----------
 
@@ -85,9 +83,7 @@ async def test_create_thinker_with_category(session: AsyncSession):
     """Thinker and Category can be linked via ThinkerCategory junction."""
     thinker = await create_thinker(session)
     cat = await create_category(session)
-    tc = await create_thinker_category(
-        session, thinker_id=thinker.id, category_id=cat.id, relevance=8
-    )
+    tc = await create_thinker_category(session, thinker_id=thinker.id, category_id=cat.id, relevance=8)
     assert tc.relevance == 8
 
     # Verify the junction entry exists
@@ -139,9 +135,7 @@ async def test_create_content_thinker(session: AsyncSession):
     thinker = await create_thinker(session)
     source = await create_source(session, thinker_id=thinker.id)
     content = await create_content(session, source_id=source.id, source_owner_id=thinker.id)
-    ct = await create_content_thinker(
-        session, content_id=content.id, thinker_id=thinker.id, role="primary", confidence=10
-    )
+    await create_content_thinker(session, content_id=content.id, thinker_id=thinker.id, role="primary", confidence=10)
     result = await session.get(ContentThinker, (content.id, thinker.id))
     assert result is not None
     assert result.role == "primary"
@@ -200,9 +194,7 @@ async def test_create_llm_review(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_create_system_config(session: AsyncSession):
     """SystemConfig persists with TEXT PK and JSONB value."""
-    sc = await create_system_config(
-        session, key="workers_active", value=True, set_by="admin"
-    )
+    await create_system_config(session, key="workers_active", value=True, set_by="admin")
     result = await session.get(SystemConfig, "workers_active")
     assert result is not None
     assert result.value is True

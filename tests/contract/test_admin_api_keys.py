@@ -19,6 +19,7 @@ async def admin_client():
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
     from thinktank.config import get_settings
+
     get_settings.cache_clear()
 
     from thinktank.admin.main import app
@@ -81,11 +82,8 @@ class TestSetApiKey:
             data={"key_name": "youtube_api_key", "key_value": "yt-key-abcdef"},
         )
         from sqlalchemy import select
-        result = await session.execute(
-            select(SystemConfig.value).where(
-                SystemConfig.key == "secret_youtube_api_key"
-            )
-        )
+
+        result = await session.execute(select(SystemConfig.value).where(SystemConfig.key == "secret_youtube_api_key"))
         value = result.scalar_one_or_none()
         assert value is not None
         assert "abcdef" in str(value)

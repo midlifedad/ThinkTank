@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from thinktank.llm.scheduled import (
     run_daily_digest,
     run_health_check,
@@ -44,11 +45,7 @@ async def test_health_check_creates_review(session: AsyncSession):
     assert result.duration_ms == 1200
 
     # Verify persisted in DB
-    reviews = (
-        await session.execute(
-            select(LLMReview).where(LLMReview.review_type == "health_check")
-        )
-    ).scalars().all()
+    reviews = (await session.execute(select(LLMReview).where(LLMReview.review_type == "health_check"))).scalars().all()
     assert len(reviews) == 1
 
 
@@ -73,11 +70,7 @@ async def test_daily_digest_creates_review(session: AsyncSession):
     assert "Quiet day" in result.decision_reasoning
 
     # Verify persisted in DB
-    reviews = (
-        await session.execute(
-            select(LLMReview).where(LLMReview.review_type == "daily_digest")
-        )
-    ).scalars().all()
+    reviews = (await session.execute(select(LLMReview).where(LLMReview.review_type == "daily_digest"))).scalars().all()
     assert len(reviews) == 1
 
 
@@ -101,11 +94,7 @@ async def test_weekly_audit_creates_review(session: AsyncSession):
     assert "Strong growth" in result.decision_reasoning
 
     # Verify persisted in DB
-    reviews = (
-        await session.execute(
-            select(LLMReview).where(LLMReview.review_type == "weekly_audit")
-        )
-    ).scalars().all()
+    reviews = (await session.execute(select(LLMReview).where(LLMReview.review_type == "weekly_audit"))).scalars().all()
     assert len(reviews) == 1
 
 
@@ -123,11 +112,7 @@ async def test_scheduled_task_handles_api_error(session: AsyncSession):
     assert result is None
 
     # No LLMReview rows created
-    reviews = (
-        await session.execute(
-            select(LLMReview).where(LLMReview.review_type == "health_check")
-        )
-    ).scalars().all()
+    reviews = (await session.execute(select(LLMReview).where(LLMReview.review_type == "health_check"))).scalars().all()
     assert len(reviews) == 0
 
 

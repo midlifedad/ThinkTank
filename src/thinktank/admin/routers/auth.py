@@ -15,9 +15,9 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, 
 from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.secrets import get_secret
 from thinktank.admin.auth import ADMIN_SESSION_COOKIE
 from thinktank.admin.dependencies import get_session
+from thinktank.secrets import get_secret
 
 router = APIRouter(prefix="/admin", tags=["auth"])
 

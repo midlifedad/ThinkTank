@@ -43,8 +43,15 @@ class TestSourceEndpointContract:
         assert resp.status_code == 200
         item = resp.json()["items"][0]
         required_keys = {
-            "id", "thinker_id", "source_type", "name", "url",
-            "approval_status", "active", "error_count", "created_at",
+            "id",
+            "thinker_id",
+            "source_type",
+            "name",
+            "url",
+            "approval_status",
+            "active",
+            "error_count",
+            "created_at",
         }
         assert required_keys.issubset(set(item.keys()))
 

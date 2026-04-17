@@ -46,9 +46,7 @@ class TestPodcastIndexHeaders:
 
             headers = _podcastindex_headers("my-key", "my-secret")
 
-            expected_hash = hashlib.sha1(
-                "my-keymy-secret1700000000".encode("utf-8")
-            ).hexdigest()
+            expected_hash = hashlib.sha1(b"my-keymy-secret1700000000").hexdigest()
 
             assert headers["X-Auth-Key"] == "my-key"
             assert headers["X-Auth-Date"] == "1700000000"
@@ -93,9 +91,7 @@ class TestSearchByPerson:
             mock_client_instance.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client_instance
 
-            result = await client.search_by_person(
-                mock_session, "worker-1", "John Smith"
-            )
+            result = await client.search_by_person(mock_session, "worker-1", "John Smith")
 
         assert result == fixture_data
         assert result["count"] == 2
@@ -108,9 +104,7 @@ class TestSearchByPerson:
             new_callable=AsyncMock,
             return_value=False,
         ):
-            result = await client.search_by_person(
-                mock_session, "worker-1", "John Smith"
-            )
+            result = await client.search_by_person(mock_session, "worker-1", "John Smith")
 
         assert result is None
 

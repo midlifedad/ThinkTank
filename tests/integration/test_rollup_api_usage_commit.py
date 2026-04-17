@@ -12,12 +12,11 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.factories import create_job, create_rate_limit_usage
 from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
 from thinktank.models.api_usage import ApiUsage
 from thinktank.models.rate_limit import RateLimitUsage
-from tests.factories import create_job, create_rate_limit_usage
 
 pytestmark = pytest.mark.anyio
 
@@ -52,9 +51,7 @@ async def test_rollup_persists_across_session_boundary(session_factory):
     # Session B: invoke handler in exactly the same way worker/loop.py does
     # (no explicit commit by caller -- handler must persist its own writes).
     async with session_factory() as handler_session:
-        result = await handler_session.execute(
-            select(type(job)).where(type(job).id == job_id)
-        )
+        result = await handler_session.execute(select(type(job)).where(type(job).id == job_id))
         loaded_job = result.scalar_one()
         await handle_rollup_api_usage(handler_session, loaded_job)
         # deliberately NO session.commit() here -- worker/loop.py does not
@@ -62,13 +59,10 @@ async def test_rollup_persists_across_session_boundary(session_factory):
 
     # Session C: independent verification -- rollup row must exist.
     async with session_factory() as verify_session:
-        rollup_result = await verify_session.execute(
-            select(ApiUsage).where(ApiUsage.api_name == "podcastindex")
-        )
+        rollup_result = await verify_session.execute(select(ApiUsage).where(ApiUsage.api_name == "podcastindex"))
         rollups = rollup_result.scalars().all()
         assert len(rollups) >= 1, (
-            "rollup row did not persist after handler returned; "
-            "handler must commit its own transaction"
+            "rollup row did not persist after handler returned; handler must commit its own transaction"
         )
         total_calls = sum(r.call_count for r in rollups)
         assert total_calls == 4
@@ -78,7 +72,4 @@ async def test_rollup_persists_across_session_boundary(session_factory):
             select(RateLimitUsage).where(RateLimitUsage.api_name == "podcastindex")
         )
         remaining = raw_result.scalars().all()
-        assert len(remaining) == 0, (
-            "stale rate_limit_usage rows were not purged; "
-            "DELETE must be committed by handler"
-        )
+        assert len(remaining) == 0, "stale rate_limit_usage rows were not purged; DELETE must be committed by handler"

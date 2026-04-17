@@ -6,7 +6,7 @@ All external dependencies mocked -- no database, no network.
 
 import uuid
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -84,9 +84,7 @@ async def test_pass1_youtube_captions(mock_captions, mock_session, job, content,
 
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.extract_youtube_captions")
-async def test_pass2_existing_transcript(
-    mock_captions, mock_existing, mock_session, job, content, source
-):
+async def test_pass2_existing_transcript(mock_captions, mock_existing, mock_session, job, content, source):
     """Pass 2: Captions fail, existing transcript succeeds -> method='existing_transcript'."""
     mock_captions.return_value = None
     source.config = {"transcript_url_pattern": "https://example.com/transcripts/{slug}"}
@@ -104,9 +102,7 @@ async def test_pass2_existing_transcript(
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.extract_youtube_captions")
-async def test_pass3_parakeet_gpu(
-    mock_captions, mock_existing, mock_gpu, mock_session, job, content, source
-):
+async def test_pass3_parakeet_gpu(mock_captions, mock_existing, mock_gpu, mock_session, job, content, source):
     """Pass 3: Captions + existing fail, GPU succeeds -> method='parakeet'."""
     mock_captions.return_value = None
     mock_existing.return_value = None
@@ -124,9 +120,7 @@ async def test_pass3_parakeet_gpu(
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.extract_youtube_captions")
-async def test_all_passes_fail(
-    mock_captions, mock_existing, mock_gpu, mock_session, job, content, source
-):
+async def test_all_passes_fail(mock_captions, mock_existing, mock_gpu, mock_session, job, content, source):
     """All three passes return None -> raises RuntimeError."""
     mock_captions.return_value = None
     mock_existing.return_value = None
@@ -161,9 +155,7 @@ async def test_pass1_skipped_for_non_youtube(
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.extract_youtube_captions")
-async def test_pass2_skipped_no_pattern(
-    mock_captions, mock_existing, mock_gpu, mock_session, job, content, source
-):
+async def test_pass2_skipped_no_pattern(mock_captions, mock_existing, mock_gpu, mock_session, job, content, source):
     """Source has no transcript_url_pattern -> Pass 2 skipped, goes to Pass 3."""
     mock_captions.return_value = None
     source.config = {}  # No transcript_url_pattern

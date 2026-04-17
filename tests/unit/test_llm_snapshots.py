@@ -11,7 +11,7 @@ Full integration tests with real DB are in Plan 02/03.
 
 import uuid
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -56,9 +56,7 @@ class TestThinkerApprovalContext:
         thinker_mock.categories = []
 
         # Mock execute for select query (now uses execute instead of get)
-        mock_session.execute = AsyncMock(
-            return_value=_mock_execute_returning(thinker_mock)
-        )
+        mock_session.execute = AsyncMock(return_value=_mock_execute_returning(thinker_mock))
 
         # Mock scalar calls for corpus stats
         mock_session.scalar = AsyncMock(return_value=10)
@@ -85,9 +83,7 @@ class TestThinkerApprovalContext:
         thinker_mock.sources = []
         thinker_mock.categories = []
 
-        mock_session.execute = AsyncMock(
-            return_value=_mock_execute_returning(thinker_mock)
-        )
+        mock_session.execute = AsyncMock(return_value=_mock_execute_returning(thinker_mock))
         mock_session.scalar = AsyncMock(return_value=5)
 
         result = await build_thinker_approval_context(mock_session, thinker_id)
@@ -97,9 +93,7 @@ class TestThinkerApprovalContext:
         def check_aware_utc(obj):
             if isinstance(obj, datetime):
                 assert obj.tzinfo is not None, f"Found naive datetime: {obj}"
-                assert obj.utcoffset().total_seconds() == 0, (
-                    f"Expected UTC offset 0, got {obj.utcoffset()}"
-                )
+                assert obj.utcoffset().total_seconds() == 0, f"Expected UTC offset 0, got {obj.utcoffset()}"
             elif isinstance(obj, dict):
                 for v in obj.values():
                     check_aware_utc(v)
@@ -130,9 +124,7 @@ class TestSourceApprovalContext:
         episode_result.scalars.return_value.all.return_value = []
         thinker_result = MagicMock()
         thinker_result.all.return_value = []
-        mock_session.execute = AsyncMock(
-            side_effect=[source_result, episode_result, thinker_result]
-        )
+        mock_session.execute = AsyncMock(side_effect=[source_result, episode_result, thinker_result])
 
         result = await build_source_approval_context(mock_session, source_id)
 

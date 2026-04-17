@@ -11,19 +11,10 @@ Handlers tested:
     - rescan_cataloged_for_thinker: Retroactive scanning when new thinkers approved
 """
 
-import uuid
-
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.handlers.rescan_cataloged_for_thinker import (
-    handle_rescan_cataloged_for_thinker,
-)
-from thinktank.handlers.scan_episodes_for_thinkers import (
-    handle_scan_episodes_for_thinkers,
-)
-from thinktank.models.content import Content, ContentThinker
 from tests.factories import (
     create_content,
     create_content_thinker,
@@ -32,6 +23,13 @@ from tests.factories import (
     create_source_thinker,
     create_thinker,
 )
+from thinktank.handlers.rescan_cataloged_for_thinker import (
+    handle_rescan_cataloged_for_thinker,
+)
+from thinktank.handlers.scan_episodes_for_thinkers import (
+    handle_scan_episodes_for_thinkers,
+)
+from thinktank.models.content import ContentThinker
 
 pytestmark = pytest.mark.anyio
 
@@ -43,9 +41,7 @@ class TestScanEpisodesForThinkersContract:
     Then: promotes matching cataloged episodes to pending, creates ContentThinker rows
     """
 
-    async def test_scan_promotes_host_source_all_episodes(
-        self, session: AsyncSession
-    ):
+    async def test_scan_promotes_host_source_all_episodes(self, session: AsyncSession):
         """Host-owned source promotes ALL cataloged episodes regardless of title match."""
         thinker = await create_thinker(session, name="Host Thinker")
         source = await create_source(session)
@@ -97,9 +93,7 @@ class TestScanEpisodesForThinkersContract:
             assert attr.role == "primary"
             assert attr.confidence == 10
 
-    async def test_scan_host_source_also_tags_guest_thinkers_in_title(
-        self, session: AsyncSession
-    ):
+    async def test_scan_host_source_also_tags_guest_thinkers_in_title(self, session: AsyncSession):
         """Host source: episodes should tag BOTH the host (primary) AND any guest
         thinkers mentioned in the title (role='guest').
 
@@ -160,21 +154,16 @@ class TestScanEpisodesForThinkersContract:
 
         guest_ct = await session.get(ContentThinker, (episode.id, guest.id))
         assert guest_ct is not None, (
-            "Guest thinker mentioned in title should get a junction row "
-            "even on host-owned sources"
+            "Guest thinker mentioned in title should get a junction row even on host-owned sources"
         )
         assert guest_ct.role == "guest"
         assert guest_ct.confidence == 9
 
         # Unrelated episode only has host row (no spurious guest attribution)
-        unrelated_guest = await session.get(
-            ContentThinker, (unrelated.id, guest.id)
-        )
+        unrelated_guest = await session.get(ContentThinker, (unrelated.id, guest.id))
         assert unrelated_guest is None
 
-    async def test_scan_host_source_does_not_tag_host_as_guest(
-        self, session: AsyncSession
-    ):
+    async def test_scan_host_source_does_not_tag_host_as_guest(self, session: AsyncSession):
         """Host source: if an episode title contains the HOST's name, the host
         still appears as 'primary' only -- no duplicate 'guest' row."""
         host = await create_thinker(session, name="Lex Fridman")
@@ -216,11 +205,9 @@ class TestScanEpisodesForThinkersContract:
         assert len(rows) == 1
         assert rows[0].role == "primary"
 
-    async def test_scan_promotes_guest_source_matching_only(
-        self, session: AsyncSession
-    ):
+    async def test_scan_promotes_guest_source_matching_only(self, session: AsyncSession):
         """Guest source only promotes episodes whose title matches a thinker name."""
-        thinker = await create_thinker(session, name="Sam Harris")
+        await create_thinker(session, name="Sam Harris")
         source = await create_source(session)
         # No host SourceThinker -> guest source
 
@@ -270,9 +257,7 @@ class TestScanEpisodesForThinkersContract:
         await session.refresh(non_matching_2)
         assert non_matching_2.status == "cataloged"
 
-    async def test_scan_leaves_non_cataloged_alone(
-        self, session: AsyncSession
-    ):
+    async def test_scan_leaves_non_cataloged_alone(self, session: AsyncSession):
         """Content with status != 'cataloged' is not modified by scan handler."""
         thinker = await create_thinker(session, name="Some Thinker")
         source = await create_source(session)
@@ -315,9 +300,7 @@ class TestScanEpisodesForThinkersContract:
         await session.refresh(done_content)
         assert done_content.status == "done"
 
-    async def test_scan_persons_are_scoped_per_episode(
-        self, session: AsyncSession
-    ):
+    async def test_scan_persons_are_scoped_per_episode(self, session: AsyncSession):
         """HANDLERS-REVIEW ME-02 (T6.7): podcast:person entries must only
         attach to the episode they actually belong to.
 
@@ -383,9 +366,7 @@ class TestScanEpisodesForThinkersContract:
         assert ep2_bob.confidence == 10
         assert ep2_alice is None, "Alice must NOT leak onto ep2"
 
-    async def test_scan_creates_content_thinker_attribution(
-        self, session: AsyncSession
-    ):
+    async def test_scan_creates_content_thinker_attribution(self, session: AsyncSession):
         """Scan handler creates ContentThinker with correct role and confidence for guest match."""
         thinker = await create_thinker(session, name="Jordan Peterson")
         source = await create_source(session)
@@ -415,9 +396,7 @@ class TestScanEpisodesForThinkersContract:
         assert ct.role == "guest"
         assert ct.confidence == 9  # Title match confidence
 
-    async def test_scan_does_not_duplicate_attribution(
-        self, session: AsyncSession
-    ):
+    async def test_scan_does_not_duplicate_attribution(self, session: AsyncSession):
         """Scan handler does not create duplicate ContentThinker rows."""
         thinker = await create_thinker(session, name="Naval Ravikant")
         source = await create_source(session)
@@ -460,9 +439,7 @@ class TestScanEpisodesForThinkersContract:
         rows = result.scalars().all()
         assert len(rows) == 1  # No duplicate
 
-    async def test_scan_skips_content_not_cataloged(
-        self, session: AsyncSession
-    ):
+    async def test_scan_skips_content_not_cataloged(self, session: AsyncSession):
         """Scan handler skips content that is not status='cataloged'."""
         thinker = await create_thinker(session, name="Test Thinker Skip")
         source = await create_source(session)
@@ -516,9 +493,7 @@ class TestRescanCatalogedForThinkerContract:
     Then: promotes cataloged episodes matching thinker name in title to pending
     """
 
-    async def test_rescan_promotes_matching_title(
-        self, session: AsyncSession
-    ):
+    async def test_rescan_promotes_matching_title(self, session: AsyncSession):
         """Rescan promotes cataloged content whose title contains the thinker name."""
         thinker = await create_thinker(session, name="Eric Weinstein")
         source = await create_source(session)
@@ -560,9 +535,7 @@ class TestRescanCatalogedForThinkerContract:
         assert ct.role == "guest"
         assert ct.confidence == 7  # Retroactive match confidence
 
-    async def test_rescan_skips_non_cataloged(
-        self, session: AsyncSession
-    ):
+    async def test_rescan_skips_non_cataloged(self, session: AsyncSession):
         """Rescan does not modify content that is already pending or done."""
         thinker = await create_thinker(session, name="Bret Weinstein")
         source = await create_source(session)
@@ -593,9 +566,7 @@ class TestRescanCatalogedForThinkerContract:
         ct = await session.get(ContentThinker, (pending_content.id, thinker.id))
         assert ct is None
 
-    async def test_rescan_skips_already_attributed(
-        self, session: AsyncSession
-    ):
+    async def test_rescan_skips_already_attributed(self, session: AsyncSession):
         """Rescan does not create duplicate ContentThinker for already-attributed content."""
         thinker = await create_thinker(session, name="Tyler Cowen")
         source = await create_source(session)

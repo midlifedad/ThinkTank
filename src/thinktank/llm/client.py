@@ -90,9 +90,7 @@ class LLMClient:
         )
 
         # Find the tool_use content block and parse it
-        tool_use_block = next(
-            block for block in response.content if block.type == "tool_use"
-        )
+        tool_use_block = next(block for block in response.content if block.type == "tool_use")
         parsed_result = response_schema.model_validate(tool_use_block.input)
 
         duration_ms = int((time.monotonic() - start) * 1000)

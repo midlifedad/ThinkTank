@@ -63,9 +63,7 @@ class TestFetchExistingTranscript:
         mock_response = MagicMock()
         mock_response.status_code = 404
         mock_response.raise_for_status = MagicMock(
-            side_effect=httpx.HTTPStatusError(
-                "Not Found", request=MagicMock(), response=mock_response
-            )
+            side_effect=httpx.HTTPStatusError("Not Found", request=MagicMock(), response=mock_response)
         )
 
         mock_client = AsyncMock()
