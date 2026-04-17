@@ -20,8 +20,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from thinktank.models import Base
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

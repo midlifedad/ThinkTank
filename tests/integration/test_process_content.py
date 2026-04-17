@@ -21,20 +21,12 @@ LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(200))
 @patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_full_pipeline_youtube_captions(mock_captions, mock_existing, mock_gpu, session):
     """YouTube source: captions succeed -> content updated with youtube_captions method."""
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id, source_type="youtube_channel")
+    await create_thinker(session)
+    source = await create_source(session, source_type="youtube_channel")
     content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=thinker.id,
-        status="pending",
-        url="https://youtube.com/watch?v=test123",
+        session, source_id=source.id, status="pending", url="https://youtube.com/watch?v=test123"
     )
-    job = await create_job(
-        session,
-        job_type="process_content",
-        payload={"content_id": str(content.id)},
-    )
+    job = await create_job(session, job_type="process_content", payload={"content_id": str(content.id)})
     await session.commit()
 
     mock_captions.return_value = LONG_TRANSCRIPT
@@ -54,19 +46,10 @@ async def test_full_pipeline_youtube_captions(mock_captions, mock_existing, mock
 @patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_full_pipeline_parakeet_fallback(mock_captions, mock_existing, mock_gpu, session):
     """Podcast source: captions N/A, existing=None -> GPU fallback with parakeet method."""
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id, source_type="podcast_rss")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=thinker.id,
-        status="pending",
-    )
-    job = await create_job(
-        session,
-        job_type="process_content",
-        payload={"content_id": str(content.id)},
-    )
+    await create_thinker(session)
+    source = await create_source(session, source_type="podcast_rss")
+    content = await create_content(session, source_id=source.id, status="pending")
+    job = await create_job(session, job_type="process_content", payload={"content_id": str(content.id)})
     await session.commit()
 
     # Captions not attempted (not youtube), existing returns None, GPU returns text
@@ -90,24 +73,14 @@ async def test_full_pipeline_parakeet_fallback(mock_captions, mock_existing, moc
 @patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_full_pipeline_existing_transcript(mock_captions, mock_existing, mock_gpu, session):
     """Source with transcript_url_pattern: captions=None -> existing transcript used."""
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         source_type="youtube_channel",
         config={"transcript_url_pattern": "https://example.com/transcripts/{slug}"},
     )
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=thinker.id,
-        status="pending",
-    )
-    job = await create_job(
-        session,
-        job_type="process_content",
-        payload={"content_id": str(content.id)},
-    )
+    content = await create_content(session, source_id=source.id, status="pending")
+    job = await create_job(session, job_type="process_content", payload={"content_id": str(content.id)})
     await session.commit()
 
     mock_captions.return_value = None
@@ -126,19 +99,10 @@ async def test_full_pipeline_existing_transcript(mock_captions, mock_existing, m
 @patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_content_status_done_after_transcription(mock_captions, mock_existing, mock_gpu, session):
     """After handler, content status changed from 'pending' to 'done' in DB."""
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id, source_type="youtube_channel")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=thinker.id,
-        status="pending",
-    )
-    job = await create_job(
-        session,
-        job_type="process_content",
-        payload={"content_id": str(content.id)},
-    )
+    await create_thinker(session)
+    source = await create_source(session, source_type="youtube_channel")
+    content = await create_content(session, source_id=source.id, status="pending")
+    job = await create_job(session, job_type="process_content", payload={"content_id": str(content.id)})
     await session.commit()
 
     assert content.status == "pending"
@@ -156,19 +120,10 @@ async def test_content_status_done_after_transcription(mock_captions, mock_exist
 @patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_word_count_calculated(mock_captions, mock_existing, mock_gpu, session):
     """After handler, word_count matches actual word count of transcript."""
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id, source_type="youtube_channel")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=thinker.id,
-        status="pending",
-    )
-    job = await create_job(
-        session,
-        job_type="process_content",
-        payload={"content_id": str(content.id)},
-    )
+    await create_thinker(session)
+    source = await create_source(session, source_type="youtube_channel")
+    content = await create_content(session, source_id=source.id, status="pending")
+    job = await create_job(session, job_type="process_content", payload={"content_id": str(content.id)})
     await session.commit()
 
     transcript = "The quick brown fox jumped over the lazy sleeping dog"
@@ -186,19 +141,10 @@ async def test_word_count_calculated(mock_captions, mock_existing, mock_gpu, ses
 @patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_all_passes_fail_raises(mock_captions, mock_existing, mock_gpu, session):
     """All passes fail -> handler raises RuntimeError."""
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id, source_type="youtube_channel")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=thinker.id,
-        status="pending",
-    )
-    job = await create_job(
-        session,
-        job_type="process_content",
-        payload={"content_id": str(content.id)},
-    )
+    await create_thinker(session)
+    source = await create_source(session, source_type="youtube_channel")
+    content = await create_content(session, source_id=source.id, status="pending")
+    job = await create_job(session, job_type="process_content", payload={"content_id": str(content.id)})
     await session.commit()
 
     mock_captions.return_value = None

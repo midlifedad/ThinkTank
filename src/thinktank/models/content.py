@@ -5,7 +5,7 @@ Spec references: Section 3.7 (content), Section 3.8 (content_thinkers).
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -35,9 +35,6 @@ class Content(Base):
 
     id: Mapped[uuid_pk]
     source_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("sources.id"))
-    source_owner_id: Mapped[uuid.UUID | None] = mapped_column(
-        sa.ForeignKey("thinkers.id"), nullable=True
-    )  # DEPRECATED — use content_thinkers junction
     content_type: Mapped[str] = mapped_column(sa.Text)
     url: Mapped[str] = mapped_column(sa.Text, index=True)
     canonical_url: Mapped[str] = mapped_column(sa.Text, unique=True)
@@ -67,7 +64,6 @@ class Content(Base):
 
     # Relationships
     source: Mapped["Source"] = relationship(back_populates="content")
-    source_owner: Mapped[Optional["Thinker"]] = relationship()  # DEPRECATED
     content_thinkers: Mapped[list["ContentThinker"]] = relationship(
         back_populates="content",
         lazy="selectin",

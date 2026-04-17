@@ -10,18 +10,9 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_candidate_thinker,
-    create_job,
-    create_source,
-    create_thinker,
-)
+from tests.factories import create_candidate_thinker, create_job, create_source, create_thinker
 from thinktank.handlers.llm_approval_check import handle_llm_approval_check
-from thinktank.llm.schemas import (
-    CandidateReviewResponse,
-    SourceApprovalResponse,
-    ThinkerApprovalResponse,
-)
+from thinktank.llm.schemas import CandidateReviewResponse, SourceApprovalResponse, ThinkerApprovalResponse
 from thinktank.models.review import LLMReview
 from thinktank.models.thinker import Thinker
 
@@ -31,10 +22,7 @@ def _mock_llm(result, tokens=500, duration=1200):
     mock_client = AsyncMock()
     mock_client.review = AsyncMock(return_value=(result, tokens, duration))
     mock_client.model = "claude-sonnet-4-20250514"
-    return patch(
-        "thinktank.handlers.llm_approval_check._llm_client",
-        mock_client,
-    )
+    return patch("thinktank.handlers.llm_approval_check._llm_client", mock_client)
 
 
 @pytest.mark.asyncio
@@ -71,12 +59,8 @@ class TestSourceApprovalContract:
     """Given source_approval payload, handler creates 1 LLMReview + updates 1 Source."""
 
     async def test_source_approval_contract(self, session: AsyncSession):
-        thinker = await create_thinker(session, approval_status="approved")
-        source = await create_source(
-            session,
-            thinker_id=thinker.id,
-            approval_status="pending_llm",
-        )
+        await create_thinker(session, approval_status="approved")
+        source = await create_source(session, approval_status="pending_llm")
         job = await create_job(
             session,
             job_type="llm_approval_check",
@@ -86,11 +70,7 @@ class TestSourceApprovalContract:
             },
         )
 
-        mock_result = SourceApprovalResponse(
-            decision="approved",
-            reasoning="Good source",
-            approved_backfill_days=60,
-        )
+        mock_result = SourceApprovalResponse(decision="approved", reasoning="Good source", approved_backfill_days=60)
 
         with _mock_llm(mock_result):
             await handle_llm_approval_check(session, job)
@@ -111,11 +91,7 @@ class TestCandidateReviewContract:
 
     async def test_candidate_review_contract(self, session: AsyncSession):
         candidate = await create_candidate_thinker(
-            session,
-            name="Test Candidate",
-            normalized_name="test candidate",
-            status="pending_llm",
-            appearance_count=5,
+            session, name="Test Candidate", normalized_name="test candidate", status="pending_llm", appearance_count=5
         )
         job = await create_job(
             session,
@@ -128,10 +104,7 @@ class TestCandidateReviewContract:
         )
 
         mock_result = CandidateReviewResponse(
-            decision="approved",
-            reasoning="Well-known expert",
-            tier=2,
-            categories=["technology"],
+            decision="approved", reasoning="Well-known expert", tier=2, categories=["technology"]
         )
 
         with _mock_llm(mock_result):

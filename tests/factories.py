@@ -174,10 +174,9 @@ async def create_thinker_metrics(session: AsyncSession, **overrides: Any) -> Thi
 
 
 def make_source(**overrides: Any) -> Source:
-    """Create a Source with sensible defaults. thinker_id is optional (deprecated)."""
+    """Create a Source with sensible defaults."""
     defaults: dict[str, Any] = {
         "id": uuid.uuid4(),
-        "thinker_id": None,
         "source_type": "podcast_rss",
         "name": "Test Podcast",
         "url": f"https://example.com/feed/{_hex8()}.xml",
@@ -247,7 +246,7 @@ async def create_source_category(session: AsyncSession, **overrides: Any) -> Sou
 
 
 def make_content(**overrides: Any) -> Content:
-    """Create a Content item. Requires source_id. source_owner_id is optional (deprecated)."""
+    """Create a Content item. Requires source_id."""
     hex_id = _hex8()
     defaults: dict[str, Any] = {
         "id": uuid.uuid4(),

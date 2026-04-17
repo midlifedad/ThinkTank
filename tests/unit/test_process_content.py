@@ -20,26 +20,17 @@ def content_id():
 
 @pytest.fixture
 def source(content_id):
-    return make_source(thinker_id=uuid.uuid4(), source_type="youtube_channel")
+    return make_source(source_type="youtube_channel")
 
 
 @pytest.fixture
 def content(content_id, source):
-    return make_content(
-        id=content_id,
-        source_id=source.id,
-        source_owner_id=source.thinker_id,
-        status="pending",
-        url="https://youtube.com/watch?v=test123",
-    )
+    return make_content(id=content_id, source_id=source.id, status="pending", url="https://youtube.com/watch?v=test123")
 
 
 @pytest.fixture
 def job(content_id):
-    return make_job(
-        job_type="process_content",
-        payload={"content_id": str(content_id)},
-    )
+    return make_job(job_type="process_content", payload={"content_id": str(content_id)})
 
 
 @pytest.fixture

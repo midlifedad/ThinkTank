@@ -28,9 +28,6 @@ async def list_content(
     if source_id is not None:
         query = query.where(Content.source_id == source_id)
     if thinker_id is not None:
-        # Filter via the content_thinkers junction, not the deprecated
-        # Content.source_owner_id FK (which is None on all new content
-        # since Phase 13 / PR #17).
         query = query.join(ContentThinker, ContentThinker.content_id == Content.id).where(
             ContentThinker.thinker_id == thinker_id
         )

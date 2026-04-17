@@ -55,10 +55,7 @@ class TestCaseInsensitive:
     def test_case_insensitive(self):
         thinker = _thinker("John Smith")
         results = match_thinkers_in_text(
-            title="JOHN SMITH joins the show",
-            description="",
-            thinker_names=[thinker],
-            source_owner_name=None,
+            title="JOHN SMITH joins the show", description="", thinker_names=[thinker], source_owner_name=None
         )
         matches = [r for r in results if r["thinker_id"] == thinker["id"]]
         assert len(matches) == 1
@@ -98,10 +95,7 @@ class TestPartialNameNotMatched:
         """'John' alone should NOT match 'John Smith' (full name required)."""
         thinker = _thinker("John Smith")
         results = match_thinkers_in_text(
-            title="John went to the store",
-            description="",
-            thinker_names=[thinker],
-            source_owner_name=None,
+            title="John went to the store", description="", thinker_names=[thinker], source_owner_name=None
         )
         assert len(results) == 0
 
@@ -131,10 +125,7 @@ class TestPartialNameNotMatched:
         """Name followed by punctuation (comma, period, colon) still matches."""
         thinker = _thinker("Sam Harris")
         results = match_thinkers_in_text(
-            title="Guest: Sam Harris, on meditation.",
-            description="",
-            thinker_names=[thinker],
-            source_owner_name=None,
+            title="Guest: Sam Harris, on meditation.", description="", thinker_names=[thinker], source_owner_name=None
         )
         assert len(results) == 1
         assert results[0]["role"] == "guest"

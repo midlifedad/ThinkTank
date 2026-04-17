@@ -14,18 +14,9 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_candidate_thinker,
-    create_job,
-    create_source,
-    create_thinker,
-)
+from tests.factories import create_candidate_thinker, create_job, create_source, create_thinker
 from thinktank.handlers.llm_approval_check import handle_llm_approval_check
-from thinktank.llm.schemas import (
-    CandidateReviewResponse,
-    SourceApprovalResponse,
-    ThinkerApprovalResponse,
-)
+from thinktank.llm.schemas import CandidateReviewResponse, SourceApprovalResponse, ThinkerApprovalResponse
 from thinktank.models.review import LLMReview
 from thinktank.models.thinker import Thinker
 
@@ -105,8 +96,7 @@ class TestThinkerApprovalFlows:
         )
 
         mock_result = ThinkerApprovalResponse(
-            decision="escalate_to_human",
-            reasoning="Borderline case, needs human judgment",
+            decision="escalate_to_human", reasoning="Borderline case, needs human judgment"
         )
 
         with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
@@ -125,12 +115,8 @@ class TestSourceApprovalFlows:
 
     async def test_source_approval_approved(self, session: AsyncSession):
         """Source gets approved with backfill_days set."""
-        thinker = await create_thinker(session, approval_status="approved")
-        source = await create_source(
-            session,
-            thinker_id=thinker.id,
-            approval_status="pending_llm",
-        )
+        await create_thinker(session, approval_status="approved")
+        source = await create_source(session, approval_status="pending_llm")
         job = await create_job(
             session,
             job_type="llm_approval_check",
@@ -141,9 +127,7 @@ class TestSourceApprovalFlows:
         )
 
         mock_result = SourceApprovalResponse(
-            decision="approved",
-            reasoning="Quality podcast source",
-            approved_backfill_days=90,
+            decision="approved", reasoning="Quality podcast source", approved_backfill_days=90
         )
 
         with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
@@ -164,11 +148,7 @@ class TestCandidateReviewFlows:
     async def test_candidate_promotion_creates_thinker(self, session: AsyncSession):
         """Approved candidate creates a new Thinker row and links to it."""
         candidate = await create_candidate_thinker(
-            session,
-            name="Dr. Jane Expert",
-            normalized_name="dr jane expert",
-            status="pending_llm",
-            appearance_count=5,
+            session, name="Dr. Jane Expert", normalized_name="dr jane expert", status="pending_llm", appearance_count=5
         )
         job = await create_job(
             session,
@@ -224,9 +204,7 @@ class TestAuditTrail:
         )
 
         mock_result = ThinkerApprovalResponse(
-            decision="approved",
-            reasoning="Valid thinker",
-            flagged_items=["minor concern about coverage"],
+            decision="approved", reasoning="Valid thinker", flagged_items=["minor concern about coverage"]
         )
 
         with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
@@ -258,10 +236,7 @@ class TestAuditTrail:
         thinker = await create_thinker(session, approval_status="pending_llm")
         # Create a pending job that the thinker is waiting on
         pending_job = await create_job(
-            session,
-            job_type="fetch_podcast_feed",
-            payload={"thinker_id": str(thinker.id)},
-            status="pending",
+            session, job_type="fetch_podcast_feed", payload={"thinker_id": str(thinker.id)}, status="pending"
         )
 
         approval_job = await create_job(

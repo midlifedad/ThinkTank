@@ -170,22 +170,22 @@ class TestMakeThinkerMetrics:
 
 class TestMakeSource:
     def test_returns_source_instance(self):
-        s = make_source(thinker_id=uuid.uuid4())
+        s = make_source()
         assert isinstance(s, Source)
 
     def test_has_sensible_defaults(self):
-        s = make_source(thinker_id=uuid.uuid4())
+        s = make_source()
         assert s.source_type == "podcast_rss"
         assert s.approval_status == "approved"
         assert s.url is not None
 
     def test_unique_urls(self):
-        s1 = make_source(thinker_id=uuid.uuid4())
-        s2 = make_source(thinker_id=uuid.uuid4())
+        s1 = make_source()
+        s2 = make_source()
         assert s1.url != s2.url
 
     def test_override_source_type(self):
-        s = make_source(thinker_id=uuid.uuid4(), source_type="substack")
+        s = make_source(source_type="substack")
         assert s.source_type == "substack"
 
 
@@ -194,23 +194,23 @@ class TestMakeSource:
 
 class TestMakeContent:
     def test_returns_content_instance(self):
-        c = make_content(source_id=uuid.uuid4(), source_owner_id=uuid.uuid4())
+        c = make_content(source_id=uuid.uuid4())
         assert isinstance(c, Content)
 
     def test_has_sensible_defaults(self):
-        c = make_content(source_id=uuid.uuid4(), source_owner_id=uuid.uuid4())
+        c = make_content(source_id=uuid.uuid4())
         assert c.content_type == "episode"
         assert c.status == "pending"
         assert c.canonical_url is not None
         assert c.title is not None
 
     def test_unique_canonical_urls(self):
-        c1 = make_content(source_id=uuid.uuid4(), source_owner_id=uuid.uuid4())
-        c2 = make_content(source_id=uuid.uuid4(), source_owner_id=uuid.uuid4())
+        c1 = make_content(source_id=uuid.uuid4())
+        c2 = make_content(source_id=uuid.uuid4())
         assert c1.canonical_url != c2.canonical_url
 
     def test_override_title(self):
-        c = make_content(source_id=uuid.uuid4(), source_owner_id=uuid.uuid4(), title="My Episode")
+        c = make_content(source_id=uuid.uuid4(), title="My Episode")
         assert c.title == "My Episode"
 
 
@@ -366,13 +366,13 @@ class TestAllFactoriesUniqueIDs:
         assert make_thinker().id != make_thinker().id
 
     def test_source_unique(self):
-        tid = uuid.uuid4()
-        assert make_source(thinker_id=tid).id != make_source(thinker_id=tid).id
+        uuid.uuid4()
+        assert make_source().id != make_source().id
 
     def test_content_unique(self):
-        sid, oid = uuid.uuid4(), uuid.uuid4()
-        first = make_content(source_id=sid, source_owner_id=oid).id
-        second = make_content(source_id=sid, source_owner_id=oid).id
+        sid, _oid = uuid.uuid4(), uuid.uuid4()
+        first = make_content(source_id=sid).id
+        second = make_content(source_id=sid).id
         assert first != second
 
     def test_job_unique(self):

@@ -18,14 +18,9 @@ pytestmark = pytest.mark.anyio
 async def test_invalid_thinker_id_is_logged_and_returns_cleanly(caplog):
     """A malformed thinker_id in the payload must log an error and
     early-return, not raise."""
-    from thinktank.handlers.discover_guests_podcastindex import (
-        handle_discover_guests_podcastindex,
-    )
+    from thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
 
-    job = make_job(
-        job_type="discover_guests_podcastindex",
-        payload={"thinker_id": "not-a-valid-uuid"},
-    )
+    job = make_job(job_type="discover_guests_podcastindex", payload={"thinker_id": "not-a-valid-uuid"})
 
     session = AsyncMock()
     session.get = AsyncMock(return_value=None)

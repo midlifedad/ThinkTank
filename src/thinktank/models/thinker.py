@@ -15,7 +15,6 @@ from thinktank.models.base import Base, uuid_pk
 
 if TYPE_CHECKING:
     from thinktank.models.category import ThinkerCategory
-    from thinktank.models.source import Source
 
 
 class Thinker(Base):
@@ -46,10 +45,6 @@ class Thinker(Base):
     # DB-level ON DELETE CASCADE / SET NULL configured in migration 005
     # instead of trying to null out FKs itself (which would error since the
     # junction PKs include the FK columns).
-    sources: Mapped[list["Source"]] = relationship(
-        back_populates="thinker",
-        lazy="selectin",
-    )
     profiles: Mapped[list["ThinkerProfile"]] = relationship(
         back_populates="thinker",
         lazy="selectin",

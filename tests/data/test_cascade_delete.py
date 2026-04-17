@@ -155,16 +155,10 @@ async def test_deleting_category_cascades_source_categories(session: AsyncSessio
 
 
 @pytest.mark.asyncio
-async def test_deleting_thinker_sets_candidate_thinker_id_to_null(
-    session: AsyncSession,
-):
+async def test_deleting_thinker_sets_candidate_thinker_id_to_null(session: AsyncSession):
     """Deleting a promoted Thinker SETs NULL on candidate.thinker_id (history preserved)."""
     thinker = await create_thinker(session)
-    candidate = await create_candidate_thinker(
-        session,
-        thinker_id=thinker.id,
-        status="promoted",
-    )
+    candidate = await create_candidate_thinker(session, thinker_id=thinker.id, status="promoted")
     await session.commit()
 
     candidate_id = candidate.id

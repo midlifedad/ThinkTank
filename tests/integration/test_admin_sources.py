@@ -8,17 +8,12 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_source,
-    create_source_thinker,
-    create_thinker,
-)
+from tests.factories import create_source, create_source_thinker, create_thinker
 
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -68,19 +63,9 @@ class TestSourceList:
 
     async def test_list_partial_shows_sources(self, admin_client, session: AsyncSession):
         """GET list partial with seeded sources shows both source names."""
-        thinker = await create_thinker(session, name="List Thinker", slug="list-thinker")
-        await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Alpha Feed",
-            url="https://example.com/alpha-src.xml",
-        )
-        await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Beta Feed",
-            url="https://example.com/beta-src.xml",
-        )
+        await create_thinker(session, name="List Thinker", slug="list-thinker")
+        await create_source(session, name="Alpha Feed", url="https://example.com/alpha-src.xml")
+        await create_source(session, name="Beta Feed", url="https://example.com/beta-src.xml")
         await session.commit()
 
         response = await admin_client.get("/admin/sources/partials/list")
@@ -90,20 +75,12 @@ class TestSourceList:
 
     async def test_filter_by_status(self, admin_client, session: AsyncSession):
         """GET with ?status=approved returns only approved sources."""
-        thinker = await create_thinker(session, name="Status Thinker", slug="status-thinker")
+        await create_thinker(session, name="Status Thinker", slug="status-thinker")
         await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Approved Source",
-            url="https://example.com/approved-src.xml",
-            approval_status="approved",
+            session, name="Approved Source", url="https://example.com/approved-src.xml", approval_status="approved"
         )
         await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Pending Source",
-            url="https://example.com/pending-src.xml",
-            approval_status="pending_llm",
+            session, name="Pending Source", url="https://example.com/pending-src.xml", approval_status="pending_llm"
         )
         await session.commit()
 
@@ -116,19 +93,9 @@ class TestSourceList:
         """GET with ?thinker_id={id} returns only that thinker's sources."""
         thinker_a = await create_thinker(session, name="Thinker A Src", slug="thinker-a-src")
         thinker_b = await create_thinker(session, name="Thinker B Src", slug="thinker-b-src")
-        source_a = await create_source(
-            session,
-            thinker_id=thinker_a.id,
-            name="A Source",
-            url="https://example.com/a-source.xml",
-        )
+        source_a = await create_source(session, name="A Source", url="https://example.com/a-source.xml")
         await create_source_thinker(session, source_id=source_a.id, thinker_id=thinker_a.id, relationship_type="host")
-        source_b = await create_source(
-            session,
-            thinker_id=thinker_b.id,
-            name="B Source",
-            url="https://example.com/b-source.xml",
-        )
+        source_b = await create_source(session, name="B Source", url="https://example.com/b-source.xml")
         await create_source_thinker(session, source_id=source_b.id, thinker_id=thinker_b.id, relationship_type="host")
         await session.commit()
 
@@ -222,20 +189,16 @@ class TestSourceApprove:
 
     async def test_approve_sets_status(self, admin_client, session: AsyncSession):
         """POST approve sets approval_status to approved."""
-        thinker = await create_thinker(session, name="Approve Thinker", slug="approve-thinker")
+        await create_thinker(session, name="Approve Thinker", slug="approve-thinker")
         source = await create_source(
             session,
-            thinker_id=thinker.id,
             name="Pending Approve",
             url="https://example.com/pending-approve.xml",
             approval_status="pending_llm",
         )
         await session.commit()
 
-        response = await admin_client.post(
-            f"/admin/sources/{source.id}/approve",
-            data={"reason": "Looks good"},
-        )
+        response = await admin_client.post(f"/admin/sources/{source.id}/approve", data={"reason": "Looks good"})
         assert response.status_code == 200
 
         from thinktank.models.source import Source
@@ -248,28 +211,18 @@ class TestSourceApprove:
 
     async def test_approve_creates_audit_trail(self, admin_client, session: AsyncSession):
         """After approve, an LLMReview exists with correct fields."""
-        thinker = await create_thinker(session, name="Audit Thinker", slug="audit-thinker")
+        await create_thinker(session, name="Audit Thinker", slug="audit-thinker")
         source = await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Audit Source",
-            url="https://example.com/audit-source.xml",
-            approval_status="pending_llm",
+            session, name="Audit Source", url="https://example.com/audit-source.xml", approval_status="pending_llm"
         )
         await session.commit()
 
-        await admin_client.post(
-            f"/admin/sources/{source.id}/approve",
-            data={"reason": "Verified feed"},
-        )
+        await admin_client.post(f"/admin/sources/{source.id}/approve", data={"reason": "Verified feed"})
 
         from thinktank.models.review import LLMReview
 
         result = await session.execute(
-            select(LLMReview).where(
-                LLMReview.review_type == "source_approval",
-                LLMReview.decision == "approve",
-            )
+            select(LLMReview).where(LLMReview.review_type == "source_approval", LLMReview.decision == "approve")
         )
         review = result.scalar_one_or_none()
         assert review is not None
@@ -278,20 +231,13 @@ class TestSourceApprove:
 
     async def test_approve_returns_success(self, admin_client, session: AsyncSession):
         """POST approve returns 200 with success message."""
-        thinker = await create_thinker(session, name="Approve Msg Thinker", slug="approve-msg-thinker")
+        await create_thinker(session, name="Approve Msg Thinker", slug="approve-msg-thinker")
         source = await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Approve Msg Source",
-            url="https://example.com/approve-msg.xml",
-            approval_status="pending_llm",
+            session, name="Approve Msg Source", url="https://example.com/approve-msg.xml", approval_status="pending_llm"
         )
         await session.commit()
 
-        response = await admin_client.post(
-            f"/admin/sources/{source.id}/approve",
-            data={"reason": "Good"},
-        )
+        response = await admin_client.post(f"/admin/sources/{source.id}/approve", data={"reason": "Good"})
         assert response.status_code == 200
         assert "approved" in response.text.lower()
 
@@ -301,20 +247,13 @@ class TestSourceReject:
 
     async def test_reject_sets_status(self, admin_client, session: AsyncSession):
         """POST reject sets approval_status to rejected."""
-        thinker = await create_thinker(session, name="Reject Thinker", slug="reject-thinker")
+        await create_thinker(session, name="Reject Thinker", slug="reject-thinker")
         source = await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Pending Reject",
-            url="https://example.com/pending-reject.xml",
-            approval_status="pending_llm",
+            session, name="Pending Reject", url="https://example.com/pending-reject.xml", approval_status="pending_llm"
         )
         await session.commit()
 
-        response = await admin_client.post(
-            f"/admin/sources/{source.id}/reject",
-            data={"reason": "Low quality"},
-        )
+        response = await admin_client.post(f"/admin/sources/{source.id}/reject", data={"reason": "Low quality"})
         assert response.status_code == 200
 
         from thinktank.models.source import Source
@@ -327,28 +266,21 @@ class TestSourceReject:
 
     async def test_reject_creates_audit_trail(self, admin_client, session: AsyncSession):
         """After reject, an LLMReview exists with decision=reject."""
-        thinker = await create_thinker(session, name="Reject Audit Thinker", slug="reject-audit-thinker")
+        await create_thinker(session, name="Reject Audit Thinker", slug="reject-audit-thinker")
         source = await create_source(
             session,
-            thinker_id=thinker.id,
             name="Reject Audit Source",
             url="https://example.com/reject-audit.xml",
             approval_status="pending_llm",
         )
         await session.commit()
 
-        await admin_client.post(
-            f"/admin/sources/{source.id}/reject",
-            data={"reason": "Not relevant"},
-        )
+        await admin_client.post(f"/admin/sources/{source.id}/reject", data={"reason": "Not relevant"})
 
         from thinktank.models.review import LLMReview
 
         result = await session.execute(
-            select(LLMReview).where(
-                LLMReview.review_type == "source_approval",
-                LLMReview.decision == "reject",
-            )
+            select(LLMReview).where(LLMReview.review_type == "source_approval", LLMReview.decision == "reject")
         )
         review = result.scalar_one_or_none()
         assert review is not None
@@ -361,13 +293,9 @@ class TestSourceForceRefresh:
 
     async def test_force_refresh_creates_job(self, admin_client, session: AsyncSession):
         """POST force-refresh creates a fetch_podcast_feed job."""
-        thinker = await create_thinker(session, name="Refresh Thinker", slug="refresh-thinker")
+        await create_thinker(session, name="Refresh Thinker", slug="refresh-thinker")
         source = await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Refresh Source",
-            url="https://example.com/refresh-source.xml",
-            approval_status="approved",
+            session, name="Refresh Source", url="https://example.com/refresh-source.xml", approval_status="approved"
         )
         await session.commit()
 
@@ -384,13 +312,9 @@ class TestSourceForceRefresh:
 
     async def test_force_refresh_returns_success(self, admin_client, session: AsyncSession):
         """POST force-refresh returns 200 with refresh queued message."""
-        thinker = await create_thinker(session, name="Refresh Msg Thinker", slug="refresh-msg-thinker")
+        await create_thinker(session, name="Refresh Msg Thinker", slug="refresh-msg-thinker")
         source = await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Refresh Msg Source",
-            url="https://example.com/refresh-msg.xml",
-            approval_status="approved",
+            session, name="Refresh Msg Source", url="https://example.com/refresh-msg.xml", approval_status="approved"
         )
         await session.commit()
 

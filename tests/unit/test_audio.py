@@ -163,15 +163,8 @@ class TestTempFileCleanup:
             return "This is the transcript text from GPU."
 
         with (
-            patch(
-                "thinktank.transcription.audio.download_audio",
-                return_value=str(audio_file),
-            ),
-            patch(
-                "thinktank.transcription.audio.convert_to_wav",
-                new_callable=AsyncMock,
-                return_value=str(wav_file),
-            ),
+            patch("thinktank.transcription.audio.download_audio", return_value=str(audio_file)),
+            patch("thinktank.transcription.audio.convert_to_wav", new_callable=AsyncMock, return_value=str(wav_file)),
         ):
             result = await transcribe_via_gpu("https://example.com/video", tmp_dir, fake_gpu_fn)
 
@@ -196,15 +189,8 @@ class TestTempFileCleanup:
             raise RuntimeError("GPU service unavailable")
 
         with (
-            patch(
-                "thinktank.transcription.audio.download_audio",
-                return_value=str(audio_file),
-            ),
-            patch(
-                "thinktank.transcription.audio.convert_to_wav",
-                new_callable=AsyncMock,
-                return_value=str(wav_file),
-            ),
+            patch("thinktank.transcription.audio.download_audio", return_value=str(audio_file)),
+            patch("thinktank.transcription.audio.convert_to_wav", new_callable=AsyncMock, return_value=str(wav_file)),
             pytest.raises(RuntimeError, match="GPU service"),
         ):
             await transcribe_via_gpu("https://example.com/video", tmp_dir, failing_gpu_fn)

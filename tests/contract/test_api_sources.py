@@ -19,8 +19,8 @@ class TestSourceEndpointContract:
 
     async def test_list_sources_returns_paginated_response(self, client: AsyncClient, session):
         """GET /api/sources returns 200 with paginated shape."""
-        thinker = await create_thinker(session)
-        await create_source(session, thinker_id=thinker.id)
+        await create_thinker(session)
+        await create_source(session)
         await session.commit()
 
         resp = await client.get("/api/sources")
@@ -35,8 +35,8 @@ class TestSourceEndpointContract:
 
     async def test_list_sources_item_shape(self, client: AsyncClient, session):
         """Each source item has required fields."""
-        thinker = await create_thinker(session)
-        await create_source(session, thinker_id=thinker.id)
+        await create_thinker(session)
+        await create_source(session)
         await session.commit()
 
         resp = await client.get("/api/sources")
@@ -58,9 +58,9 @@ class TestSourceEndpointContract:
     async def test_filter_by_thinker_id(self, client: AsyncClient, session):
         """GET /api/sources?thinker_id={uuid} returns sources for that thinker."""
         thinker1 = await create_thinker(session)
-        thinker2 = await create_thinker(session)
-        await create_source(session, thinker_id=thinker1.id)
-        await create_source(session, thinker_id=thinker2.id)
+        await create_thinker(session)
+        await create_source(session)
+        await create_source(session)
         await session.commit()
 
         resp = await client.get("/api/sources", params={"thinker_id": str(thinker1.id)})
@@ -70,9 +70,9 @@ class TestSourceEndpointContract:
 
     async def test_filter_by_approval_status(self, client: AsyncClient, session):
         """GET /api/sources?approval_status=approved returns only approved sources."""
-        thinker = await create_thinker(session)
-        await create_source(session, thinker_id=thinker.id, approval_status="approved")
-        await create_source(session, thinker_id=thinker.id, approval_status="pending_llm")
+        await create_thinker(session)
+        await create_source(session, approval_status="approved")
+        await create_source(session, approval_status="pending_llm")
         await session.commit()
 
         resp = await client.get("/api/sources", params={"approval_status": "approved"})

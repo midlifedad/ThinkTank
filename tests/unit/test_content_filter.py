@@ -3,10 +3,7 @@
 Tests duration-based and title-pattern-based skip rules per spec Section 5.7.
 """
 
-from thinktank.ingestion.content_filter import (
-    should_skip_by_duration,
-    should_skip_by_title,
-)
+from thinktank.ingestion.content_filter import should_skip_by_duration, should_skip_by_title
 
 
 class TestDurationFilter:

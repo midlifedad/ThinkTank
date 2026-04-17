@@ -12,10 +12,7 @@ Covers all behavior cases from PLAN 06-01 Task 1:
 
 import pytest
 
-from thinktank.discovery.name_extractor import (
-    _looks_like_person_name,
-    extract_names,
-)
+from thinktank.discovery.name_extractor import _looks_like_person_name, extract_names
 
 
 class TestExtractNamesPatterns:
@@ -185,18 +182,12 @@ class TestExtractNamesDescription:
 
     def test_description_scanned_guest_pattern(self):
         """Names in description should be extracted via guest pattern."""
-        result = extract_names(
-            "Episode Title",
-            "Guest: John Smith discusses artificial intelligence",
-        )
+        result = extract_names("Episode Title", "Guest: John Smith discusses artificial intelligence")
         assert result == ["john smith"]
 
     def test_description_with_pattern(self):
         """Names in description using 'with' pattern should be extracted."""
-        result = extract_names(
-            "Episode Title",
-            "A great episode with John Smith about technology",
-        )
+        result = extract_names("Episode Title", "A great episode with John Smith about technology")
         assert result == ["john smith"]
 
     def test_multiple_matches(self):
@@ -206,10 +197,7 @@ class TestExtractNamesDescription:
 
     def test_deduplication(self):
         """Same name in title and description should appear once."""
-        result = extract_names(
-            "with John Smith",
-            "A conversation with John Smith about AI",
-        )
+        result = extract_names("with John Smith", "A conversation with John Smith about AI")
         assert result == ["john smith"]
 
     def test_sorted_output(self):

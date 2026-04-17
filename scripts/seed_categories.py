@@ -10,7 +10,6 @@ Usage:
 import asyncio
 import uuid
 
-from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -74,15 +73,19 @@ async def seed_categories(session: AsyncSession) -> int:
         parent_id = _category_id(slug)
 
         # Insert top-level category
-        stmt = insert(Category).values(
-            id=parent_id,
-            slug=slug,
-            name=name,
-            description=description,
-            parent_id=None,
-        ).on_conflict_do_update(
-            index_elements=["slug"],
-            set_={"name": name, "description": description, "parent_id": None},
+        stmt = (
+            insert(Category)
+            .values(
+                id=parent_id,
+                slug=slug,
+                name=name,
+                description=description,
+                parent_id=None,
+            )
+            .on_conflict_do_update(
+                index_elements=["slug"],
+                set_={"name": name, "description": description, "parent_id": None},
+            )
         )
         await session.execute(stmt)
         count += 1
@@ -90,15 +93,19 @@ async def seed_categories(session: AsyncSession) -> int:
         # Insert subcategories
         for child_slug, (child_name, child_desc) in children.items():
             child_id = _category_id(child_slug)
-            stmt = insert(Category).values(
-                id=child_id,
-                slug=child_slug,
-                name=child_name,
-                description=child_desc,
-                parent_id=parent_id,
-            ).on_conflict_do_update(
-                index_elements=["slug"],
-                set_={"name": child_name, "description": child_desc, "parent_id": parent_id},
+            stmt = (
+                insert(Category)
+                .values(
+                    id=child_id,
+                    slug=child_slug,
+                    name=child_name,
+                    description=child_desc,
+                    parent_id=parent_id,
+                )
+                .on_conflict_do_update(
+                    index_elements=["slug"],
+                    set_={"name": child_name, "description": child_desc, "parent_id": parent_id},
+                )
             )
             await session.execute(stmt)
             count += 1

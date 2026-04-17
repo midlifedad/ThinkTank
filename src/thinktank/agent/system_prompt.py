@@ -13,16 +13,16 @@ DATABASE SCHEMA SUMMARY:
    approved_source_types, active (bool), added_at
 
 2. sources - Content sources (RSS feeds, YouTube channels) — first-class entities independent of thinkers
-   Columns: id (UUID PK), thinker_id (FK->thinkers, nullable, DEPRECATED), source_type, name,
-   slug (unique), url (unique), external_id, tier (1-3), description, host_name,
-   config (JSONB), approval_status, approved_backfill_days, backfill_complete,
-   refresh_interval_hours, last_fetched, item_count, active (bool), error_count, created_at
+   Columns: id (UUID PK), source_type, name, slug (unique), url (unique), external_id,
+   tier (1-3), description, host_name, config (JSONB), approval_status,
+   approved_backfill_days, backfill_complete, refresh_interval_hours, last_fetched,
+   latest_published_at, item_count, active (bool), error_count, created_at
 
 3. content - Ingested content items (episodes, videos, articles)
-   Columns: id (UUID PK), source_id (FK->sources), source_owner_id (FK->thinkers, nullable, DEPRECATED),
-   content_type, url, canonical_url (unique), content_fingerprint (unique), title,
-   body_text (nullable), word_count, published_at, duration_seconds, show_name, host_name,
-   thumbnail_url, transcription_method, status, error_message, discovered_at, processed_at
+   Columns: id (UUID PK), source_id (FK->sources), content_type, url, canonical_url (unique),
+   content_fingerprint (unique), title, description, body_text (nullable), word_count,
+   published_at, duration_seconds, show_name, host_name, thumbnail_url,
+   transcription_method, status, error_message, discovered_at, processed_at
    Status values: 'cataloged' (metadata only, awaiting thinker scan), 'pending' (approved for transcription),
    'skipped' (filtered out), 'transcribing', 'done', 'error'
 
@@ -76,9 +76,6 @@ RELATIONSHIPS:
 - jobs -> llm_reviews (optional FK via llm_review_id)
 - candidate_thinkers -> llm_reviews (optional FK via llm_review_id)
 - candidate_thinkers -> thinkers (optional FK via thinker_id, set on promotion)
-
-NOTE: source.thinker_id and content.source_owner_id are DEPRECATED.
-Use source_thinkers and content_thinkers junction tables instead.
 """.strip()
 
 

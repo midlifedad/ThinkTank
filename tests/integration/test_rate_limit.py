@@ -20,11 +20,7 @@ class TestCheckAndAcquireRateLimit:
         from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed: podcastindex_calls_per_hour = 3
-        await create_system_config(
-            session,
-            key="podcastindex_calls_per_hour",
-            value={"value": 3},
-        )
+        await create_system_config(session, key="podcastindex_calls_per_hour", value={"value": 3})
 
         # 3 calls should all succeed
         for i in range(3):
@@ -36,11 +32,7 @@ class TestCheckAndAcquireRateLimit:
         from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed: podcastindex_calls_per_hour = 3
-        await create_system_config(
-            session,
-            key="podcastindex_calls_per_hour",
-            value={"value": 3},
-        )
+        await create_system_config(session, key="podcastindex_calls_per_hour", value={"value": 3})
 
         # Use up the limit
         for _ in range(3):
@@ -63,11 +55,7 @@ class TestCheckAndAcquireRateLimit:
         from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed: youtube_calls_per_hour = 2
-        await create_system_config(
-            session,
-            key="youtube_calls_per_hour",
-            value={"value": 2},
-        )
+        await create_system_config(session, key="youtube_calls_per_hour", value={"value": 2})
 
         # Insert 2 old rows using PG LOCALTIMESTAMP so the time base matches
         # the sliding-window query (avoids Python UTC vs PG local timezone mismatch).
@@ -94,16 +82,8 @@ class TestCheckAndAcquireRateLimit:
         from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed limits for two APIs
-        await create_system_config(
-            session,
-            key="podcastindex_calls_per_hour",
-            value={"value": 1},
-        )
-        await create_system_config(
-            session,
-            key="youtube_calls_per_hour",
-            value={"value": 1},
-        )
+        await create_system_config(session, key="podcastindex_calls_per_hour", value={"value": 1})
+        await create_system_config(session, key="youtube_calls_per_hour", value={"value": 1})
 
         # Use up podcastindex limit
         result = await check_and_acquire_rate_limit(session, "podcastindex", "worker-1")
@@ -118,11 +98,7 @@ class TestCheckAndAcquireRateLimit:
         from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         # Seed with raw integer value
-        await create_system_config(
-            session,
-            key="testapi_calls_per_hour",
-            value=2,
-        )
+        await create_system_config(session, key="testapi_calls_per_hour", value=2)
 
         # Two calls should succeed
         for _ in range(2):
@@ -147,11 +123,7 @@ class TestConcurrentAcquires:
         from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
 
         async with session_factory() as setup_session:
-            await create_system_config(
-                setup_session,
-                key="concurrent_api_calls_per_hour",
-                value={"value": 5},
-            )
+            await create_system_config(setup_session, key="concurrent_api_calls_per_hour", value={"value": 5})
             await setup_session.commit()
 
         async def acquire_one(idx: int) -> bool:

@@ -59,11 +59,7 @@ class TestConfigEndpointContract:
     async def test_put_config_creates_entry(self, client: AsyncClient, authed_admin_headers):
         """PUT /api/config/{key} creates a new config entry (auth required)."""
         payload = {"value": {"rate": 100}, "set_by": "test"}
-        resp = await client.put(
-            "/api/config/new_config_key",
-            json=payload,
-            headers=authed_admin_headers,
-        )
+        resp = await client.put("/api/config/new_config_key", json=payload, headers=authed_admin_headers)
         assert resp.status_code == 200
         body = resp.json()
         assert body["key"] == "new_config_key"
@@ -76,11 +72,7 @@ class TestConfigEndpointContract:
         await session.commit()
 
         payload = {"value": {"new": True}, "set_by": "admin"}
-        resp = await client.put(
-            "/api/config/update_key",
-            json=payload,
-            headers=authed_admin_headers,
-        )
+        resp = await client.put("/api/config/update_key", json=payload, headers=authed_admin_headers)
         assert resp.status_code == 200
         body = resp.json()
         assert body["value"] == {"new": True}
@@ -111,20 +103,14 @@ class TestConfigPutRequiresAuth:
         """PUT /api/config/{key} with a wrong bearer token → 401."""
         payload = {"value": {"x": 1}, "set_by": "anon"}
         resp = await client.put(
-            "/api/config/some_key",
-            json=payload,
-            headers={"Authorization": "Bearer not-the-real-token"},
+            "/api/config/some_key", json=payload, headers={"Authorization": "Bearer not-the-real-token"}
         )
         assert resp.status_code == 401
 
     async def test_put_accepts_valid_token(self, client: AsyncClient, authed_admin_headers):
         """PUT /api/config/{key} with a valid bearer token succeeds."""
         payload = {"value": {"ok": True}, "set_by": "admin"}
-        resp = await client.put(
-            "/api/config/gated_key",
-            json=payload,
-            headers=authed_admin_headers,
-        )
+        resp = await client.put("/api/config/gated_key", json=payload, headers=authed_admin_headers)
         assert resp.status_code == 200
         assert resp.json()["value"] == {"ok": True}
 
@@ -151,18 +137,8 @@ class TestConfigSecretRedaction:
     async def test_list_config_excludes_secret_keys(self, client: AsyncClient, session):
         """GET /api/config omits every row whose key starts with 'secret_'."""
         await create_system_config(session, key="workers_active", value=True, set_by="seed")
-        await create_system_config(
-            session,
-            key="secret_anthropic_api_key",
-            value="sk-ant-redacted",
-            set_by="seed",
-        )
-        await create_system_config(
-            session,
-            key="secret_railway_api_key",
-            value="rw-redacted",
-            set_by="seed",
-        )
+        await create_system_config(session, key="secret_anthropic_api_key", value="sk-ant-redacted", set_by="seed")
+        await create_system_config(session, key="secret_railway_api_key", value="rw-redacted", set_by="seed")
         await session.commit()
 
         resp = await client.get("/api/config")
@@ -180,12 +156,7 @@ class TestConfigSecretRedaction:
 
     async def test_get_config_rejects_secret_key(self, client: AsyncClient, session):
         """GET /api/config/secret_* returns 403 regardless of whether the row exists."""
-        await create_system_config(
-            session,
-            key="secret_railway_api_key",
-            value="rw-redacted",
-            set_by="seed",
-        )
+        await create_system_config(session, key="secret_railway_api_key", value="rw-redacted", set_by="seed")
         await session.commit()
 
         resp = await client.get("/api/config/secret_railway_api_key")

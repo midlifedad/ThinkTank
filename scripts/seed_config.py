@@ -40,14 +40,18 @@ async def seed_config(session: AsyncSession) -> int:
     count = 0
 
     for entry in CONFIG_DEFAULTS:
-        stmt = insert(SystemConfig).values(
-            key=entry["key"],
-            value=entry["value"],
-            set_by="seed",
-            updated_at=now,
-        ).on_conflict_do_update(
-            index_elements=["key"],
-            set_={"value": entry["value"], "set_by": "seed", "updated_at": now},
+        stmt = (
+            insert(SystemConfig)
+            .values(
+                key=entry["key"],
+                value=entry["value"],
+                set_by="seed",
+                updated_at=now,
+            )
+            .on_conflict_do_update(
+                index_elements=["key"],
+                set_={"value": entry["value"], "set_by": "seed", "updated_at": now},
+            )
         )
         await session.execute(stmt)
         count += 1

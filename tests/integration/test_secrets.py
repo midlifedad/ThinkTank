@@ -20,13 +20,7 @@ async def test_get_secret_unwraps_jsonb_dict(session: AsyncSession) -> None:
     """JSONB dict {"value": "sk-..."} must unwrap to the inner string,
     not be stringified to "{'value': 'sk-...'}".
     """
-    session.add(
-        SystemConfig(
-            key="secret_anthropic_api_key",
-            value={"value": "sk-ant-dict-wrapped"},
-            set_by="test",
-        )
-    )
+    session.add(SystemConfig(key="secret_anthropic_api_key", value={"value": "sk-ant-dict-wrapped"}, set_by="test"))
     await session.commit()
 
     result = await get_secret(session, "anthropic_api_key")
@@ -36,13 +30,7 @@ async def test_get_secret_unwraps_jsonb_dict(session: AsyncSession) -> None:
 
 async def test_get_secret_returns_string_value_directly(session: AsyncSession) -> None:
     """JSONB plain-string value must be returned as-is."""
-    session.add(
-        SystemConfig(
-            key="secret_plain_key",
-            value="plain-string-value",
-            set_by="test",
-        )
-    )
+    session.add(SystemConfig(key="secret_plain_key", value="plain-string-value", set_by="test"))
     await session.commit()
 
     result = await get_secret(session, "plain_key")
@@ -65,13 +53,7 @@ async def test_get_secret_empty_string_falls_back_to_env(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Empty-string DB value must NOT shadow a real env var."""
-    session.add(
-        SystemConfig(
-            key="secret_empty_key",
-            value="",
-            set_by="test",
-        )
-    )
+    session.add(SystemConfig(key="secret_empty_key", value="", set_by="test"))
     await session.commit()
     monkeypatch.setenv("EMPTY_KEY", "from-env")
 
@@ -84,13 +66,7 @@ async def test_get_secret_empty_dict_value_falls_back_to_env(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """JSONB dict with missing/empty "value" must fall through to env."""
-    session.add(
-        SystemConfig(
-            key="secret_empty_dict",
-            value={"value": ""},
-            set_by="test",
-        )
-    )
+    session.add(SystemConfig(key="secret_empty_dict", value={"value": ""}, set_by="test"))
     await session.commit()
     monkeypatch.setenv("EMPTY_DICT", "from-env")
 

@@ -25,12 +25,7 @@ async def test_escalation_flags_timed_out_job(session: AsyncSession):
     # Setup: config + job older than timeout
     await create_system_config(session, key="llm_timeout_hours", value=2, set_by="test")
     three_hours_ago = _now() - timedelta(hours=3)
-    job = await create_job(
-        session,
-        status="awaiting_llm",
-        job_type="approve_thinker",
-        created_at=three_hours_ago,
-    )
+    job = await create_job(session, status="awaiting_llm", job_type="approve_thinker", created_at=three_hours_ago)
     await session.commit()
 
     # Act
@@ -41,8 +36,7 @@ async def test_escalation_flags_timed_out_job(session: AsyncSession):
     assert count == 1
     # Verify payload flag was set
     result = await session.execute(
-        text("SELECT payload->>'needs_human_review' FROM jobs WHERE id = :id"),
-        {"id": job.id},
+        text("SELECT payload->>'needs_human_review' FROM jobs WHERE id = :id"), {"id": job.id}
     )
     flag = result.scalar_one()
     assert flag == "true"
@@ -61,12 +55,7 @@ async def test_escalation_skips_recent_job(session: AsyncSession):
     """Jobs younger than timeout hours are NOT escalated."""
     await create_system_config(session, key="llm_timeout_hours", value=2, set_by="test")
     one_hour_ago = _now() - timedelta(hours=1)
-    await create_job(
-        session,
-        status="awaiting_llm",
-        job_type="approve_thinker",
-        created_at=one_hour_ago,
-    )
+    await create_job(session, status="awaiting_llm", job_type="approve_thinker", created_at=one_hour_ago)
     await session.commit()
 
     count = await escalate_timed_out_reviews(session)
@@ -115,25 +104,10 @@ async def test_escalation_returns_count(session: AsyncSession):
     one_hour_ago = _now() - timedelta(hours=1)
 
     # Two timed-out jobs
-    await create_job(
-        session,
-        status="awaiting_llm",
-        job_type="approve_thinker",
-        created_at=three_hours_ago,
-    )
-    await create_job(
-        session,
-        status="awaiting_llm",
-        job_type="approve_source",
-        created_at=three_hours_ago,
-    )
+    await create_job(session, status="awaiting_llm", job_type="approve_thinker", created_at=three_hours_ago)
+    await create_job(session, status="awaiting_llm", job_type="approve_source", created_at=three_hours_ago)
     # One recent job (should not be escalated)
-    await create_job(
-        session,
-        status="awaiting_llm",
-        job_type="approve_thinker",
-        created_at=one_hour_ago,
-    )
+    await create_job(session, status="awaiting_llm", job_type="approve_thinker", created_at=one_hour_ago)
     await session.commit()
 
     count = await escalate_timed_out_reviews(session)

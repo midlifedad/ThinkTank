@@ -11,13 +11,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_content,
-    create_job,
-    create_source,
-    create_source_thinker,
-    create_thinker,
-)
+from tests.factories import create_content, create_job, create_source, create_source_thinker, create_thinker
 from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
 from thinktank.models.content import ContentThinker
 
@@ -27,14 +21,9 @@ pytestmark = pytest.mark.anyio
 async def test_source_owner_tagged_primary(session: AsyncSession):
     """Source owner is tagged as role='primary' with confidence=10."""
     owner = await create_thinker(session, name="Alice Owner")
-    source = await create_source(session, thinker_id=owner.id)
+    source = await create_source(session)
     await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Random Episode Title",
-    )
+    content = await create_content(session, source_id=source.id, title="Random Episode Title")
     job = await create_job(
         session,
         job_type="tag_content_thinkers",
@@ -62,14 +51,9 @@ async def test_title_match_tagged_guest(session: AsyncSession):
     """Thinker name in episode title -> role='guest', confidence=9."""
     owner = await create_thinker(session, name="Podcast Host")
     guest = await create_thinker(session, name="John Smith")
-    source = await create_source(session, thinker_id=owner.id)
+    source = await create_source(session)
     await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Interview with John Smith",
-    )
+    content = await create_content(session, source_id=source.id, title="Interview with John Smith")
     job = await create_job(
         session,
         job_type="tag_content_thinkers",
@@ -84,10 +68,7 @@ async def test_title_match_tagged_guest(session: AsyncSession):
     await handle_tag_content_thinkers(session, job)
 
     result = await session.execute(
-        select(ContentThinker).where(
-            ContentThinker.content_id == content.id,
-            ContentThinker.thinker_id == guest.id,
-        )
+        select(ContentThinker).where(ContentThinker.content_id == content.id, ContentThinker.thinker_id == guest.id)
     )
     attr = result.scalar_one()
     assert attr.role == "guest"
@@ -98,14 +79,9 @@ async def test_description_match_tagged_guest(session: AsyncSession):
     """Thinker name in description (via payload) -> role='guest', confidence=6."""
     owner = await create_thinker(session, name="Podcast Host")
     guest = await create_thinker(session, name="Jane Doe")
-    source = await create_source(session, thinker_id=owner.id)
+    source = await create_source(session)
     await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="General Episode Title",
-    )
+    content = await create_content(session, source_id=source.id, title="General Episode Title")
     job = await create_job(
         session,
         job_type="tag_content_thinkers",
@@ -120,10 +96,7 @@ async def test_description_match_tagged_guest(session: AsyncSession):
     await handle_tag_content_thinkers(session, job)
 
     result = await session.execute(
-        select(ContentThinker).where(
-            ContentThinker.content_id == content.id,
-            ContentThinker.thinker_id == guest.id,
-        )
+        select(ContentThinker).where(ContentThinker.content_id == content.id, ContentThinker.thinker_id == guest.id)
     )
     attr = result.scalar_one()
     assert attr.role == "guest"
@@ -134,14 +107,9 @@ async def test_no_match_only_primary(session: AsyncSession):
     """Content with no thinker names in title/desc -> only source owner attribution."""
     owner = await create_thinker(session, name="Solo Host")
     await create_thinker(session, name="Unrelated Thinker")
-    source = await create_source(session, thinker_id=owner.id)
+    source = await create_source(session)
     await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Weekly Roundup",
-    )
+    content = await create_content(session, source_id=source.id, title="Weekly Roundup")
     job = await create_job(
         session,
         job_type="tag_content_thinkers",
@@ -169,14 +137,9 @@ async def test_multiple_thinkers_matched(session: AsyncSession):
     owner = await create_thinker(session, name="Show Host")
     guest1 = await create_thinker(session, name="Alice Walker")
     guest2 = await create_thinker(session, name="Bob Martin")
-    source = await create_source(session, thinker_id=owner.id)
+    source = await create_source(session)
     await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Debate: Alice Walker vs Bob Martin",
-    )
+    content = await create_content(session, source_id=source.id, title="Debate: Alice Walker vs Bob Martin")
     job = await create_job(
         session,
         job_type="tag_content_thinkers",
@@ -207,14 +170,10 @@ async def test_multiple_thinkers_matched(session: AsyncSession):
 async def test_skipped_content_not_attributed(session: AsyncSession):
     """Content with status='skipped' -> no ContentThinker rows created."""
     owner = await create_thinker(session, name="Host Name")
-    source = await create_source(session, thinker_id=owner.id)
+    source = await create_source(session)
     await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
     content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Skipped Episode with Host Name",
-        status="skipped",
+        session, source_id=source.id, title="Skipped Episode with Host Name", status="skipped"
     )
     job = await create_job(
         session,
@@ -237,14 +196,9 @@ async def test_duplicate_attribution_prevented(session: AsyncSession):
     """Running handler twice on same content -> no duplicate ContentThinker rows."""
     owner = await create_thinker(session, name="Repeat Host")
     await create_thinker(session, name="Repeat Guest")
-    source = await create_source(session, thinker_id=owner.id)
+    source = await create_source(session)
     await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Episode with Repeat Guest",
-    )
+    content = await create_content(session, source_id=source.id, title="Episode with Repeat Guest")
 
     payload = {
         "content_ids": [str(content.id)],
@@ -252,11 +206,7 @@ async def test_duplicate_attribution_prevented(session: AsyncSession):
         "descriptions": {str(content.id): "A repeat episode."},
     }
 
-    job1 = await create_job(
-        session,
-        job_type="tag_content_thinkers",
-        payload=payload,
-    )
+    job1 = await create_job(session, job_type="tag_content_thinkers", payload=payload)
     await session.commit()
 
     # First run
@@ -267,11 +217,7 @@ async def test_duplicate_attribution_prevented(session: AsyncSession):
     assert first_count == 2  # owner + guest
 
     # Second run with new job
-    job2 = await create_job(
-        session,
-        job_type="tag_content_thinkers",
-        payload=payload,
-    )
+    job2 = await create_job(session, job_type="tag_content_thinkers", payload=payload)
     await session.commit()
 
     await handle_tag_content_thinkers(session, job2)

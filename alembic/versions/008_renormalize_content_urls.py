@@ -43,8 +43,7 @@ outside the rewrite set), the entire collision group is dropped after
 merging their associations onto that pre-existing row.
 """
 
-from typing import Sequence, Union
-from uuid import UUID
+from collections.abc import Sequence
 
 from alembic import op
 from sqlalchemy import text
@@ -53,9 +52,9 @@ from thinktank.ingestion.url_normalizer import normalize_url
 
 # revision identifiers, used by Alembic.
 revision: str = "008_renormalize_urls"
-down_revision: Union[str, Sequence[str], None] = "007c_tz_remaining"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "007c_tz_remaining"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def _pick_keeper(
@@ -110,19 +109,13 @@ def _merge_associations(conn, keeper_id: str, loser_ids: list[str]) -> None:
 def upgrade() -> None:
     """Renormalize every content row's url and canonical_url."""
     conn = op.get_bind()
-    rows = conn.execute(
-        text("SELECT id, url, canonical_url FROM content")
-    ).mappings().all()
+    rows = conn.execute(text("SELECT id, url, canonical_url FROM content")).mappings().all()
 
     # First pass: compute the new canonical forms per row.
     rewrites: list[tuple[str, str, str]] = []  # (id, new_url, new_canonical)
     for row in rows:
         new_url = normalize_url(row["url"]) if row["url"] else row["url"]
-        new_canonical = (
-            normalize_url(row["canonical_url"])
-            if row["canonical_url"]
-            else row["canonical_url"]
-        )
+        new_canonical = normalize_url(row["canonical_url"]) if row["canonical_url"] else row["canonical_url"]
         if new_url != row["url"] or new_canonical != row["canonical_url"]:
             rewrites.append((str(row["id"]), new_url, new_canonical))
 
@@ -140,10 +133,7 @@ def upgrade() -> None:
     for canonical, ids in by_canonical.items():
         # Is there a row outside the rewrite set that already has this canonical?
         existing = conn.execute(
-            text(
-                "SELECT id FROM content WHERE canonical_url = :c "
-                "AND id <> ALL(:ids)"
-            ),
+            text("SELECT id FROM content WHERE canonical_url = :c AND id <> ALL(:ids)"),
             {"c": canonical, "ids": ids},
         ).scalar_one_or_none()
 
@@ -173,10 +163,7 @@ def upgrade() -> None:
         if row_id not in surviving:
             continue
         conn.execute(
-            text(
-                "UPDATE content SET url = :u, canonical_url = :c "
-                "WHERE id = :id"
-            ),
+            text("UPDATE content SET url = :u, canonical_url = :c WHERE id = :id"),
             {"u": new_url, "c": new_canonical, "id": row_id},
         )
 

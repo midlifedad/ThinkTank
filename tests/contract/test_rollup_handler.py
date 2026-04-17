@@ -34,12 +34,7 @@ class TestRollupApiUsageHandler:
 
         three_hours_ago = _hours_ago(3)
         for _ in range(5):
-            await create_rate_limit_usage(
-                session,
-                api_name="podcastindex",
-                worker_id="w1",
-                called_at=three_hours_ago,
-            )
+            await create_rate_limit_usage(session, api_name="podcastindex", worker_id="w1", called_at=three_hours_ago)
         job = await create_job(session, job_type="rollup_api_usage")
         await session.commit()
 
@@ -58,12 +53,7 @@ class TestRollupApiUsageHandler:
 
         three_hours_ago = _hours_ago(3)
         for _ in range(10):
-            await create_rate_limit_usage(
-                session,
-                api_name="youtube",
-                worker_id="w1",
-                called_at=three_hours_ago,
-            )
+            await create_rate_limit_usage(session, api_name="youtube", worker_id="w1", called_at=three_hours_ago)
         job = await create_job(session, job_type="rollup_api_usage")
         await session.commit()
 
@@ -82,12 +72,7 @@ class TestRollupApiUsageHandler:
 
         three_hours_ago = _hours_ago(3)
         for _ in range(3):
-            await create_rate_limit_usage(
-                session,
-                api_name="youtube",
-                worker_id="w1",
-                called_at=three_hours_ago,
-            )
+            await create_rate_limit_usage(session, api_name="youtube", worker_id="w1", called_at=three_hours_ago)
         job = await create_job(session, job_type="rollup_api_usage")
         await session.commit()
 
@@ -110,12 +95,7 @@ class TestRollupApiUsageHandler:
 
         three_hours_ago = _hours_ago(3)
         for _ in range(3):
-            await create_rate_limit_usage(
-                session,
-                api_name="anthropic",
-                worker_id="w1",
-                called_at=three_hours_ago,
-            )
+            await create_rate_limit_usage(session, api_name="anthropic", worker_id="w1", called_at=three_hours_ago)
         job = await create_job(session, job_type="rollup_api_usage")
         await session.commit()
 
@@ -132,21 +112,11 @@ class TestRollupApiUsageHandler:
 
         # Old rows (should be aggregated and purged)
         three_hours_ago = _hours_ago(3)
-        await create_rate_limit_usage(
-            session,
-            api_name="podcastindex",
-            worker_id="w1",
-            called_at=three_hours_ago,
-        )
+        await create_rate_limit_usage(session, api_name="podcastindex", worker_id="w1", called_at=three_hours_ago)
 
         # Recent row (should be preserved)
         recent = datetime.now(UTC) - timedelta(minutes=5)
-        await create_rate_limit_usage(
-            session,
-            api_name="podcastindex",
-            worker_id="w1",
-            called_at=recent,
-        )
+        await create_rate_limit_usage(session, api_name="podcastindex", worker_id="w1", called_at=recent)
 
         job = await create_job(session, job_type="rollup_api_usage")
         await session.commit()

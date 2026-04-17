@@ -12,12 +12,7 @@ from datetime import UTC, datetime
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_content,
-    create_job,
-    create_source,
-    create_thinker,
-)
+from tests.factories import create_content, create_job, create_source, create_thinker
 
 
 @pytest.mark.asyncio

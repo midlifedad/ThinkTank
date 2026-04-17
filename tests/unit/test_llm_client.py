@@ -109,9 +109,7 @@ class TestLLMClientReview:
     @pytest.mark.asyncio
     async def test_returns_parsed_response_tokens_duration(self, client):
         mock_response = _make_mock_response(
-            {"decision": "approved", "reasoning": "Great match"},
-            input_tokens=200,
-            output_tokens=80,
+            {"decision": "approved", "reasoning": "Great match"}, input_tokens=200, output_tokens=80
         )
         client._client.messages.create = AsyncMock(return_value=mock_response)
 

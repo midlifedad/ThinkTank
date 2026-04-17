@@ -16,19 +16,12 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_content,
-    create_content_thinker,
-    create_job,
-    create_source,
-    create_thinker,
-)
+from tests.factories import create_content, create_content_thinker, create_job, create_source, create_thinker
 
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -84,12 +77,7 @@ class TestThinkerContentStatusRendering:
     async def _setup_content(self, session: AsyncSession, status: str) -> tuple[str, str]:
         thinker = await create_thinker(session)
         source = await create_source(session)
-        content = await create_content(
-            session,
-            source_id=source.id,
-            status=status,
-            title=f"Episode status={status}",
-        )
+        content = await create_content(session, source_id=source.id, status=status, title=f"Episode status={status}")
         await create_content_thinker(session, content_id=content.id, thinker_id=thinker.id)
         await session.commit()
         return str(thinker.id), status
@@ -130,12 +118,7 @@ class TestSourceEpisodesStatusRendering:
 
     async def _setup_episode(self, session: AsyncSession, status: str) -> str:
         source = await create_source(session)
-        await create_content(
-            session,
-            source_id=source.id,
-            status=status,
-            title=f"Episode status={status}",
-        )
+        await create_content(session, source_id=source.id, status=status, title=f"Episode status={status}")
         await session.commit()
         return str(source.id)
 

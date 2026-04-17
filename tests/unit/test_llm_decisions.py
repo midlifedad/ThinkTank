@@ -19,11 +19,7 @@ from thinktank.llm.decisions import (
     apply_thinker_decision,
     promote_candidate_to_thinker,
 )
-from thinktank.llm.schemas import (
-    CandidateReviewResponse,
-    SourceApprovalResponse,
-    ThinkerApprovalResponse,
-)
+from thinktank.llm.schemas import CandidateReviewResponse, SourceApprovalResponse, ThinkerApprovalResponse
 
 
 @pytest.fixture
@@ -100,14 +96,10 @@ class TestApplyThinkerDecision:
 class TestApplySourceDecision:
     @pytest.mark.asyncio
     async def test_approved_sets_status_and_backfill(self, mock_session):
-        source = make_source(thinker_id=uuid.uuid4(), approval_status="pending_llm")
+        source = make_source(approval_status="pending_llm")
         mock_session.get.return_value = source
 
-        result = SourceApprovalResponse(
-            decision="approved",
-            reasoning="Good source",
-            approved_backfill_days=30,
-        )
+        result = SourceApprovalResponse(decision="approved", reasoning="Good source", approved_backfill_days=30)
         await apply_source_decision(mock_session, source.id, result)
 
         assert source.approval_status == "approved"
@@ -115,7 +107,7 @@ class TestApplySourceDecision:
 
     @pytest.mark.asyncio
     async def test_rejected_sets_rejected_by_llm(self, mock_session):
-        source = make_source(thinker_id=uuid.uuid4(), approval_status="pending_llm")
+        source = make_source(approval_status="pending_llm")
         mock_session.get.return_value = source
 
         result = SourceApprovalResponse(decision="rejected", reasoning="Low quality")
@@ -125,7 +117,7 @@ class TestApplySourceDecision:
 
     @pytest.mark.asyncio
     async def test_escalate_sets_pending_human(self, mock_session):
-        source = make_source(thinker_id=uuid.uuid4(), approval_status="pending_llm")
+        source = make_source(approval_status="pending_llm")
         mock_session.get.return_value = source
 
         result = SourceApprovalResponse(decision="escalate_to_human", reasoning="Unsure")
@@ -179,11 +171,7 @@ class TestApplyCandidateDecision:
         mock_session.get.return_value = candidate
         review_id = uuid.uuid4()
 
-        result = CandidateReviewResponse(
-            decision="duplicate",
-            reasoning="Already exists",
-            duplicate_of="existing-slug",
-        )
+        result = CandidateReviewResponse(decision="duplicate", reasoning="Already exists", duplicate_of="existing-slug")
         await apply_candidate_decision(mock_session, candidate.id, result, review_id)
 
         assert candidate.status == "rejected_duplicate"
@@ -218,17 +206,10 @@ class TestApplyCandidateDecision:
 class TestPromoteCandidateToThinker:
     @pytest.mark.asyncio
     async def test_creates_thinker_from_candidate(self, mock_session):
-        candidate = make_candidate_thinker(
-            name="Jane Smith",
-            normalized_name="jane smith",
-            status="pending_llm",
-        )
+        candidate = make_candidate_thinker(name="Jane Smith", normalized_name="jane smith", status="pending_llm")
 
         result = CandidateReviewResponse(
-            decision="approved",
-            reasoning="Excellent expert",
-            tier=2,
-            categories=["Philosophy", "Ethics"],
+            decision="approved", reasoning="Excellent expert", tier=2, categories=["Philosophy", "Ethics"]
         )
 
         thinker = await promote_candidate_to_thinker(mock_session, candidate, result)
@@ -243,11 +224,7 @@ class TestPromoteCandidateToThinker:
     async def test_links_candidate_to_thinker(self, mock_session):
         candidate = make_candidate_thinker(name="Test Person", status="pending_llm")
 
-        result = CandidateReviewResponse(
-            decision="approved",
-            reasoning="Good",
-            tier=3,
-        )
+        result = CandidateReviewResponse(decision="approved", reasoning="Good", tier=3)
 
         thinker = await promote_candidate_to_thinker(mock_session, candidate, result)
 
@@ -276,11 +253,7 @@ class TestPromoteCandidateToThinker:
         breaks silently.
         """
         candidate = make_candidate_thinker(name="New Expert", status="pending_llm")
-        result = CandidateReviewResponse(
-            decision="approved",
-            reasoning="Strong signal",
-            tier=2,
-        )
+        result = CandidateReviewResponse(decision="approved", reasoning="Strong signal", tier=2)
 
         thinker = await promote_candidate_to_thinker(mock_session, candidate, result)
 
@@ -335,7 +308,7 @@ class TestApplyDecision:
 
     @pytest.mark.asyncio
     async def test_dispatches_source_approval(self, mock_session):
-        source = make_source(thinker_id=uuid.uuid4(), approval_status="pending_llm")
+        source = make_source(approval_status="pending_llm")
         mock_session.get.return_value = source
         review_id = uuid.uuid4()
 

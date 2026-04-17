@@ -24,10 +24,7 @@ async def test_invalid_uuid_is_logged_and_skipped(caplog):
     from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
 
     valid_id = uuid.uuid4()
-    job = make_job(
-        job_type="scan_for_candidates",
-        payload={"content_ids": ["not-a-uuid", str(valid_id)]},
-    )
+    job = make_job(job_type="scan_for_candidates", payload={"content_ids": ["not-a-uuid", str(valid_id)]})
 
     session = AsyncMock()
     session.commit = AsyncMock()

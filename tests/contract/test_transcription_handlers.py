@@ -33,19 +33,10 @@ async def test_process_content_contract(mock_captions, mock_existing, mock_gpu, 
         - content.processed_at: non-null datetime
     """
     # Setup: create complete object graph in DB
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id, source_type="youtube_channel")
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=thinker.id,
-        status="pending",
-    )
-    job = await create_job(
-        session,
-        job_type="process_content",
-        payload={"content_id": str(content.id)},
-    )
+    await create_thinker(session)
+    source = await create_source(session, source_type="youtube_channel")
+    content = await create_content(session, source_id=source.id, status="pending")
+    job = await create_job(session, job_type="process_content", payload={"content_id": str(content.id)})
     await session.commit()
 
     # Pre-conditions

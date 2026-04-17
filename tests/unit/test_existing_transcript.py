@@ -32,8 +32,7 @@ class TestFetchExistingTranscript:
         mock_client_cls.return_value = mock_client
 
         result = await fetch_existing_transcript(
-            content_url="https://show.com/episodes/ep-42",
-            transcript_url_pattern="https://show.com/transcripts/{slug}",
+            content_url="https://show.com/episodes/ep-42", transcript_url_pattern="https://show.com/transcripts/{slug}"
         )
 
         assert result is not None
@@ -48,8 +47,7 @@ class TestFetchExistingTranscript:
         from thinktank.transcription.existing import fetch_existing_transcript
 
         result = await fetch_existing_transcript(
-            content_url="https://show.com/episodes/ep-42",
-            transcript_url_pattern=None,
+            content_url="https://show.com/episodes/ep-42", transcript_url_pattern=None
         )
 
         assert result is None
@@ -73,8 +71,7 @@ class TestFetchExistingTranscript:
         mock_client_cls.return_value = mock_client
 
         result = await fetch_existing_transcript(
-            content_url="https://show.com/episodes/ep-99",
-            transcript_url_pattern="https://show.com/transcripts/{slug}",
+            content_url="https://show.com/episodes/ep-99", transcript_url_pattern="https://show.com/transcripts/{slug}"
         )
 
         assert result is None
@@ -111,14 +108,8 @@ class TestFetchExistingTranscript:
 
         def _handler(request: httpx.Request) -> httpx.Response:
             if request.url.path.endswith("/ep-42"):
-                return httpx.Response(
-                    302,
-                    headers={"Location": "https://cdn.show.com/transcripts/ep-42-final"},
-                )
-            return httpx.Response(
-                200,
-                text="<html><body><p>Redirected body.</p></body></html>",
-            )
+                return httpx.Response(302, headers={"Location": "https://cdn.show.com/transcripts/ep-42-final"})
+            return httpx.Response(200, text="<html><body><p>Redirected body.</p></body></html>")
 
         transport = httpx.MockTransport(_handler)
         real_async_client = httpx.AsyncClient

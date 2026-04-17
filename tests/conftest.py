@@ -6,18 +6,13 @@ from collections.abc import AsyncGenerator
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from thinktank.models import Base
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -192,12 +187,7 @@ async def seeded_admin_token(session) -> str:
     """
     from tests.factories import create_system_config
 
-    await create_system_config(
-        session,
-        key="secret_admin_api_token",
-        value=_ADMIN_TEST_TOKEN,
-        set_by="test",
-    )
+    await create_system_config(session, key="secret_admin_api_token", value=_ADMIN_TEST_TOKEN, set_by="test")
     await session.commit()
     return _ADMIN_TEST_TOKEN
 

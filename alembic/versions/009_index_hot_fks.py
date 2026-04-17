@@ -57,15 +57,15 @@ Chains off 006 so the PR #24 (schema-only) deploy can land without
 downstream chain 007a -> 007b -> 007c -> 008 picks up from 009.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "009_index_hot_fks"
-down_revision: Union[str, Sequence[str], None] = "006_status_check"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "006_status_check"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 # (index_name, table, columns) tuples. Driving the up/down from a single
