@@ -14,16 +14,16 @@ Existing source→thinker relationships are preserved in the junction table via
 data migration.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "004_sources_first_class"
-down_revision: Union[str, Sequence[str], None] = "003_add_pg_trgm"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "003_add_pg_trgm"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -117,18 +117,47 @@ def upgrade() -> None:
         ON CONFLICT DO NOTHING
     """)
 
-    # 7. Generate slugs for existing sources
+    # 7. Generate slugs for existing sources.
+    #
+    # DATA-REVIEW L3: the original migration generated the slug directly from
+    # name with REGEXP_REPLACE. Two sources whose names collapsed to the same
+    # slug (e.g. "Lex Fridman" and "lex-fridman!") would silently share a slug
+    # and then the unique constraint created in step 8 would fail to apply.
+    # The ROW_NUMBER() window below deduplicates by appending -2, -3, ... to
+    # collisions (stable order: created_at then id), so the unique constraint
+    # always succeeds. On databases with no collisions this produces the same
+    # slugs as the original migration.
     op.execute("""
-        UPDATE sources
-        SET slug = LOWER(
-            TRIM(BOTH '-' FROM
-                REGEXP_REPLACE(
-                    REGEXP_REPLACE(name, '[^a-zA-Z0-9]+', '-', 'g'),
-                    '-+', '-', 'g'
-                )
-            )
-        )
-        WHERE slug IS NULL
+        UPDATE sources s
+        SET slug = CASE
+            WHEN sub.rn > 1 THEN sub.base_slug || '-' || sub.rn
+            ELSE sub.base_slug
+        END
+        FROM (
+            SELECT
+                id,
+                LOWER(
+                    TRIM(BOTH '-' FROM
+                        REGEXP_REPLACE(
+                            REGEXP_REPLACE(name, '[^a-zA-Z0-9]+', '-', 'g'),
+                            '-+', '-', 'g'
+                        )
+                    )
+                ) AS base_slug,
+                ROW_NUMBER() OVER (
+                    PARTITION BY LOWER(
+                        TRIM(BOTH '-' FROM
+                            REGEXP_REPLACE(
+                                REGEXP_REPLACE(name, '[^a-zA-Z0-9]+', '-', 'g'),
+                                '-+', '-', 'g'
+                            )
+                        )
+                    ) ORDER BY created_at, id
+                ) AS rn
+            FROM sources
+            WHERE slug IS NULL
+        ) sub
+        WHERE s.id = sub.id
     """)
 
     # 8. Create unique index on slug
