@@ -15,8 +15,8 @@ class TestReclaimStaleJobs:
     async def _create_running_job_started_minutes_ago(self, session: AsyncSession, minutes_ago: int, **overrides):
         """Helper: create a running job with started_at set via PG time.
 
-        Uses LOCALTIMESTAMP to avoid timezone mismatch between Python UTC
-        and PG local time in TIMESTAMP WITHOUT TIME ZONE columns.
+        Uses NOW() (TIMESTAMPTZ) so the test helper matches the timezone
+        handling of reclaim.py's SELECT/UPDATE after HANDLERS LO-06.
         """
         job = await create_job(
             session,
@@ -26,7 +26,7 @@ class TestReclaimStaleJobs:
         )
         # Set started_at using PG's own clock for consistency with reclaim query
         await session.execute(
-            text("UPDATE jobs SET started_at = LOCALTIMESTAMP - MAKE_INTERVAL(mins => :mins) WHERE id = :job_id"),
+            text("UPDATE jobs SET started_at = NOW() - MAKE_INTERVAL(mins => :mins) WHERE id = :job_id"),
             {"mins": minutes_ago, "job_id": str(job.id)},
         )
         await session.flush()
@@ -144,7 +144,7 @@ class TestReclaimStaleJobs:
         for status in ("pending", "done", "failed"):
             job = await create_job(session, status=status, attempts=0, max_attempts=3)
             await session.execute(
-                text("UPDATE jobs SET started_at = LOCALTIMESTAMP - INTERVAL '2 hours' WHERE id = :id"),
+                text("UPDATE jobs SET started_at = NOW() - INTERVAL '2 hours' WHERE id = :id"),
                 {"id": str(job.id)},
             )
 
@@ -222,7 +222,7 @@ class TestReclaimStaleJobs:
         now_ts: datetime = row[2]
         delta = scheduled_at - now_ts
         # Expected: calculate_backoff(11) = min(2**11, 60) = 60 minutes.
-        # Allow small slop for clock drift between LOCALTIMESTAMP and the
+        # Allow small slop for clock drift between NOW() calls across the
         # per-row UPDATE execution.
         assert delta <= timedelta(minutes=60, seconds=5), f"Reclaim backoff should be capped at 60 minutes, got {delta}"
         assert delta >= timedelta(minutes=59), f"Expected full 60-minute cap, got {delta}"

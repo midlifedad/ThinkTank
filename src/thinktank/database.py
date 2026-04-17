@@ -15,13 +15,14 @@ def create_engine_from_url(url: str, **kwargs: object) -> AsyncEngine:
     Useful for tests that need a different database URL or pool settings.
 
     HANDLERS-REVIEW LO-06: forces every asyncpg connection to ``TIMEZONE=UTC``
-    so that ``LOCALTIMESTAMP`` / ``NOW()::timestamp`` in ``queue/reclaim.py``
-    and ``queue/rate_limiter.py`` always evaluate in UTC. Without this, a
-    Postgres session default of the server's local tz (e.g. ``America/Los_Angeles``
-    on Railway-West) would make the reclaim cutoff and the sliding rate-limit
-    window diverge from the aware UTC datetimes Python writes via
-    ``TIMESTAMPTZ`` columns -- stale jobs would appear up to 8h "fresh" depending
-    on DST, and the rate limiter would either over- or under-count the window.
+    as a belt-and-suspenders complement to the ``NOW()`` queries in
+    ``queue/reclaim.py`` and ``queue/rate_limiter.py``. ``NOW()`` already
+    returns TIMESTAMPTZ (unambiguous), but several admin + rollup paths still
+    use ``LOCALTIMESTAMP`` / ``NOW()::timestamp``; forcing the session tz
+    keeps those correct too. Without it, a Postgres session default of the
+    server's local tz (e.g. ``America/Los_Angeles`` on Railway-West) would
+    make timezone-less timestamps diverge from the aware UTC datetimes
+    Python writes via ``TIMESTAMPTZ`` columns.
     """
     settings = get_settings()
     defaults = {
