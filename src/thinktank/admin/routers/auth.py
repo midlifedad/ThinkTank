@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, 
 from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.admin.auth import ADMIN_SESSION_COOKIE
+from thinktank.admin.auth import ADMIN_SESSION_COOKIE, ADMIN_USER_COOKIE, _sanitize_principal
 from thinktank.admin.dependencies import get_session
 from thinktank.secrets import get_secret
 
@@ -31,7 +31,8 @@ _LOGIN_PAGE_HTML = """<!doctype html>
 <body>
   <h1>Admin Login</h1>
   <form method="post" action="/admin/login">
-    <label>Admin token: <input type="password" name="token" required></label>
+    <label>Admin token: <input type="password" name="token" required></label><br>
+    <label>Your name (optional, for audit): <input type="text" name="username" maxlength="64"></label>
     <button type="submit">Sign in</button>
   </form>
 </body>
@@ -50,9 +51,16 @@ async def login(
     request: Request,
     response: Response,
     token: str = Form(...),
+    username: str = Form(""),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     """Accept an admin token, set the admin_session cookie on success.
+
+    Optionally records a human-readable ``username`` alongside the
+    session cookie as an audit label (ADMIN-REVIEW LO-01). The label is
+    NOT used for authorization -- the admin token still gates access --
+    it only identifies who performed the action in audit columns
+    (``set_by``, ``reviewed_by``, ``triggered_by``, ``overridden_by``).
 
     Returns 401 on mismatch. Returns 500 if the admin token isn't
     configured in system_config at all (same fail-closed behaviour as
@@ -76,12 +84,24 @@ async def login(
     # request via ``require_admin``). Signed-cookie / server-side session
     # storage is a follow-up hardening — captured by ADMIN-REVIEW HI-05.
     response = Response(status_code=status.HTTP_200_OK, content="ok")
+    is_https = request.url.scheme == "https"
     response.set_cookie(
         key=ADMIN_SESSION_COOKIE,
         value=expected,
         httponly=True,
         samesite="lax",
-        secure=request.url.scheme == "https",
+        secure=is_https,
+        path="/",
+    )
+    # Audit label cookie (LO-01). Sanitize so a stray header/control char
+    # can't end up in SQL TEXT audit columns or log output. Not HttpOnly
+    # -- it's a display label, not a credential.
+    response.set_cookie(
+        key=ADMIN_USER_COOKIE,
+        value=_sanitize_principal(username),
+        httponly=False,
+        samesite="lax",
+        secure=is_https,
         path="/",
     )
     return response
@@ -89,7 +109,8 @@ async def login(
 
 @router.post("/logout")
 async def logout() -> Response:
-    """Clear the admin_session cookie. Publicly reachable (idempotent)."""
+    """Clear the admin session and user-label cookies. Publicly reachable (idempotent)."""
     response = Response(status_code=status.HTTP_200_OK, content="ok")
     response.delete_cookie(key=ADMIN_SESSION_COOKIE, path="/")
+    response.delete_cookie(key=ADMIN_USER_COOKIE, path="/")
     return response

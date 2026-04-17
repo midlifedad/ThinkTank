@@ -165,15 +165,16 @@ class TestOverride:
             data={
                 "override_decision": "approve",
                 "override_reasoning": "Manual approval by admin",
-                "admin_username": "testadmin",
             },
         )
         assert response.status_code == 200
 
-        # Verify the review was updated
+        # Verify the review was updated. ADMIN-REVIEW LO-01: overridden_by
+        # is now sourced from the authenticated principal (stubbed to
+        # "admin" in conftest._auto_admin_auth_override), not a form field.
         await session.refresh(review)
         assert review.decision == "approve"
-        assert review.overridden_by == "testadmin"
+        assert review.overridden_by == "admin"
         assert review.override_reasoning == "Manual approval by admin"
         assert review.overridden_at is not None
 
@@ -192,7 +193,6 @@ class TestOverride:
             data={
                 "override_decision": "approve",
                 "override_reasoning": "Manually approved",
-                "admin_username": "admin",
             },
         )
         assert response.status_code == 200
@@ -219,7 +219,6 @@ class TestOverride:
             data={
                 "override_decision": "approve",
                 "override_reasoning": "Source verified",
-                "admin_username": "admin",
             },
         )
         assert response.status_code == 200
@@ -234,7 +233,6 @@ class TestOverride:
             data={
                 "override_decision": "approve",
                 "override_reasoning": "Test",
-                "admin_username": "admin",
             },
         )
         assert response.status_code == 404

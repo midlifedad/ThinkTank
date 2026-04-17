@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.admin.auth import require_admin
 from thinktank.admin.dependencies import get_session, get_templates
 
 router = APIRouter(prefix="/admin/llm", tags=["llm"])
@@ -162,12 +163,15 @@ async def override_decision(
     session: AsyncSession = Depends(get_session),
     override_decision: str = Form(...),
     override_reasoning: str = Form(...),
-    admin_username: str = Form("admin"),
+    principal: str = Depends(require_admin),
 ):
     """Process human override of an LLM decision.
 
     Updates the LLM review and applies the override to the target entity
-    (thinker, source, or candidate) in the same transaction.
+    (thinker, source, or candidate) in the same transaction. The
+    ``overridden_by`` audit column takes its value from the authenticated
+    principal (ADMIN-REVIEW LO-01) rather than a user-supplied form
+    field, so a reviewer cannot stamp someone else's name on an override.
     """
     from thinktank.models.candidate import CandidateThinker
     from thinktank.models.review import LLMReview
@@ -183,7 +187,7 @@ async def override_decision(
 
     # Update the review record
     review.decision = override_decision
-    review.overridden_by = admin_username
+    review.overridden_by = principal
     review.overridden_at = _now()
     review.override_reasoning = override_reasoning
 

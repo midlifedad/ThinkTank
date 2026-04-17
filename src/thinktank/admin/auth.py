@@ -42,6 +42,20 @@ from thinktank.secrets import get_secret
 # after a successful token login.
 ADMIN_SESSION_COOKIE = "admin_session"
 
+# Audit-label cookie set alongside the session cookie at login time.
+# ADMIN-REVIEW LO-01: routers previously wrote the literal ``"admin"``
+# into audit fields (``set_by``, ``reviewed_by``, ``triggered_by``,
+# ``overridden_by``). This cookie carries a self-declared display name
+# so multiple humans sharing the admin token can still distinguish who
+# took an action. It is NOT an authentication credential -- the admin
+# token still gates access via ``require_admin`` -- just an audit label.
+ADMIN_USER_COOKIE = "admin_user"
+
+# Default principal label when no ``admin_user`` cookie is present
+# (token-only auth via ``Authorization: Bearer`` header, or legacy
+# sessions opened before this cookie was introduced).
+DEFAULT_ADMIN_PRINCIPAL = "admin"
+
 # ``get_secret`` expects the name WITHOUT the ``secret_`` prefix; it
 # prefixes internally.
 _ADMIN_TOKEN_NAME = "admin_api_token"
@@ -63,14 +77,33 @@ async def _extract_presented_token(request: Request) -> str | None:
     return None
 
 
+_MAX_PRINCIPAL_LEN = 64
+
+
+def _sanitize_principal(raw: str | None) -> str:
+    """Clamp an ``admin_user`` cookie to a safe audit label.
+
+    Falls back to :data:`DEFAULT_ADMIN_PRINCIPAL` on empty/whitespace.
+    Strips characters outside ``[A-Za-z0-9 _.@+-]`` so the value is safe
+    to round-trip into SQL TEXT audit columns, HTML attributes, and log
+    lines without escaping surprises.
+    """
+    if not raw:
+        return DEFAULT_ADMIN_PRINCIPAL
+    cleaned = "".join(ch for ch in raw.strip() if ch.isalnum() or ch in " _.@+-")[:_MAX_PRINCIPAL_LEN]
+    return cleaned or DEFAULT_ADMIN_PRINCIPAL
+
+
 async def require_admin(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> str:
     """FastAPI dependency: authorise an admin request.
 
-    Returns the principal identifier (currently the literal ``"admin"``
-    — LO-01 tracks adding real usernames once a proper auth system exists).
+    Returns the principal label to record in audit columns
+    (``set_by``, ``reviewed_by``, ``triggered_by``, ``overridden_by``).
+    Derived from the ``admin_user`` cookie if present and sanitized, or
+    :data:`DEFAULT_ADMIN_PRINCIPAL` otherwise. ADMIN-REVIEW LO-01.
 
     Raises:
         HTTPException(500): secret_admin_api_token is not configured.
@@ -97,4 +130,4 @@ async def require_admin(
             detail="unauthorized",
         )
 
-    return "admin"
+    return _sanitize_principal(request.cookies.get(ADMIN_USER_COOKIE))

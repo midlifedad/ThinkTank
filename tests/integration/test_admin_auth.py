@@ -153,3 +153,69 @@ class TestAdminAuthTokenNotConfigured:
             headers={"Authorization": "Bearer anything"},
         )
         assert resp.status_code == 500
+
+
+class TestAdminPrincipalCookie:
+    """ADMIN-REVIEW LO-01: admin_user cookie drives the audit-label
+    principal returned by ``require_admin``. The cookie is a display
+    label only -- auth is still gated by the admin token."""
+
+    async def test_login_sets_admin_user_cookie(self, admin_client, seeded_admin_token):
+        """POST /admin/login with a username form field sets admin_user cookie."""
+        resp = await admin_client.post(
+            "/admin/login",
+            data={"token": seeded_admin_token, "username": "luna"},
+        )
+        assert resp.status_code == 200
+        set_cookie = resp.headers.get("set-cookie", "")
+        assert "admin_user=luna" in set_cookie
+
+    async def test_login_without_username_defaults_to_admin(self, admin_client, seeded_admin_token):
+        """No username field → admin_user cookie falls back to 'admin'."""
+        resp = await admin_client.post(
+            "/admin/login",
+            data={"token": seeded_admin_token},
+        )
+        assert resp.status_code == 200
+        set_cookie = resp.headers.get("set-cookie", "")
+        assert "admin_user=admin" in set_cookie
+
+    async def test_login_sanitizes_username(self, admin_client, seeded_admin_token):
+        """Dangerous characters in username are stripped before cookie set."""
+        resp = await admin_client.post(
+            "/admin/login",
+            data={"token": seeded_admin_token, "username": "lu\nna;<script>"},
+        )
+        assert resp.status_code == 200
+        # Newlines, semicolons, and angle brackets are stripped by
+        # ``_sanitize_principal``; only the allowed-char subset survives.
+        # (No spaces in input so httpx doesn't quote the cookie value.)
+        assert resp.cookies.get("admin_user") == "lunascript"
+
+    async def test_logout_clears_admin_user_cookie(self, admin_client):
+        """POST /admin/logout deletes the admin_user cookie alongside the session."""
+        resp = await admin_client.post("/admin/logout")
+        assert resp.status_code == 200
+        set_cookie = resp.headers.get("set-cookie", "")
+        assert "admin_session=" in set_cookie
+        assert "admin_user=" in set_cookie
+
+    async def test_principal_used_in_audit_column(self, admin_client, seeded_admin_token, session):
+        """Config write by an authed admin with admin_user cookie stores that name in set_by."""
+        from sqlalchemy import select
+
+        from thinktank.models.config_table import SystemConfig
+
+        resp = await admin_client.post(
+            "/admin/kill-switch/toggle",
+            cookies={"admin_session": seeded_admin_token, "admin_user": "luna"},
+        )
+        assert resp.status_code < 500
+        assert resp.status_code != 401
+
+        # Fetch what got written. The kill-switch toggle upserts workers_active.
+        row = (
+            await session.execute(select(SystemConfig).where(SystemConfig.key == "workers_active"))
+        ).scalar_one_or_none()
+        assert row is not None
+        assert row.set_by == "luna"

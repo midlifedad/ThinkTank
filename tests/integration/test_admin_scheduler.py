@@ -248,7 +248,7 @@ class TestSchedulerRunNow:
         )
         job = result.scalar_one()
         assert job.status == "pending"
-        assert job.payload["triggered_by"] == "admin_scheduler_run_now"
+        assert job.payload["triggered_by"] == "admin:scheduler_run_now"
 
     async def test_run_now_updates_last_run(self, admin_client, session: AsyncSession):
         """POST run-now for scan_for_candidates sets last_run_at to approximately now."""

@@ -15,6 +15,7 @@ from sqlalchemy import func, select
 from sqlalchemy import text as sa_text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.admin.auth import require_admin
 from thinktank.admin.dependencies import get_session, get_templates
 from thinktank.models.config_table import SystemConfig
 from thinktank.models.job import Job
@@ -241,6 +242,7 @@ async def trigger_job(
     job_type: str,
     session: AsyncSession = Depends(get_session),
     thinker_id: str | None = Form(None),
+    principal: str = Depends(require_admin),
 ):
     """Manually trigger a pipeline job."""
     if job_type not in ALLOWED_TRIGGER_TYPES:
@@ -249,7 +251,7 @@ async def trigger_job(
             detail=f"Invalid job type: {job_type}. Allowed: {', '.join(sorted(ALLOWED_TRIGGER_TYPES))}",
         )
 
-    payload: dict = {"triggered_by": "admin"}
+    payload: dict = {"triggered_by": principal}
     if thinker_id and thinker_id.strip():
         payload["thinker_id"] = thinker_id.strip()
 
@@ -428,6 +430,7 @@ async def scheduler_save(
     task_key: str,
     session: AsyncSession = Depends(get_session),
     frequency_hours: int = Form(...),
+    principal: str = Depends(require_admin),
 ):
     """Save the frequency for a scheduled task."""
     if task_key not in _SCHEDULED_TASK_MAP:
@@ -455,7 +458,7 @@ async def scheduler_save(
         else:
             val["next_run_at"] = (now + timedelta(hours=frequency_hours)).isoformat()
         existing.value = val
-        existing.set_by = "admin"
+        existing.set_by = principal
         existing.updated_at = now
     else:
         session.add(
@@ -467,7 +470,7 @@ async def scheduler_save(
                     "last_run_at": None,
                     "next_run_at": (now + timedelta(hours=frequency_hours)).isoformat(),
                 },
-                set_by="admin",
+                set_by=principal,
                 updated_at=now,
             )
         )
@@ -487,6 +490,7 @@ async def scheduler_toggle(
     request: Request,
     task_key: str,
     session: AsyncSession = Depends(get_session),
+    principal: str = Depends(require_admin),
 ):
     """Toggle enabled/disabled for a scheduled task."""
     if task_key not in _SCHEDULED_TASK_MAP:
@@ -508,7 +512,7 @@ async def scheduler_toggle(
             freq = val.get("frequency_hours", task_def["default_hours"])
             val["next_run_at"] = (now + timedelta(hours=freq)).isoformat()
         existing.value = val
-        existing.set_by = "admin"
+        existing.set_by = principal
         existing.updated_at = now
     else:
         # Default is enabled=True, so toggling creates with enabled=False
@@ -521,7 +525,7 @@ async def scheduler_toggle(
                     "last_run_at": None,
                     "next_run_at": None,
                 },
-                set_by="admin",
+                set_by=principal,
                 updated_at=now,
             )
         )
@@ -541,6 +545,7 @@ async def scheduler_run_now(
     request: Request,
     task_key: str,
     session: AsyncSession = Depends(get_session),
+    principal: str = Depends(require_admin),
 ):
     """Run Now: create a job for pipeline tasks, show info for LLM tasks."""
     if task_key not in _SCHEDULED_TASK_MAP:
@@ -566,7 +571,7 @@ async def scheduler_run_now(
     new_job = Job(
         id=uuid.uuid4(),
         job_type=task_def["job_type"],
-        payload={"triggered_by": "admin_scheduler_run_now"},
+        payload={"triggered_by": f"{principal}:scheduler_run_now"},
         status="pending",
         priority=5,
         attempts=0,
@@ -584,7 +589,7 @@ async def scheduler_run_now(
         val["last_run_at"] = now.isoformat()
         val["next_run_at"] = (now + timedelta(hours=freq)).isoformat()
         existing.value = val
-        existing.set_by = "admin"
+        existing.set_by = principal
         existing.updated_at = now
     else:
         session.add(
@@ -596,7 +601,7 @@ async def scheduler_run_now(
                     "last_run_at": now.isoformat(),
                     "next_run_at": (now + timedelta(hours=task_def["default_hours"])).isoformat(),
                 },
-                set_by="admin",
+                set_by=principal,
                 updated_at=now,
             )
         )
