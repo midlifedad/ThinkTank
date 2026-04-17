@@ -70,3 +70,47 @@ class TestIsWorkersActive:
 
         result = await is_workers_active(session)
         assert result is True
+
+    async def test_handles_string_false(self, session: AsyncSession):
+        """HANDLERS-REVIEW LO-01: JSONB string "false" must NOT be truthy.
+
+        Operators editing via the admin UI can leave the value as a JSON
+        string literal instead of a bool; previously bool("false") was
+        True, silently leaving workers active.
+        """
+        from thinktank.queue.kill_switch import is_workers_active
+
+        await create_system_config(
+            session,
+            key="workers_active",
+            value="false",
+        )
+
+        result = await is_workers_active(session)
+        assert result is False
+
+    async def test_handles_string_true(self, session: AsyncSession):
+        """JSONB string "true" evaluates truthy."""
+        from thinktank.queue.kill_switch import is_workers_active
+
+        await create_system_config(
+            session,
+            key="workers_active",
+            value="true",
+        )
+
+        result = await is_workers_active(session)
+        assert result is True
+
+    async def test_handles_wrapped_string_false(self, session: AsyncSession):
+        """{"value": "false"} must coerce to False (same trap as above)."""
+        from thinktank.queue.kill_switch import is_workers_active
+
+        await create_system_config(
+            session,
+            key="workers_active",
+            value={"value": "false"},
+        )
+
+        result = await is_workers_active(session)
+        assert result is False
