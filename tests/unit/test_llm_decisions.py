@@ -7,7 +7,7 @@ thinkers, sources, candidates, and jobs.
 
 import uuid
 from datetime import datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -28,9 +28,18 @@ from thinktank.llm.schemas import (
 
 @pytest.fixture
 def mock_session():
-    """Create a mock AsyncSession."""
+    """Create a mock AsyncSession.
+
+    Default ``session.execute`` returns a result whose ``scalar_one_or_none``
+    is None, so slug-collision lookups in decisions.py short-circuit after
+    one probe (otherwise AsyncMock returns a truthy MagicMock and the while
+    loop never terminates).
+    """
     session = AsyncMock()
     session.flush = AsyncMock()
+    default_result = MagicMock()
+    default_result.scalar_one_or_none.return_value = None
+    session.execute.return_value = default_result
     return session
 
 
@@ -258,6 +267,54 @@ class TestPromoteCandidateToThinker:
         thinker = await promote_candidate_to_thinker(mock_session, candidate, result)
 
         assert thinker.tier == 3  # Default tier
+
+    @pytest.mark.asyncio
+    async def test_enqueues_discover_and_rescan_jobs(self, mock_session):
+        """HANDLERS-REVIEW ME-03: promotion must enqueue BOTH a discover_thinker
+        job (forward-looking source discovery) AND a rescan_cataloged_for_thinker
+        job (retroactive episode match). If either is dropped, the cascade
+        breaks silently.
+        """
+        candidate = make_candidate_thinker(name="New Expert", status="pending_llm")
+        result = CandidateReviewResponse(
+            decision="approved",
+            reasoning="Strong signal",
+            tier=2,
+        )
+
+        thinker = await promote_candidate_to_thinker(mock_session, candidate, result)
+
+        added = [call.args[0] for call in mock_session.add.call_args_list]
+        job_types = {obj.job_type for obj in added if hasattr(obj, "job_type")}
+        assert "discover_thinker" in job_types, "promotion must enqueue discover_thinker"
+        assert "rescan_cataloged_for_thinker" in job_types, "promotion must enqueue rescan_cataloged_for_thinker"
+
+        jobs_by_type = {obj.job_type: obj for obj in added if hasattr(obj, "job_type")}
+        assert jobs_by_type["discover_thinker"].payload == {"thinker_id": str(thinker.id)}
+        assert jobs_by_type["rescan_cataloged_for_thinker"].payload == {
+            "thinker_id": str(thinker.id),
+            "thinker_name": thinker.name,
+        }
+
+    @pytest.mark.asyncio
+    async def test_slug_collision_appends_suffix(self, mock_session):
+        """ADMIN LO-02 (decisions path): when _slugify collides with an
+        existing thinker, _unique_thinker_slug must append -2, -3, ... until
+        a free slug is found. Otherwise promotion raises IntegrityError.
+        """
+        candidate = make_candidate_thinker(name="Jane Smith", status="pending_llm")
+        result = CandidateReviewResponse(decision="approved", reasoning="ok", tier=3)
+
+        # First two probes collide; third is free.
+        collide = MagicMock()
+        collide.scalar_one_or_none.return_value = uuid.uuid4()
+        free = MagicMock()
+        free.scalar_one_or_none.return_value = None
+        mock_session.execute.side_effect = [collide, collide, free]
+
+        thinker = await promote_candidate_to_thinker(mock_session, candidate, result)
+
+        assert thinker.slug == "jane-smith-3"
 
 
 # ---------- apply_decision (dispatcher) ----------
