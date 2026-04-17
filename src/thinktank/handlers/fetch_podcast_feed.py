@@ -154,13 +154,19 @@ async def handle_fetch_podcast_feed(session: AsyncSession, job: Job) -> None:
     dedup_count = 0
     guest_filtered_count = 0
 
+    # HANDLERS LO-05: compare against the maximum published_at we've
+    # already ingested on this source (stable invariant), falling back
+    # to last_fetched only when the column hasn't been backfilled yet.
+    incremental_cutoff = source.latest_published_at or source.last_fetched
+    max_published_at = source.latest_published_at
+
     for entry in entries:
-        # Incremental mode: skip entries published before last_fetched
+        # Incremental mode: skip entries at-or-before the high-water mark
         if (
             not is_backfill
-            and source.last_fetched is not None
+            and incremental_cutoff is not None
             and entry.published_at is not None
-            and entry.published_at <= source.last_fetched
+            and entry.published_at <= incremental_cutoff
         ):
             continue
 
@@ -218,6 +224,7 @@ async def handle_fetch_podcast_feed(session: AsyncSession, job: Job) -> None:
             content_fingerprint=fp,
             source_guid=entry.guid,
             title=entry.title,
+            description=entry.description,  # HANDLERS ME-05 — enables retroactive matching
             published_at=entry.published_at,
             duration_seconds=entry.duration_seconds,
             show_name=entry.show_name,
@@ -226,6 +233,10 @@ async def handle_fetch_podcast_feed(session: AsyncSession, job: Job) -> None:
         )
         session.add(content)
         inserted_content.append(content)
+
+        # HANDLERS LO-05: track the newest published_at we've inserted
+        if entry.published_at is not None and (max_published_at is None or entry.published_at > max_published_at):
+            max_published_at = entry.published_at
 
         # Collect description for attribution payload
         descriptions[str(content.id)] = entry.description or ""
@@ -243,6 +254,9 @@ async def handle_fetch_podcast_feed(session: AsyncSession, job: Job) -> None:
     now = _now()
     source.last_fetched = now
     source.item_count += len(inserted_content)
+    # HANDLERS LO-05: persist high-water mark for next incremental run
+    if max_published_at is not None:
+        source.latest_published_at = max_published_at
 
     if is_backfill:
         source.backfill_complete = True

@@ -7,9 +7,8 @@ This enables retroactive discovery: episodes that were cataloged before
 a thinker was tracked can be promoted once the thinker is approved.
 
 Matching:
-    - Case-insensitive ILIKE on Content.title only
-    - Content.description is not stored on the model; descriptions
-      are only available at fetch time via job payloads
+    - Case-insensitive ILIKE on Content.title and Content.description
+    - Word-boundary confirmation via name_matcher
     - Retroactive match confidence = 7 (lower than real-time title match of 9)
 
 Spec reference: Phase 13 -- Efficient episode cataloging.
@@ -21,7 +20,7 @@ import uuid
 from datetime import UTC, datetime
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.ingestion.name_matcher import match_thinkers_in_text
@@ -81,9 +80,17 @@ async def handle_rescan_cataloged_for_thinker(session: AsyncSession, job: Job) -
     # Pre-filter via ILIKE to avoid scanning every cataloged row, then confirm
     # each candidate with the shared word-boundary matcher so substrings like
     # "Scam Harrison" don't poison rescan results (HANDLERS-REVIEW ME-01).
+    # HANDLERS ME-05: description is now persisted alongside title, so both
+    # columns are searched in the pre-filter and both feed the word-boundary
+    # confirmation. Episodes like "Lex Fridman Podcast #412" (title) /
+    # "Jensen Huang on GPUs" (description) now match retroactively.
+    name_pattern = f"%{thinker_name}%"
     stmt = select(Content).where(
         Content.status == "cataloged",
-        Content.title.ilike(f"%{thinker_name}%"),
+        or_(
+            Content.title.ilike(name_pattern),
+            Content.description.ilike(name_pattern),
+        ),
     )
     result = await session.execute(stmt)
     candidates = result.scalars().all()
@@ -94,7 +101,7 @@ async def handle_rescan_cataloged_for_thinker(session: AsyncSession, job: Job) -
         for c in candidates
         if match_thinkers_in_text(
             title=c.title or "",
-            description="",
+            description=c.description or "",
             thinker_names=thinker_names_arg,
             source_owner_name=None,
         )

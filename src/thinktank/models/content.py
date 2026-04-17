@@ -51,6 +51,7 @@ class Content(Base):
         nullable=True,
     )
     title: Mapped[str] = mapped_column(sa.Text)
+    description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     body_text: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     word_count: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)

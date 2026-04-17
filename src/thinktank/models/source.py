@@ -57,6 +57,7 @@ class Source(Base):
     backfill_complete: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.text("false"))
     refresh_interval_hours: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
     last_fetched: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    latest_published_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     item_count: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("0"))
     active: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.text("true"))
     error_count: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("0"))
