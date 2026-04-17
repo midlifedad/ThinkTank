@@ -2,6 +2,11 @@
 
 Uses pydantic-settings for type-safe configuration loading.
 Precedence: environment variables > .env file > code defaults.
+
+Non-secret operational knobs live here (DB pool sizing, model IDs, CORS).
+Secrets (API keys, credentials) live in the ``system_config`` table and
+are accessed via ``thinktank.secrets`` -- never put secret values in this
+file, .env, or environment variables for production.
 """
 
 from functools import lru_cache
@@ -34,6 +39,9 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: list[str] = ["*"]
+
+    # LLM Supervisor
+    llm_model: str = "claude-sonnet-4-20250514"
 
 
 @lru_cache

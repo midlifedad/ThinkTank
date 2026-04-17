@@ -16,6 +16,7 @@ from anthropic import AsyncAnthropic
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.config import get_settings
 from thinktank.secrets import get_secret
 
 
@@ -24,7 +25,7 @@ class LLMClient:
 
     def __init__(self) -> None:
         self._client: AsyncAnthropic | None = None
-        self.model = "claude-sonnet-4-20250514"
+        self.model = get_settings().llm_model
 
     async def _get_client(self, session: AsyncSession) -> AsyncAnthropic:
         """Get or create Anthropic client with DB-backed API key."""
