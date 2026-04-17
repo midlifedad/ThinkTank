@@ -293,6 +293,7 @@ async def retry_job(
                 "message": f"Cannot retry job with status '{job.status}'. Only failed jobs can be retried.",
             },
         )
+        response.headers["HX-Trigger"] = "refreshJobList"
         return response
 
     # Create new job copying type and payload
@@ -338,6 +339,7 @@ async def cancel_job(
                 "message": f"Cannot cancel job with status '{job.status}'. Only pending jobs can be cancelled.",
             },
         )
+        response.headers["HX-Trigger"] = "refreshJobList"
         return response
 
     job.status = "cancelled"
