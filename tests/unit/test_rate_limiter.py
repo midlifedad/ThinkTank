@@ -80,7 +80,13 @@ class TestCheckAndAcquireRateLimit:
         mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = None
 
-        mock_session.execute.side_effect = [mock_count_result, mock_config_result]
+        # First execute call is the pg_advisory_xact_lock (no return value used).
+        mock_lock_result = MagicMock()
+        mock_session.execute.side_effect = [
+            mock_lock_result,
+            mock_count_result,
+            mock_config_result,
+        ]
 
         result = await check_and_acquire_rate_limit(
             mock_session, "podcastindex", "worker-1"
@@ -99,7 +105,13 @@ class TestCheckAndAcquireRateLimit:
         mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = {"value": 100}
 
-        mock_session.execute.side_effect = [mock_count_result, mock_config_result]
+        # First execute call is the pg_advisory_xact_lock (no return value used).
+        mock_lock_result = MagicMock()
+        mock_session.execute.side_effect = [
+            mock_lock_result,
+            mock_count_result,
+            mock_config_result,
+        ]
 
         result = await check_and_acquire_rate_limit(
             mock_session, "podcastindex", "worker-1"
@@ -118,7 +130,13 @@ class TestCheckAndAcquireRateLimit:
         mock_config_result = MagicMock()
         mock_config_result.scalar_one_or_none.return_value = {"value": 100}
 
-        mock_session.execute.side_effect = [mock_count_result, mock_config_result]
+        # First execute call is the pg_advisory_xact_lock (no return value used).
+        mock_lock_result = MagicMock()
+        mock_session.execute.side_effect = [
+            mock_lock_result,
+            mock_count_result,
+            mock_config_result,
+        ]
 
         result = await check_and_acquire_rate_limit(
             mock_session, "podcastindex", "worker-1"

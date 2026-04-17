@@ -3,6 +3,7 @@
 Tests the sliding-window rate limiting via rate_limit_usage table.
 """
 
+import asyncio
 import uuid
 
 import pytest
@@ -148,3 +149,39 @@ class TestCheckAndAcquireRateLimit:
             session, "testapi", "worker-1"
         )
         assert result is False
+
+
+class TestConcurrentAcquires:
+    """TOCTOU regression: concurrent acquires must respect the limit.
+
+    Source: INTEGRATIONS-REVIEW H-01. Without serialization, count+insert
+    is a classic time-of-check-to-time-of-use race: all N concurrent
+    callers see the same count, all pass the limit check, all insert.
+    """
+
+    async def test_concurrent_acquires_respect_limit(self, session_factory):
+        """Spawn 10 concurrent acquires with limit=5. Exactly 5 must succeed."""
+        from thinktank.queue.rate_limiter import check_and_acquire_rate_limit
+
+        async with session_factory() as setup_session:
+            await create_system_config(
+                setup_session,
+                key="concurrent_api_calls_per_hour",
+                value={"value": 5},
+            )
+            await setup_session.commit()
+
+        async def acquire_one(idx: int) -> bool:
+            async with session_factory() as sess:
+                result = await check_and_acquire_rate_limit(
+                    sess, "concurrent_api", f"worker-{idx}"
+                )
+                await sess.commit()
+                return result
+
+        results = await asyncio.gather(*[acquire_one(i) for i in range(10)])
+        successes = sum(1 for r in results if r is True)
+        assert successes == 5, (
+            f"Expected exactly 5 successful acquires, got {successes}. "
+            f"Results: {results}"
+        )

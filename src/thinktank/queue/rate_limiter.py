@@ -60,6 +60,16 @@ async def check_and_acquire_rate_limit(
     Returns:
         True if the call can proceed, False if rate-limited.
     """
+    # Serialize concurrent rate-limit checks for the same API via a
+    # transaction-scoped advisory lock. Without this, count+insert is a
+    # TOCTOU race (INTEGRATIONS-REVIEW H-01): N concurrent callers all
+    # see the same count, pass the limit check, and insert.
+    # The lock releases automatically at commit/rollback.
+    lock_key = hash(api_name) & 0x7FFFFFFF
+    await session.execute(
+        text("SELECT pg_advisory_xact_lock(:k)"), {"k": lock_key}
+    )
+
     # Use PG's LOCALTIMESTAMP for cutoff to match server-default NOW()
     # on the called_at column (both TIMESTAMP WITHOUT TIME ZONE).
     # This avoids timezone mismatches between Python UTC and PG local time.
