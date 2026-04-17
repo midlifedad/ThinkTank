@@ -16,7 +16,7 @@ LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(250))
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_process_content_contract(mock_captions, mock_existing, mock_gpu, session):
     """Contract: pending content -> done content with all fields populated.
 

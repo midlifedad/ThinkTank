@@ -6,6 +6,7 @@ Captions with fewer than 100 words are rejected (returns None).
 Entire function is fail-safe: any exception returns None.
 """
 
+import asyncio
 import io
 
 import httpx
@@ -42,20 +43,8 @@ def _parse_vtt_text(vtt_content: str) -> str:
     return "\n".join(seen)
 
 
-def extract_youtube_captions(video_url: str) -> str | None:
-    """Extract YouTube captions via yt-dlp.
-
-    Returns plain text transcript or None if:
-    - No captions available
-    - Captions have fewer than 100 words
-    - Any error occurs (fail-safe)
-
-    Args:
-        video_url: YouTube video URL.
-
-    Returns:
-        Plain text transcript or None.
-    """
+def _ytdlp_extract(video_url: str) -> dict | None:
+    """Sync yt-dlp helper, isolated so the async wrapper can `to_thread` it."""
     opts = {
         "writeautomaticsub": True,
         "writesubtitles": True,
@@ -64,10 +53,32 @@ def extract_youtube_captions(video_url: str) -> str | None:
         "quiet": True,
         "no_warnings": True,
     }
+    with YoutubeDL(opts) as ydl:
+        return ydl.extract_info(video_url, download=False)
 
+
+async def extract_youtube_captions(video_url: str) -> str | None:
+    """Extract YouTube captions via yt-dlp.
+
+    Returns plain text transcript or None if:
+    - No captions available
+    - Captions have fewer than 100 words
+    - Any error occurs (fail-safe)
+
+    yt-dlp is sync + blocking (makes its own HTTP calls), so it runs via
+    `asyncio.to_thread`. The subtitle VTT fetch uses `httpx.AsyncClient`
+    so nothing blocks the event loop. INTEGRATIONS L-03.
+
+    Args:
+        video_url: YouTube video URL.
+
+    Returns:
+        Plain text transcript or None.
+    """
     try:
-        with YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(video_url, download=False)
+        info = await asyncio.to_thread(_ytdlp_extract, video_url)
+        if info is None:
+            return None
 
         subs = info.get("requested_subtitles") or {}
         en_sub = subs.get("en")
@@ -80,8 +91,8 @@ def extract_youtube_captions(video_url: str) -> str | None:
             logger.info("captions_no_url", url=video_url)
             return None
 
-        # Fetch VTT content (sync, since yt-dlp is sync)
-        response = httpx.get(sub_url, timeout=30.0, follow_redirects=True)
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+            response = await client.get(sub_url)
         raise_for_status_with_backoff(response)
 
         text = _parse_vtt_text(response.text)

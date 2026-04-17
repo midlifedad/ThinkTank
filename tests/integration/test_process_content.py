@@ -18,7 +18,7 @@ LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(200))
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_full_pipeline_youtube_captions(mock_captions, mock_existing, mock_gpu, session):
     """YouTube source: captions succeed -> content updated with youtube_captions method."""
     thinker = await create_thinker(session)
@@ -51,7 +51,7 @@ async def test_full_pipeline_youtube_captions(mock_captions, mock_existing, mock
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_full_pipeline_parakeet_fallback(mock_captions, mock_existing, mock_gpu, session):
     """Podcast source: captions N/A, existing=None -> GPU fallback with parakeet method."""
     thinker = await create_thinker(session)
@@ -87,7 +87,7 @@ async def test_full_pipeline_parakeet_fallback(mock_captions, mock_existing, moc
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_full_pipeline_existing_transcript(mock_captions, mock_existing, mock_gpu, session):
     """Source with transcript_url_pattern: captions=None -> existing transcript used."""
     thinker = await create_thinker(session)
@@ -123,7 +123,7 @@ async def test_full_pipeline_existing_transcript(mock_captions, mock_existing, m
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_content_status_done_after_transcription(mock_captions, mock_existing, mock_gpu, session):
     """After handler, content status changed from 'pending' to 'done' in DB."""
     thinker = await create_thinker(session)
@@ -153,7 +153,7 @@ async def test_content_status_done_after_transcription(mock_captions, mock_exist
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_word_count_calculated(mock_captions, mock_existing, mock_gpu, session):
     """After handler, word_count matches actual word count of transcript."""
     thinker = await create_thinker(session)
@@ -183,7 +183,7 @@ async def test_word_count_calculated(mock_captions, mock_existing, mock_gpu, ses
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_all_passes_fail_raises(mock_captions, mock_existing, mock_gpu, session):
     """All passes fail -> handler raises RuntimeError."""
     thinker = await create_thinker(session)

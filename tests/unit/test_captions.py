@@ -4,7 +4,9 @@ Spec reference: Section 7.1.
 All yt-dlp and httpx calls are mocked -- no external I/O.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # --- Helpers ---
 
@@ -45,19 +47,38 @@ def _vtt_with_duplicates() -> str:
     )
 
 
+def _make_vtt_response(vtt: str) -> MagicMock:
+    """Build a mock httpx.Response with text + no-op raise_for_status."""
+    response = MagicMock()
+    response.text = vtt
+    response.status_code = 200
+    response.headers = {}
+    response.raise_for_status = MagicMock()
+    return response
+
+
+def _patch_async_client(mock_httpx, response):
+    """Wire mock_httpx.AsyncClient as an async context manager with mocked .get()."""
+    client = MagicMock()
+    client.get = AsyncMock(return_value=response)
+    mock_httpx.AsyncClient.return_value.__aenter__ = AsyncMock(return_value=client)
+    mock_httpx.AsyncClient.return_value.__aexit__ = AsyncMock(return_value=False)
+    return client
+
+
 # --- Tests ---
 
 
 class TestExtractYoutubeCaptions:
     """Test suite for extract_youtube_captions."""
 
+    @pytest.mark.asyncio
     @patch("thinktank.transcription.captions.httpx")
     @patch("thinktank.transcription.captions.YoutubeDL")
-    def test_extract_captions_success(self, mock_ydl_cls, mock_httpx):
+    async def test_extract_captions_success(self, mock_ydl_cls, mock_httpx):
         """Successful caption extraction returns plain text >= 100 words."""
         from thinktank.transcription.captions import extract_youtube_captions
 
-        # Mock yt-dlp
         mock_ydl = MagicMock()
         mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
         mock_ydl_cls.return_value.__exit__ = MagicMock(return_value=False)
@@ -65,20 +86,17 @@ class TestExtractYoutubeCaptions:
             "requested_subtitles": {"en": {"url": "https://example.com/subs.vtt", "ext": "vtt"}}
         }
 
-        # Mock httpx.get to return VTT content
         vtt = _vtt_content(150)
-        mock_response = MagicMock()
-        mock_response.text = vtt
-        mock_response.raise_for_status = MagicMock()
-        mock_httpx.get.return_value = mock_response
+        _patch_async_client(mock_httpx, _make_vtt_response(vtt))
 
-        result = extract_youtube_captions("https://youtube.com/watch?v=test123")
+        result = await extract_youtube_captions("https://youtube.com/watch?v=test123")
 
         assert result is not None
         assert len(result.split()) >= 100
 
+    @pytest.mark.asyncio
     @patch("thinktank.transcription.captions.YoutubeDL")
-    def test_extract_captions_no_subs(self, mock_ydl_cls):
+    async def test_extract_captions_no_subs(self, mock_ydl_cls):
         """Returns None when no subtitles are available."""
         from thinktank.transcription.captions import extract_youtube_captions
 
@@ -87,13 +105,14 @@ class TestExtractYoutubeCaptions:
         mock_ydl_cls.return_value.__exit__ = MagicMock(return_value=False)
         mock_ydl.extract_info.return_value = {"requested_subtitles": {}}
 
-        result = extract_youtube_captions("https://youtube.com/watch?v=nosubs")
+        result = await extract_youtube_captions("https://youtube.com/watch?v=nosubs")
 
         assert result is None
 
+    @pytest.mark.asyncio
     @patch("thinktank.transcription.captions.httpx")
     @patch("thinktank.transcription.captions.YoutubeDL")
-    def test_extract_captions_too_short(self, mock_ydl_cls, mock_httpx):
+    async def test_extract_captions_too_short(self, mock_ydl_cls, mock_httpx):
         """Returns None when captions have fewer than 100 words."""
         from thinktank.transcription.captions import extract_youtube_captions
 
@@ -105,17 +124,15 @@ class TestExtractYoutubeCaptions:
         }
 
         vtt = _vtt_content(50)
-        mock_response = MagicMock()
-        mock_response.text = vtt
-        mock_response.raise_for_status = MagicMock()
-        mock_httpx.get.return_value = mock_response
+        _patch_async_client(mock_httpx, _make_vtt_response(vtt))
 
-        result = extract_youtube_captions("https://youtube.com/watch?v=short")
+        result = await extract_youtube_captions("https://youtube.com/watch?v=short")
 
         assert result is None
 
+    @pytest.mark.asyncio
     @patch("thinktank.transcription.captions.YoutubeDL")
-    def test_extract_captions_exception_returns_none(self, mock_ydl_cls):
+    async def test_extract_captions_exception_returns_none(self, mock_ydl_cls):
         """Returns None on any exception (fail-safe per spec 7.1)."""
         from thinktank.transcription.captions import extract_youtube_captions
 
@@ -124,38 +141,17 @@ class TestExtractYoutubeCaptions:
         mock_ydl_cls.return_value.__exit__ = MagicMock(return_value=False)
         mock_ydl.extract_info.side_effect = RuntimeError("yt-dlp exploded")
 
-        result = extract_youtube_captions("https://youtube.com/watch?v=boom")
+        result = await extract_youtube_captions("https://youtube.com/watch?v=boom")
 
         assert result is None
 
-    @patch("thinktank.transcription.captions.httpx")
-    @patch("thinktank.transcription.captions.YoutubeDL")
-    def test_vtt_parsing_strips_timing_and_deduplicates(self, mock_ydl_cls, mock_httpx):
-        """VTT content with timestamps and duplicate lines yields clean text."""
-
-        mock_ydl = MagicMock()
-        mock_ydl_cls.return_value.__enter__ = MagicMock(return_value=mock_ydl)
-        mock_ydl_cls.return_value.__exit__ = MagicMock(return_value=False)
-        mock_ydl.extract_info.return_value = {
-            "requested_subtitles": {"en": {"url": "https://example.com/dups.vtt", "ext": "vtt"}}
-        }
-
-        # VTT with 3 unique lines (will be < 100 words, so returns None -- that's expected)
-        # We test the dedup logic by checking the parse function directly
-        vtt = _vtt_with_duplicates()
-        mock_response = MagicMock()
-        mock_response.text = vtt
-        mock_response.raise_for_status = MagicMock()
-        mock_httpx.get.return_value = mock_response
-
-        # Since < 100 words, extract_youtube_captions returns None
-        # But we verify the internal VTT parsing via a direct call
+    def test_vtt_parsing_strips_timing_and_deduplicates(self):
+        """VTT content with duplicate lines yields 3 unique lines."""
         from thinktank.transcription.captions import _parse_vtt_text
 
-        parsed = _parse_vtt_text(vtt)
+        parsed = _parse_vtt_text(_vtt_with_duplicates())
         lines = parsed.split("\n")
 
-        # Should have 3 unique lines, not 5
         assert len(lines) == 3
         assert "Hello world this is a test" in lines
         assert "of the caption extraction system" in lines
