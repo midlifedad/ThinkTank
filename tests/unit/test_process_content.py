@@ -65,7 +65,7 @@ def mock_session(content, source):
 LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(200))
 
 
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_pass1_youtube_captions(mock_captions, mock_session, job, content, source):
     """Pass 1: YouTube captions succeed -> method='youtube_captions'."""
     mock_captions.return_value = LONG_TRANSCRIPT
@@ -83,7 +83,7 @@ async def test_pass1_youtube_captions(mock_captions, mock_session, job, content,
 
 
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_pass2_existing_transcript(mock_captions, mock_existing, mock_session, job, content, source):
     """Pass 2: Captions fail, existing transcript succeeds -> method='existing_transcript'."""
     mock_captions.return_value = None
@@ -101,7 +101,7 @@ async def test_pass2_existing_transcript(mock_captions, mock_existing, mock_sess
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_pass3_parakeet_gpu(mock_captions, mock_existing, mock_gpu, mock_session, job, content, source):
     """Pass 3: Captions + existing fail, GPU succeeds -> method='parakeet'."""
     mock_captions.return_value = None
@@ -119,7 +119,7 @@ async def test_pass3_parakeet_gpu(mock_captions, mock_existing, mock_gpu, mock_s
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_all_passes_fail(mock_captions, mock_existing, mock_gpu, mock_session, job, content, source):
     """All three passes return None -> raises RuntimeError."""
     mock_captions.return_value = None
@@ -134,7 +134,7 @@ async def test_all_passes_fail(mock_captions, mock_existing, mock_gpu, mock_sess
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_pass1_skipped_for_non_youtube(
     mock_captions, mock_existing, mock_gpu, mock_session, job, content, source
 ):
@@ -154,7 +154,7 @@ async def test_pass1_skipped_for_non_youtube(
 
 @patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
 @patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_pass2_skipped_no_pattern(mock_captions, mock_existing, mock_gpu, mock_session, job, content, source):
     """Source has no transcript_url_pattern -> Pass 2 skipped, goes to Pass 3."""
     mock_captions.return_value = None
@@ -170,7 +170,7 @@ async def test_pass2_skipped_no_pattern(mock_captions, mock_existing, mock_gpu, 
     assert content.transcription_method == "parakeet"
 
 
-@patch("thinktank.handlers.process_content.extract_youtube_captions")
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
 async def test_content_fields_updated(mock_captions, mock_session, job, content, source):
     """After successful transcription, verify all content fields are set."""
     mock_captions.return_value = LONG_TRANSCRIPT

@@ -13,7 +13,6 @@ all passes fail (worker loop categorizes as TRANSCRIPTION_FAILED).
 
 from __future__ import annotations
 
-import asyncio
 import os
 import tempfile
 import uuid
@@ -68,10 +67,7 @@ async def handle_process_content(session: AsyncSession, job: Job) -> None:  # no
 
     # Pass 1: YouTube captions (only for youtube_channel sources)
     if source.source_type == "youtube_channel":
-        # extract_youtube_captions is sync (yt-dlp + httpx.get) -- wrap in
-        # asyncio.to_thread so it doesn't block the event loop while the
-        # worker holds a DB session.
-        transcript = await asyncio.to_thread(extract_youtube_captions, content.url)
+        transcript = await extract_youtube_captions(content.url)
         if transcript and len(transcript.split()) >= 100:
             method = "youtube_captions"
         else:
