@@ -12,6 +12,8 @@ import os
 import httpx
 import structlog
 
+from thinktank.http_utils import RateLimitedError, raise_for_status_with_backoff
+
 logger = structlog.get_logger(__name__)
 
 # Default GPU worker URL (Railway internal networking)
@@ -53,7 +55,7 @@ async def send_to_gpu(
                     transcribe_url,
                     files={"file": (os.path.basename(wav_path), f, "audio/wav")},
                 )
-            response.raise_for_status()
+            raise_for_status_with_backoff(response)
             data = response.json()
             text = data.get("text", "")
             logger.info(
@@ -63,6 +65,11 @@ async def send_to_gpu(
             )
             return text
 
+    # INTEGRATIONS H-04: propagate RateLimitedError unchanged so the worker's
+    # fail_job path reads retry_after_seconds from it and schedules the retry
+    # at the upstream's requested delay rather than our own backoff curve.
+    except RateLimitedError:
+        raise
     except httpx.TimeoutException as exc:
         raise RuntimeError(f"GPU transcription timeout for {wav_path}: {exc}") from exc
     except httpx.HTTPStatusError as exc:

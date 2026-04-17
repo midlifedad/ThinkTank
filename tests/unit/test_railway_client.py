@@ -240,6 +240,69 @@ class TestRailwayExceptionNarrowing:
             await scale_gpu_service(1)
 
 
+class TestRailwayRateLimited:
+    """INTEGRATIONS H-04: 429/Retry-After from Railway's GraphQL API must be
+    caught and surfaced as a False/None return (not a raised exception) — the
+    scaling loop has no job to attach a retry hint to, but we still want to
+    log retry_after_seconds and avoid masking rate-limit signals as generic
+    HTTP errors.
+    """
+
+    @pytest.mark.asyncio
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
+    async def test_scale_returns_false_on_429(self, mock_client_cls, monkeypatch):
+        from thinktank.scaling.railway import scale_gpu_service
+
+        monkeypatch.setenv("RAILWAY_API_KEY", "k")
+        monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "s")
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT_ID", "e")
+
+        mock_request = MagicMock()
+        mock_request.url = "https://backboard.railway.com/graphql/v2"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {"Retry-After": "90"}
+        mock_response.request = mock_request
+
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        result = await scale_gpu_service(1)
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    @patch("thinktank.scaling.railway.httpx.AsyncClient")
+    async def test_get_replica_returns_none_on_429(self, mock_client_cls, monkeypatch):
+        from thinktank.scaling.railway import get_gpu_replica_count
+
+        monkeypatch.setenv("RAILWAY_API_KEY", "k")
+        monkeypatch.setenv("RAILWAY_GPU_SERVICE_ID", "s")
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT_ID", "e")
+
+        mock_request = MagicMock()
+        mock_request.url = "https://backboard.railway.com/graphql/v2"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {"Retry-After": "45"}
+        mock_response.request = mock_request
+
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        result = await get_gpu_replica_count()
+
+        assert result is None
+
+
 class TestManageGpuScaling:
     """Tests for manage_gpu_scaling orchestration function."""
 
