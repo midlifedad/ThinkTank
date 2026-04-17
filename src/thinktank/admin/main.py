@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI
 from sqlalchemy import text
 
 from thinktank.admin.auth import require_admin
+from thinktank.admin.csrf import CSRFMiddleware
 from thinktank.admin.routers.api_keys import router as api_keys_router
 from thinktank.admin.routers.auth import router as auth_router
 from thinktank.admin.routers.categories import router as categories_router
@@ -59,6 +60,9 @@ app = FastAPI(
 
 # Correlation ID middleware
 app.add_middleware(CorrelationIDMiddleware, service_name="thinktank-admin")
+
+# CSRF protection on state-changing admin endpoints (ADMIN-REVIEW HI-05).
+app.add_middleware(CSRFMiddleware)
 
 # Login / logout: publicly reachable (no require_admin) so humans can
 # obtain a cookie. All other admin routes are gated behind require_admin.

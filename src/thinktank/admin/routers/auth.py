@@ -16,6 +16,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.admin.auth import ADMIN_SESSION_COOKIE, ADMIN_USER_COOKIE, _sanitize_principal
+from thinktank.admin.csrf import CSRF_COOKIE, generate_csrf_token
 from thinktank.admin.dependencies import get_session
 from thinktank.secrets import get_secret
 
@@ -104,13 +105,25 @@ async def login(
         secure=is_https,
         path="/",
     )
+    # CSRF double-submit cookie (HI-05). NOT HttpOnly so HTMX JavaScript
+    # can read it and echo it into the X-CSRF-Token header on mutating
+    # requests. Rotated on every login.
+    response.set_cookie(
+        key=CSRF_COOKIE,
+        value=generate_csrf_token(),
+        httponly=False,
+        samesite="lax",
+        secure=is_https,
+        path="/",
+    )
     return response
 
 
 @router.post("/logout")
 async def logout() -> Response:
-    """Clear the admin session and user-label cookies. Publicly reachable (idempotent)."""
+    """Clear the admin session, user-label, and CSRF cookies. Publicly reachable (idempotent)."""
     response = Response(status_code=status.HTTP_200_OK, content="ok")
     response.delete_cookie(key=ADMIN_SESSION_COOKIE, path="/")
     response.delete_cookie(key=ADMIN_USER_COOKIE, path="/")
+    response.delete_cookie(key=CSRF_COOKIE, path="/")
     return response
