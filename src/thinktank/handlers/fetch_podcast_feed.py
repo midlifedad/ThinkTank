@@ -23,6 +23,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.http_utils import raise_for_status_with_backoff
 from thinktank.ingestion.config_reader import (
     get_config_value,
     get_source_filter_config,
@@ -123,7 +124,7 @@ async def handle_fetch_podcast_feed(
     # g. Fetch the RSS feed
     async with httpx.AsyncClient(follow_redirects=True) as client:
         response = await client.get(source.url, timeout=60.0)
-        response.raise_for_status()
+        raise_for_status_with_backoff(response)
 
     # h. Parse feed
     entries = parse_feed(response.text)

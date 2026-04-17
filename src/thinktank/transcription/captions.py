@@ -13,6 +13,8 @@ import structlog
 import webvtt
 from yt_dlp import YoutubeDL
 
+from thinktank.http_utils import raise_for_status_with_backoff
+
 logger = structlog.get_logger(__name__)
 
 # Minimum word count for captions to be considered valid (spec 7.1)
@@ -80,7 +82,7 @@ def extract_youtube_captions(video_url: str) -> str | None:
 
         # Fetch VTT content (sync, since yt-dlp is sync)
         response = httpx.get(sub_url, timeout=30.0, follow_redirects=True)
-        response.raise_for_status()
+        raise_for_status_with_backoff(response)
 
         text = _parse_vtt_text(response.text)
 

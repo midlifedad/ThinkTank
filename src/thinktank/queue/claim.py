@@ -8,7 +8,7 @@ Spec reference: Sections 3.10, 6.1, 6.2.
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -96,12 +96,17 @@ async def fail_job(
     error_msg: str,
     error_category: ErrorCategory,
     max_attempts: int | None = None,
+    retry_after_seconds: int | None = None,
 ) -> None:
     """Mark a job as failed. Retry with backoff if under max_attempts.
 
     If max_attempts not provided, uses per-type limit from retry.py.
     Retryable: status='retrying', scheduled_at set to now + backoff.
     Terminal: status='failed', completed_at set.
+
+    If retry_after_seconds is provided (e.g. from a 429 Retry-After header),
+    it takes precedence over our exponential backoff when scheduling the
+    retry, so we honor the upstream's requested delay.
     """
     job = await session.get(Job, job_id)
     if job is None:
@@ -113,9 +118,12 @@ async def fail_job(
     now = _now()
 
     if job.attempts < max_attempts:
-        # Retry with exponential backoff
+        # Retry with exponential backoff, unless upstream told us otherwise.
         job.status = "retrying"
-        job.scheduled_at = now + calculate_backoff(job.attempts)
+        if retry_after_seconds is not None:
+            job.scheduled_at = now + timedelta(seconds=retry_after_seconds)
+        else:
+            job.scheduled_at = now + calculate_backoff(job.attempts)
         job.worker_id = None
     else:
         # Terminal failure

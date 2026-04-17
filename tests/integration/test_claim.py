@@ -319,3 +319,38 @@ class TestFailJob:
         await session.refresh(job)
         assert job.error_category == "rate_limited"
         assert isinstance(job.error_category, str)
+
+    async def test_retry_after_seconds_overrides_backoff(self, session: AsyncSession):
+        """When retry_after_seconds is provided, it takes precedence over backoff.
+
+        Source: INTEGRATIONS-REVIEW M-02. Upstream 429 Retry-After must
+        win over our internal exponential backoff so we don't retry
+        sooner than the server asked.
+        """
+        job = await create_job(
+            session,
+            status="running",
+            attempts=2,  # calculate_backoff(2) = 4 minutes
+            max_attempts=4,
+        )
+        await session.commit()
+
+        before = _now()
+        await fail_job(
+            session,
+            job.id,
+            error_msg="Rate limited by upstream",
+            error_category=ErrorCategory.RATE_LIMITED,
+            retry_after_seconds=90,  # upstream says "wait 90s"
+        )
+        after = _now()
+
+        await session.refresh(job)
+        assert job.status == "retrying"
+        # Scheduled ~90s out, not ~4 minutes out
+        expected_min = before + timedelta(seconds=89)
+        expected_max = after + timedelta(seconds=91)
+        assert expected_min <= job.scheduled_at <= expected_max, (
+            f"scheduled_at {job.scheduled_at} not in "
+            f"[{expected_min}, {expected_max}] — backoff ignored Retry-After"
+        )
