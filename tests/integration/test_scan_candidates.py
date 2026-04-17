@@ -8,12 +8,14 @@ Trigram functions (find_similar_thinkers, find_similar_candidates) are
 real DB operations requiring the pg_trgm extension.
 """
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.discovery.quota import check_daily_quota
 from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
 from thinktank.models.candidate import CandidateThinker
 from thinktank.models.job import Job
@@ -22,6 +24,7 @@ from tests.factories import (
     create_content,
     create_job,
     create_source,
+    create_system_config,
     create_thinker,
 )
 
@@ -242,3 +245,53 @@ async def test_cascade_pause_pending_queue(session: AsyncSession):
         select(func.count()).select_from(CandidateThinker)
     )
     assert count == 0
+
+
+class TestConcurrentDailyQuota:
+    """TOCTOU regression: concurrent quota checks must not breach daily_limit.
+
+    Sources: INTEGRATIONS-REVIEW H-02, HANDLERS-REVIEW ME-04.
+    Without serialization, two concurrent check_daily_quota + insert flows
+    both see the same count, both pass the limit check, both insert — blowing
+    past max_candidates_per_day.
+    """
+
+    async def test_concurrent_quota_inserts_respect_limit(self, session_factory):
+        """Limit=3 with 2 pre-seeded; two concurrent workers, only one can win."""
+        async with session_factory() as setup:
+            await create_system_config(
+                setup,
+                key="max_candidates_per_day",
+                value={"value": 3},
+            )
+            # Pre-seed 2 candidates "today"
+            await create_candidate_thinker(setup, name="Existing 1", normalized_name="existing 1")
+            await create_candidate_thinker(setup, name="Existing 2", normalized_name="existing 2")
+            await setup.commit()
+
+        async def check_and_insert(worker_idx: int) -> bool:
+            """Simulate the handler critical section: quota check + insert + commit."""
+            async with session_factory() as s:
+                can_continue, _count, _limit = await check_daily_quota(s)
+                if can_continue:
+                    s.add(
+                        CandidateThinker(
+                            name=f"New {worker_idx}",
+                            normalized_name=f"new {worker_idx}",
+                        )
+                    )
+                await s.commit()
+                return can_continue
+
+        # Two concurrent workers: only 1 slot left (3 - 2 = 1)
+        results = await asyncio.gather(*[check_and_insert(i) for i in range(2)])
+
+        # Exactly one worker should see can_continue=True and insert
+        assert sum(1 for r in results if r) == 1, (
+            f"Expected exactly 1 worker to pass the quota check, got {results}"
+        )
+
+        # DB should hold exactly 3 candidates (2 pre-seeded + 1 new), never 4
+        async with session_factory() as check:
+            total = await check.scalar(select(func.count()).select_from(CandidateThinker))
+        assert total == 3, f"Expected 3 candidates total (quota=3), got {total}"
