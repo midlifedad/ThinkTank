@@ -112,3 +112,45 @@ class TestWeeklyAuditPrompt:
         _, user = build_weekly_audit_prompt(context)
         assert "summary" in user.lower()
         assert "structural_observations" in user.lower() or "recommendations" in user.lower()
+
+
+class TestContextBoundaryMarkers:
+    """INTEGRATIONS-REVIEW M-01 (T6.10): context data must be wrapped in a
+    ``<context>...</context>`` boundary so the model treats the JSON as data,
+    not instructions. This makes prompt-injection via user-provided fields
+    (names, titles, etc.) harder to leverage.
+    """
+
+    BUILDERS = [
+        build_thinker_approval_prompt,
+        build_source_approval_prompt,
+        build_candidate_review_prompt,
+        build_health_check_prompt,
+        build_daily_digest_prompt,
+        build_weekly_audit_prompt,
+    ]
+
+    def test_all_prompts_wrap_context_in_tags(self):
+        for builder in self.BUILDERS:
+            _, user = builder({"foo": "bar"})
+            assert "<context>" in user, f"{builder.__name__} missing <context>"
+            assert "</context>" in user, f"{builder.__name__} missing </context>"
+            assert user.index("<context>") < user.index("</context>")
+
+    def test_all_prompts_instruct_treat_as_data(self):
+        for builder in self.BUILDERS:
+            _, user = builder({"foo": "bar"})
+            lowered = user.lower()
+            assert "data" in lowered and (
+                "not instructions" in lowered or "treat" in lowered
+            ), f"{builder.__name__} missing treat-as-data instruction"
+
+    def test_context_payload_sits_inside_tags(self):
+        context = {"marker_value": "ZZZ-UNIQUE-123"}
+        for builder in self.BUILDERS:
+            _, user = builder(context)
+            start = user.index("<context>")
+            end = user.index("</context>")
+            assert "ZZZ-UNIQUE-123" in user[start:end], (
+                f"{builder.__name__} did not place payload inside <context>"
+            )
