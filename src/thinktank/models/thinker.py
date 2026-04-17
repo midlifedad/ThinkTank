@@ -98,6 +98,22 @@ class ThinkerMetrics(Base):
 
     __tablename__ = "thinker_metrics"
 
+    # DATA-REVIEW L2: each (thinker, platform) pair may produce at most one
+    # metrics snapshot per UTC day. The invariant is enforced by migration
+    # 012 via a functional unique index; declaring the same index in the
+    # model keeps Base.metadata.create_all (used by the test suite) in sync
+    # with the alembic-managed schema so integration tests exercise the
+    # same constraint production runs under.
+    __table_args__ = (
+        sa.Index(
+            "ux_thinker_metrics_daily",
+            "thinker_id",
+            "platform",
+            sa.text("((snapshotted_at AT TIME ZONE 'UTC')::date)"),
+            unique=True,
+        ),
+    )
+
     id: Mapped[uuid_pk]
     thinker_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("thinkers.id", ondelete="CASCADE"))
     platform: Mapped[str] = mapped_column(sa.Text)
