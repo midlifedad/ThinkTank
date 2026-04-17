@@ -306,3 +306,25 @@ async def test_thinker_metrics_relationship(session: AsyncSession):
     assert result.thinker_id == thinker.id
     assert result.platform == "twitter"
     assert result.followers == 50000
+
+
+@pytest.mark.asyncio
+async def test_thinker_metrics_daily_uniqueness(session: AsyncSession):
+    """DATA-REVIEW L2: (thinker, platform, UTC day) must be unique."""
+    from datetime import UTC, datetime
+
+    thinker = await create_thinker(session)
+    day = datetime(2026, 4, 17, 12, 0, tzinfo=UTC)
+    await create_thinker_metrics(
+        session,
+        thinker_id=thinker.id,
+        platform="twitter",
+        snapshotted_at=day,
+    )
+    with pytest.raises(IntegrityError):
+        await create_thinker_metrics(
+            session,
+            thinker_id=thinker.id,
+            platform="twitter",
+            snapshotted_at=day.replace(hour=23),
+        )
