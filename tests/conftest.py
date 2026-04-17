@@ -90,9 +90,23 @@ async def session(session_factory) -> AsyncGenerator[AsyncSession, None]:
 
     Each test gets its own session. Tables are truncated
     after each test for isolation.
+
+    Teardown swallows cross-loop RuntimeError: a known
+    pytest-asyncio+anyio+asyncpg quirk on CI where a pooled
+    asyncpg connection bound to a dead per-test loop explodes
+    during ``AsyncSession.close()`` rollback. By the time we get
+    here the test body has already passed; ``engine.dispose()``
+    at session end reclaims the connections. Harmless to ignore.
     """
-    async with session_factory() as session:
-        yield session
+    sess = session_factory()
+    try:
+        yield sess
+    finally:
+        try:
+            await sess.close()
+        except RuntimeError as e:
+            if "different loop" not in str(e):
+                raise
 
 
 @pytest.fixture
