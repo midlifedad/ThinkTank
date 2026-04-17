@@ -15,6 +15,7 @@ from sqlalchemy import delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from thinktank.admin.auth import require_admin
 from thinktank.admin.dependencies import get_session, get_templates
 from thinktank.models.candidate import CandidateThinker
 from thinktank.models.category import Category, ThinkerCategory
@@ -349,6 +350,7 @@ async def promote_candidate(
     candidate_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
     reason: str = Form(""),
+    principal: str = Depends(require_admin),
 ):
     """Promote a candidate to a full thinker with LLM approval job."""
     result = await session.execute(select(CandidateThinker).where(CandidateThinker.id == candidate_id))
@@ -384,7 +386,7 @@ async def promote_candidate(
     now = datetime.now(UTC)
     candidate.status = "promoted"
     candidate.thinker_id = thinker.id
-    candidate.reviewed_by = "admin"
+    candidate.reviewed_by = principal
     candidate.reviewed_at = now
 
     await session.commit()
@@ -405,6 +407,7 @@ async def reject_candidate(
     candidate_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
     reason: str = Form(""),
+    principal: str = Depends(require_admin),
 ):
     """Reject a candidate with a reason."""
     result = await session.execute(select(CandidateThinker).where(CandidateThinker.id == candidate_id))
@@ -414,7 +417,7 @@ async def reject_candidate(
 
     now = datetime.now(UTC)
     candidate.status = "rejected"
-    candidate.reviewed_by = "admin"
+    candidate.reviewed_by = principal
     candidate.reviewed_at = now
 
     await session.commit()

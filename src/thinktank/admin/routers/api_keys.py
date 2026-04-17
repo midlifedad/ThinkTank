@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.admin.auth import require_admin
 from thinktank.admin.dependencies import get_session, get_templates
 from thinktank.models.config_table import SystemConfig
 
@@ -92,6 +93,7 @@ async def set_api_key(
     session: AsyncSession = Depends(get_session),
     key_name: str = Form(...),
     key_value: str = Form(...),
+    principal: str = Depends(require_admin),
 ):
     """Set or update an API key in system_config."""
     # Validate key name is in managed list
@@ -113,14 +115,14 @@ async def set_api_key(
 
     if existing:
         existing.value = key_value
-        existing.set_by = "admin"
+        existing.set_by = principal
         existing.updated_at = now
     else:
         session.add(
             SystemConfig(
                 key=db_key,
                 value=key_value,
-                set_by="admin",
+                set_by=principal,
                 updated_at=now,
             )
         )

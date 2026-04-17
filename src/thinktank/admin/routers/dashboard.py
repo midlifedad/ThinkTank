@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.admin.auth import require_admin
 from thinktank.admin.dependencies import get_session, get_templates
 from thinktank.models.config_table import SystemConfig
 
@@ -283,6 +284,7 @@ async def kill_switch_partial(
 async def kill_switch_toggle(
     request: Request,
     session: AsyncSession = Depends(get_session),
+    principal: str = Depends(require_admin),
 ):
     """Toggle the global kill switch (workers_active config) and re-render partial."""
     result = await session.execute(select(SystemConfig).where(SystemConfig.key == "workers_active"))
@@ -296,14 +298,14 @@ async def kill_switch_toggle(
         else:
             new_val = not bool(current)
         config.value = new_val
-        config.set_by = "admin"
+        config.set_by = principal
         config.updated_at = _utcnow()
     else:
         # Create with value False (turning off)
         config = SystemConfig(
             key="workers_active",
             value=False,
-            set_by="admin",
+            set_by=principal,
             updated_at=_utcnow(),
         )
         session.add(config)

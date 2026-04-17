@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.admin.auth import require_admin
 from thinktank.admin.dependencies import get_session, get_templates
 from thinktank.models.config_table import SystemConfig
 
@@ -91,6 +92,7 @@ async def save_rate_limits(
     limit_youtube: int = Form(...),
     limit_podcastindex: int = Form(...),
     limit_anthropic: int = Form(...),
+    principal: str = Depends(require_admin),
 ):
     """Save rate limit settings to system_config."""
     new_limits = {
@@ -107,14 +109,14 @@ async def save_rate_limits(
 
     if existing:
         existing.value = new_limits
-        existing.set_by = "admin"
+        existing.set_by = principal
         existing.updated_at = now
     else:
         session.add(
             SystemConfig(
                 key="rate_limits",
                 value=new_limits,
-                set_by="admin",
+                set_by=principal,
                 updated_at=now,
             )
         )
@@ -163,6 +165,7 @@ async def save_system_settings(
     backpressure_threshold: int = Form(...),
     stale_job_minutes: int = Form(...),
     max_candidates_per_day: int = Form(...),
+    principal: str = Depends(require_admin),
 ):
     """Save system config settings to system_config."""
     values = {
@@ -180,14 +183,14 @@ async def save_system_settings(
 
         if existing:
             existing.value = val
-            existing.set_by = "admin"
+            existing.set_by = principal
             existing.updated_at = now
         else:
             session.add(
                 SystemConfig(
                     key=key,
                     value=val,
-                    set_by="admin",
+                    set_by=principal,
                     updated_at=now,
                 )
             )
