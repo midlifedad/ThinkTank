@@ -83,11 +83,18 @@ async def handle_scan_episodes_for_thinkers(session: AsyncSession, job: Job) -> 
         return
 
     # c. Determine if host-owned source
+    # DATA-REVIEW M4: order by added_at, thinker_id so `host_thinker_ids[0]`
+    # is deterministic when a source has multiple host junction rows (e.g.
+    # co-hosted podcasts). Without the order, Postgres returns rows in
+    # arbitrary order and the "primary host" for source_owner_name varies
+    # between runs.
     host_result = await session.execute(
-        select(SourceThinker).where(
+        select(SourceThinker)
+        .where(
             SourceThinker.source_id == source_id,
             SourceThinker.relationship_type == "host",
         )
+        .order_by(SourceThinker.added_at, SourceThinker.thinker_id)
     )
     host_source_thinkers = host_result.scalars().all()
     is_host_source = len(host_source_thinkers) > 0

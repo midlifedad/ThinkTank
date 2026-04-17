@@ -39,7 +39,7 @@ class Content(Base):
         sa.ForeignKey("thinkers.id"), nullable=True
     )  # DEPRECATED — use content_thinkers junction
     content_type: Mapped[str] = mapped_column(sa.Text)
-    url: Mapped[str] = mapped_column(sa.Text)
+    url: Mapped[str] = mapped_column(sa.Text, index=True)
     canonical_url: Mapped[str] = mapped_column(sa.Text, unique=True)
     content_fingerprint: Mapped[str | None] = mapped_column(
         sa.Text,

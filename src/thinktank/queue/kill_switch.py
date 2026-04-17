@@ -38,7 +38,15 @@ async def is_workers_active(session: AsyncSession) -> bool:
         # No config entry = default to active (fail-open)
         return True
 
-    # value is JSONB, could be {"value": true/false} or just true/false
+    # value is JSONB; could be wrapped dict, raw bool, or the string
+    # "true"/"false" left by an operator editing via the admin UI.
+    # HANDLERS-REVIEW LO-01: a raw string "false" was previously coerced
+    # to True by bool() (any non-empty string is truthy), silently
+    # leaving workers active when the operator tried to kill them.
     if isinstance(row, dict):
-        return bool(row.get("value", True))
-    return bool(row)
+        value = row.get("value", True)
+    else:
+        value = row
+    if isinstance(value, str):
+        return value.strip().lower() not in ("false", "0", "no", "off", "")
+    return bool(value)

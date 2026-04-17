@@ -161,6 +161,13 @@ async def worker_loop(
             )
 
             # Step 4d: Backpressure check
+            # HANDLERS-REVIEW LO-03: snapshot the pre-mutation priority so
+            # that if merge/commit raises, we restore the in-memory value
+            # to match what's still in the database. Otherwise the "Non-fatal:
+            # continue with original priority" comment below is a lie --
+            # job.priority was already mutated on line job.priority=... and
+            # dispatch would see the new value despite the write failing.
+            original_priority = job.priority
             try:
                 async with session_factory() as session:
                     effective_priority = await get_effective_priority(session, job)
@@ -169,7 +176,7 @@ async def worker_loop(
                             "backpressure_demotion",
                             job_id=str(job.id),
                             job_type=job.job_type,
-                            original_priority=job.priority,
+                            original_priority=original_priority,
                             effective_priority=effective_priority,
                         )
                         job.priority = effective_priority
@@ -182,7 +189,9 @@ async def worker_loop(
                     "backpressure_check_failed",
                     job_id=str(job.id),
                 )
-                # Non-fatal: continue with original priority
+                # Non-fatal: continue with original priority (restored so
+                # dispatch sees the same value as what's persisted in DB).
+                job.priority = original_priority
 
             # Step 4e: Dispatch
             await semaphore.acquire()
