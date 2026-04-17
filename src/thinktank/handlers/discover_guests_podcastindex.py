@@ -13,6 +13,7 @@ import uuid
 
 import structlog
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.discovery.podcastindex_client import PodcastIndexClient
@@ -84,14 +85,36 @@ async def handle_discover_guests_podcastindex(
 
         normalized = normalize_url(feed_url)
 
-        # Check for existing source with same URL
-        existing = await session.execute(
-            select(Source).where(Source.url == normalized)
+        # Atomic upsert: ON CONFLICT on the unique sources.url index.
+        # Concurrent discovery jobs for the same feed would otherwise both
+        # SELECT None, both INSERT, and one would die on unique violation
+        # (INTEGRATIONS-REVIEW H-03). RETURNING id yields the row only when
+        # we actually inserted; on conflict we refetch the existing row.
+        new_source_id = uuid.uuid4()
+        insert_stmt = (
+            pg_insert(Source)
+            .values(
+                id=new_source_id,
+                thinker_id=None,
+                source_type="podcast_rss",
+                name=item.get("feedTitle", "Unknown Podcast"),
+                url=normalized,
+                approval_status="pending_llm",
+                config={"is_guest_source": True},
+            )
+            .on_conflict_do_nothing(index_elements=["url"])
+            .returning(Source.id)
         )
-        existing_source = existing.scalar_one_or_none()
+        insert_result = await session.execute(insert_stmt)
+        inserted_id = insert_result.scalar_one_or_none()
 
-        if existing_source is not None:
-            # Source exists — ensure junction row links it to this thinker
+        if inserted_id is None:
+            # Another worker already inserted this URL — ensure the junction
+            # row links it to this thinker, then move on.
+            existing = await session.execute(
+                select(Source).where(Source.url == normalized)
+            )
+            existing_source = existing.scalar_one()
             existing_junction = await session.execute(
                 select(SourceThinker).where(
                     SourceThinker.source_id == existing_source.id,
@@ -107,33 +130,21 @@ async def handle_discover_guests_podcastindex(
                 session.add(junction)
             continue
 
-        source = Source(
-            id=uuid.uuid4(),
-            thinker_id=None,
-            source_type="podcast_rss",
-            name=item.get("feedTitle", "Unknown Podcast"),
-            url=normalized,
-            approval_status="pending_llm",
-            config={"is_guest_source": True},
-        )
-        session.add(source)
-
-        # Create junction row linking source to thinker as guest appearance
+        # We inserted a new source — create junction + approval job.
         junction = SourceThinker(
-            source_id=source.id,
+            source_id=inserted_id,
             thinker_id=thinker.id,
             relationship_type="guest_appearance",
         )
         session.add(junction)
         sources_created += 1
 
-        # Create LLM approval job for the new source
         llm_job = Job(
             id=uuid.uuid4(),
             job_type="llm_approval_check",
             payload={
                 "review_type": "source_approval",
-                "target_id": str(source.id),
+                "target_id": str(inserted_id),
             },
             priority=3,
             status="pending",

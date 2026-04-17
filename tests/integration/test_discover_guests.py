@@ -6,6 +6,7 @@ handling of missing feed URLs, and rate limit retry behavior.
 Uses real PostgreSQL database with mocked API clients.
 """
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -177,3 +178,76 @@ async def test_podcastindex_skips_no_feedurl(session: AsyncSession):
         .where(Source.approval_status == "pending_llm")
     )
     assert count == 0
+
+
+class TestConcurrentDiscoveryRace:
+    """Regression: concurrent discovers of the same feedUrl must not crash.
+
+    Source: INTEGRATIONS-REVIEW H-03. Two thinkers whose guest discovery
+    runs in parallel and both find the same podcast feed would previously
+    hit a unique-violation on sources.url.
+    """
+
+    async def test_concurrent_discover_same_feed_upserts(self, session_factory):
+        """Two workers discover the same feedUrl — exactly one inserts, no crash."""
+        async with session_factory() as setup:
+            t1 = await create_thinker(setup, name="Thinker One")
+            t2 = await create_thinker(setup, name="Thinker Two")
+            job1 = await create_job(
+                setup,
+                job_type="discover_guests_podcastindex",
+                payload={"thinker_id": str(t1.id)},
+            )
+            job2 = await create_job(
+                setup,
+                job_type="discover_guests_podcastindex",
+                payload={"thinker_id": str(t2.id)},
+            )
+            await setup.commit()
+            job1_id, job2_id = job1.id, job2.id
+
+        shared_feed = {
+            "items": [
+                {
+                    "feedTitle": "Shared Podcast",
+                    "feedUrl": "https://feeds.example.com/shared.xml",
+                }
+            ]
+        }
+
+        async def run_handler(job_id) -> None:
+            from thinktank.models.job import Job as JobModel
+            async with session_factory() as s:
+                job = await s.get(JobModel, job_id)
+                await handle_discover_guests_podcastindex(s, job)
+
+        # Patch env + client once outside the gather — patch contexts aren't
+        # coroutine-safe when two contexts enter/exit interleaved under
+        # asyncio.gather (one's exit tears down what the other still needs).
+        with (
+            _mock_podcastindex_client(shared_feed),
+            patch.dict(
+                "os.environ",
+                {
+                    "PODCASTINDEX_API_KEY": "test-key",
+                    "PODCASTINDEX_API_SECRET": "test-secret",
+                },
+            ),
+        ):
+            # Must not raise IntegrityError from concurrent insert of same URL.
+            await asyncio.gather(run_handler(job1_id), run_handler(job2_id))
+
+        async with session_factory() as check:
+            src_count = await check.scalar(
+                select(func.count())
+                .select_from(Source)
+                .where(Source.url == "https://feeds.example.com/shared.xml")
+            )
+            assert src_count == 1, f"Expected 1 source, got {src_count}"
+
+            junc_count = await check.scalar(
+                select(func.count()).select_from(SourceThinker)
+            )
+            assert junc_count == 2, (
+                f"Expected 2 junction rows (one per thinker), got {junc_count}"
+            )
