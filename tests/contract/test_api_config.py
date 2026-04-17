@@ -30,7 +30,7 @@ class TestConfigEndpointContract:
 
     @pytest.mark.xfail(
         strict=False,
-        reason="asyncpg connection-sharing flake under client+session fixture interleaving; tracked for fixture refactor",
+        reason="asyncpg InterfaceError flake under client+session fixture interleaving",
     )
     async def test_list_config_item_shape(self, client: AsyncClient, session):
         """Each config item has required fields."""
