@@ -22,7 +22,9 @@ class RateLimitUsage(Base):
     id: Mapped[uuid_pk]
     api_name: Mapped[str] = mapped_column(sa.Text)
     worker_id: Mapped[str] = mapped_column(sa.Text)
-    called_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    called_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
 
     def __repr__(self) -> str:
         return f"<RateLimitUsage(api={self.api_name!r}, worker={self.worker_id!r})>"

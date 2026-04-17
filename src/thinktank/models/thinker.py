@@ -39,8 +39,12 @@ class Thinker(Base):
         nullable=True,
     )
     active: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.text("true"))
-    added_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
-    last_refreshed: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    added_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
+    last_refreshed: Mapped[Optional[datetime]] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
 
     # Relationships. passive_deletes=True tells SQLAlchemy to rely on the
     # DB-level ON DELETE CASCADE / SET NULL configured in migration 005
@@ -82,7 +86,9 @@ class ThinkerProfile(Base):
     positions_held: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
     notable_works: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
     awards: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
-    updated_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
 
     # Relationships
     thinker: Mapped["Thinker"] = relationship(back_populates="profiles")
@@ -106,7 +112,9 @@ class ThinkerMetrics(Base):
     avg_views: Mapped[int] = mapped_column(sa.BigInteger)
     post_count: Mapped[int] = mapped_column(sa.Integer)
     verified: Mapped[bool] = mapped_column(sa.Boolean)
-    snapshotted_at: Mapped[datetime] = mapped_column(server_default=sa.text("NOW()"))
+    snapshotted_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.text("NOW()")
+    )
 
     # Relationships
     thinker: Mapped["Thinker"] = relationship(back_populates="metrics")

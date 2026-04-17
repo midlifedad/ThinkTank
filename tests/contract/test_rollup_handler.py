@@ -22,8 +22,8 @@ pytestmark = pytest.mark.anyio
 
 
 def _hours_ago(n: int) -> datetime:
-    """Return a timezone-naive datetime n hours ago."""
-    return datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=n)
+    """Return a timezone-aware UTC datetime n hours ago (TIMESTAMPTZ columns)."""
+    return datetime.now(UTC) - timedelta(hours=n)
 
 
 class TestRollupApiUsageHandler:
@@ -149,7 +149,7 @@ class TestRollupApiUsageHandler:
         )
 
         # Recent row (should be preserved)
-        recent = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=5)
+        recent = datetime.now(UTC) - timedelta(minutes=5)
         await create_rate_limit_usage(
             session,
             api_name="podcastindex",

@@ -208,10 +208,10 @@ async def manage_gpu_scaling(
     # Queue is empty: manage idle timeout
     if gpu_idle_since is None:
         # Start idle timer (timezone-naive to match project convention)
-        return (False, datetime.now(UTC).replace(tzinfo=None))
+        return (False, datetime.now(UTC))
 
     # Check if idle long enough to scale down
-    elapsed = datetime.now(UTC).replace(tzinfo=None) - gpu_idle_since
+    elapsed = datetime.now(UTC) - gpu_idle_since
     if elapsed > timedelta(minutes=idle_minutes):
         await scale_gpu_service(0, session)
         return (True, None)

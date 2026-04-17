@@ -43,12 +43,8 @@ logger = structlog.get_logger(__name__)
 
 
 def _now() -> datetime:
-    """Return current UTC time as timezone-naive datetime.
-
-    Matches the pattern from queue/claim.py -- all timestamps are
-    timezone-naive per Phase 1 decision.
-    """
-    return datetime.now(UTC).replace(tzinfo=None)
+    """Return current UTC time as timezone-aware datetime (TIMESTAMPTZ, migration 007)."""
+    return datetime.now(UTC)
 
 
 # Default skip title patterns per spec Section 5.7

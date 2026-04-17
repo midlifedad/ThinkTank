@@ -32,8 +32,8 @@ logger = structlog.get_logger(__name__)
 
 
 def _now() -> datetime:
-    """Return current UTC time as timezone-naive datetime."""
-    return datetime.now(UTC).replace(tzinfo=None)
+    """Return current UTC time as timezone-aware datetime (TIMESTAMPTZ)."""
+    return datetime.now(UTC)
 
 
 async def handle_rescan_cataloged_for_thinker(

@@ -359,7 +359,7 @@ async def promote_candidate(
     session.add(job)
 
     # Update candidate status
-    now = datetime.now(UTC).replace(tzinfo=None)
+    now = datetime.now(UTC)
     candidate.status = "promoted"
     candidate.thinker_id = thinker.id
     candidate.reviewed_by = "admin"
@@ -394,7 +394,7 @@ async def reject_candidate(
     if candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
 
-    now = datetime.now(UTC).replace(tzinfo=None)
+    now = datetime.now(UTC)
     candidate.status = "rejected"
     candidate.reviewed_by = "admin"
     candidate.reviewed_at = now

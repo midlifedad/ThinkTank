@@ -16,14 +16,8 @@ from thinktank.admin.dependencies import get_session, get_templates
 
 
 def _utcnow() -> datetime:
-    """Timezone-naive UTC now, matching TIMESTAMP WITHOUT TIME ZONE columns.
-
-    Mirrors the helper in ``thinktank.admin.routers.pipeline``. Python 3.12
-    deprecates ``datetime.utcnow()`` in favor of an explicit timezone-aware
-    ``datetime.now(UTC)``; the database stores naive timestamps so we strip
-    the tzinfo after capturing UTC.
-    """
-    return datetime.now(UTC).replace(tzinfo=None)
+    """Timezone-aware UTC now, matching TIMESTAMPTZ columns (migration 007)."""
+    return datetime.now(UTC)
 
 router = APIRouter(prefix="/admin", tags=["dashboard"])
 templates = get_templates()

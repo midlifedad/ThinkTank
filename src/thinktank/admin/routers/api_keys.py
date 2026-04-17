@@ -91,7 +91,7 @@ async def set_api_key(
         )
 
     db_key = f"secret_{key_name}"
-    now = datetime.now(UTC).replace(tzinfo=None)
+    now = datetime.now(UTC)
 
     # Check if key already exists
     result = await session.execute(

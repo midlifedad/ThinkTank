@@ -30,7 +30,7 @@ from thinktank.models.thinker import Thinker
 
 def _now() -> datetime:
     """Return current UTC time as timezone-naive datetime."""
-    return datetime.now(UTC).replace(tzinfo=None)
+    return datetime.now(UTC)
 
 
 def _slugify(name: str) -> str:

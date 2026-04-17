@@ -23,8 +23,8 @@ pytestmark = pytest.mark.anyio
 
 
 def _hours_ago(n: int) -> datetime:
-    """Return a timezone-naive datetime n hours ago."""
-    return datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=n)
+    """Return a timezone-aware UTC datetime n hours ago (TIMESTAMPTZ)."""
+    return datetime.now(UTC) - timedelta(hours=n)
 
 
 async def test_rollup_persists_across_session_boundary(session_factory):

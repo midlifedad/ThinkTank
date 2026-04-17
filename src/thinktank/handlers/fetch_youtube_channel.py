@@ -44,28 +44,29 @@ _CHANNEL_ID_RE = re.compile(r"youtube\.com/channel/(UC[a-zA-Z0-9_-]+)")
 
 
 def _now() -> datetime:
-    """Return current UTC time as timezone-naive datetime.
-
-    Matches the pattern from queue/claim.py -- all timestamps are
-    timezone-naive per Phase 1 decision.
-    """
-    return datetime.now(UTC).replace(tzinfo=None)
+    """Return current UTC time as timezone-aware datetime (TIMESTAMPTZ, migration 007)."""
+    return datetime.now(UTC)
 
 
 def _parse_published_at(published_at_str: str) -> datetime | None:
-    """Parse YouTube ISO 8601 timestamp to timezone-naive datetime.
+    """Parse YouTube ISO 8601 timestamp to timezone-aware UTC datetime.
 
     Args:
         published_at_str: Timestamp string like "2024-01-15T10:00:00Z".
 
     Returns:
-        Timezone-naive datetime, or None if parsing fails.
+        Timezone-aware UTC datetime (matches TIMESTAMPTZ column), or
+        None if parsing fails.
     """
     if not published_at_str:
         return None
     try:
         dt = datetime.fromisoformat(published_at_str.replace("Z", "+00:00"))
-        return dt.replace(tzinfo=None)
+        # Guarantee tzinfo is set (fromisoformat handles the +00:00 suffix
+        # above, but be defensive against implementations that strip it).
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt
     except (ValueError, TypeError):
         return None
 
