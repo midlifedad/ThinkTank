@@ -105,14 +105,19 @@ async def _cleanup_tables(engine):
 
 
 @pytest.fixture
-async def client(session) -> AsyncGenerator[AsyncClient, None]:
+async def client(session_factory) -> AsyncGenerator[AsyncClient, None]:
     """HTTP client for API tests against the FastAPI app.
 
-    Overrides ``get_session`` to yield the test's ``session`` fixture
-    itself. Test and app share ONE AsyncSession on ONE connection, so
-    they can't race on asyncpg pool connections (previous symptoms:
-    ``InterfaceError: another operation is in progress`` and TRUNCATE
-    deadlocks caused by separate sessions competing for the pool).
+    Overrides ``get_session`` so the app uses the test engine's
+    ``session_factory`` (with NullPool) instead of its own module-level
+    engine. Each request opens a fresh AsyncSession on a fresh asyncpg
+    connection inside the request's own event loop -- no pool race, no
+    cross-loop Future errors.
+
+    We deliberately do NOT yield the test's ``session`` fixture here:
+    pytest-asyncio runs async fixtures on the session-wide loop but
+    anyio tests run on a per-test loop, so sharing a single AsyncSession
+    between fixture and test crosses loops and explodes on close.
     """
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
     from thinktank.config import get_settings
@@ -123,7 +128,8 @@ async def client(session) -> AsyncGenerator[AsyncClient, None]:
     from thinktank.api.main import app
 
     async def _override_get_session() -> AsyncGenerator[AsyncSession, None]:
-        yield session
+        async with session_factory() as s:
+            yield s
 
     app.dependency_overrides[get_session] = _override_get_session
 
