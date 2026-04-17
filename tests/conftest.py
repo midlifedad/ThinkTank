@@ -22,6 +22,23 @@ TEST_DATABASE_URL = os.getenv(
 
 
 @pytest.fixture(scope="session")
+def anyio_backend() -> str:
+    """Pin anyio to a single session-wide asyncio loop.
+
+    Without this, anyio's default ``anyio_backend`` fixture is function-
+    scoped and spins up a fresh event loop per test. That loop dies at
+    end-of-test, but any asyncpg connection opened during the test stays
+    attached to it -- then the ``async with session_factory()`` teardown
+    in our ``session`` fixture runs the rollback on a different loop and
+    blows up with "got Future attached to a different loop".
+
+    Matching pytest-asyncio's session-scope loop means fixtures and tests
+    share one loop so connections stay on that loop for their full life.
+    """
+    return "asyncio"
+
+
+@pytest.fixture(scope="session")
 async def engine():
     """Session-scoped async engine for test database.
 
