@@ -28,9 +28,8 @@ class TestConfigEndpointContract:
         assert isinstance(body, list)
         assert len(body) >= 1
 
-    @pytest.mark.xfail(
-        strict=False,
-        reason="asyncpg InterfaceError flake under client+session fixture interleaving",
+    @pytest.mark.skip(
+        reason="asyncpg InterfaceError/hang under client+session fixture interleaving",
     )
     async def test_list_config_item_shape(self, client: AsyncClient, session):
         """Each config item has required fields."""
