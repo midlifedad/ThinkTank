@@ -76,10 +76,14 @@ class ThinkerProfile(Base):
 
     id: Mapped[uuid_pk]
     thinker_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("thinkers.id", ondelete="CASCADE"))
-    education: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
-    positions_held: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
-    notable_works: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
-    awards: Mapped[dict] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
+    # DATA-REVIEW L1: JSONB server default is '[]' (array), so the in-memory
+    # shape is list[dict] not dict. Keeping Mapped[dict] on an array default
+    # is a static-type lie that would break the first caller who trusted the
+    # annotation to `.items()` an education row.
+    education: Mapped[list] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
+    positions_held: Mapped[list] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
+    notable_works: Mapped[list] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
+    awards: Mapped[list] = mapped_column(JSONB, server_default=sa.text("'[]'::jsonb"))
     updated_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
 
     # Relationships
