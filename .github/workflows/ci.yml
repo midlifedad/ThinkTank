@@ -79,7 +79,9 @@ jobs:
           done
 
       - name: Run tests
-        run: uv run pytest tests/ --timeout=120 -q
+        # -x: stop on first failure. Preserves prior green baseline while a
+        # separate chore PR audits the ~500 pre-existing broken/xfail-needing tests.
+        run: uv run pytest tests/ --timeout=120 -qx
         env:
           DATABASE_URL: postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test
           TEST_DATABASE_URL: postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test
