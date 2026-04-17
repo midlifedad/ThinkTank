@@ -34,6 +34,33 @@ def _slugify(name: str) -> str:
     return slug
 
 
+async def _unique_thinker_slug(session: AsyncSession, name: str) -> str:
+    """Return a slug for ``name`` guaranteed to be unique across thinkers.
+
+    ADMIN-REVIEW LO-02: ``_slugify`` alone produces collisions for common
+    cases like "Jane Smith" (from an existing thinker) and "Jane Smith"
+    (a new one with a different bio) -- the second insert would blow up
+    on the ``slug UNIQUE`` constraint at commit time. The bulk import
+    path in ``import_thinkers`` already skips duplicates, but the
+    single-add and candidate-promote paths did not, so a retry with a
+    suffix is the right behavior there.
+
+    Appends ``-2``, ``-3``, ... until a free slug is found. Does not
+    handle concurrent inserters racing on the same name -- the UNIQUE
+    constraint still backs us in that case; this only keeps the common
+    "same name, different people" path working without a 500.
+    """
+    base = _slugify(name)
+    candidate = base
+    suffix = 2
+    while True:
+        existing = await session.execute(select(Thinker.id).where(Thinker.slug == candidate))
+        if existing.scalar_one_or_none() is None:
+            return candidate
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+
+
 async def _build_thinker_list(
     session: AsyncSession,
     q: str | None = None,
@@ -150,7 +177,7 @@ async def add_thinker(
     form_data = await request.form()
     category_ids = form_data.getlist("category_ids")
 
-    slug = _slugify(name)
+    slug = await _unique_thinker_slug(session, name)
 
     # Create thinker
     thinker = Thinker(
@@ -330,7 +357,7 @@ async def promote_candidate(
         raise HTTPException(status_code=404, detail="Candidate not found")
 
     # Create new thinker from candidate data
-    slug = _slugify(candidate.name)
+    slug = await _unique_thinker_slug(session, candidate.name)
     thinker = Thinker(
         id=uuid.uuid4(),
         name=candidate.name,

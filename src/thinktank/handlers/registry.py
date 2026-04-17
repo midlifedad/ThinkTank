@@ -16,7 +16,6 @@ from thinktank.handlers.rescan_cataloged_for_thinker import handle_rescan_catalo
 from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
 from thinktank.handlers.scan_episodes_for_thinkers import handle_scan_episodes_for_thinkers
 from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
-from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
 
 # Key: job_type string, Value: callable matching JobHandler protocol.
 JOB_HANDLERS: dict[str, JobHandler] = {}
@@ -55,9 +54,13 @@ def get_handler(job_type: str) -> JobHandler | None:
 
 
 # --- Phase 3 handler registrations ---
+# HANDLERS-REVIEW LO-02: tag_content_thinkers was deregistered because no
+# enqueue site remains -- scan_episodes_for_thinkers (Phase 13) fully
+# superseded it. The handler module and its tests are retained in case the
+# attribution logic is wired in intentionally later, but the agent tool
+# surface and pipeline dropdown no longer advertise it.
 register_handler("fetch_podcast_feed", handle_fetch_podcast_feed)
 register_handler("refresh_due_sources", handle_refresh_due_sources)
-register_handler("tag_content_thinkers", handle_tag_content_thinkers)
 
 # --- Phase 4 handler registrations ---
 register_handler("process_content", handle_process_content)
