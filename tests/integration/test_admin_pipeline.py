@@ -219,6 +219,7 @@ class TestJobRetry:
         response = await admin_client.post(f"/admin/pipeline/jobs/{original.id}/retry")
         assert response.status_code == 200
         assert "Retry job created" in response.text
+        assert response.headers.get("HX-Trigger") == "refreshJobList"
 
         # Verify new job exists
         result = await session.execute(
@@ -245,6 +246,7 @@ class TestJobRetry:
         response = await admin_client.post(f"/admin/pipeline/jobs/{job.id}/retry")
         assert response.status_code == 200
         assert "Cannot retry" in response.text
+        assert response.headers.get("HX-Trigger") == "refreshJobList"
 
 
 class TestJobCancel:
@@ -258,6 +260,7 @@ class TestJobCancel:
         response = await admin_client.post(f"/admin/pipeline/jobs/{job.id}/cancel")
         assert response.status_code == 200
         assert "cancelled" in response.text
+        assert response.headers.get("HX-Trigger") == "refreshJobList"
 
         # Verify status changed
         result = await session.execute(select(Job).where(Job.id == job.id).execution_options(populate_existing=True))
@@ -272,6 +275,7 @@ class TestJobCancel:
         response = await admin_client.post(f"/admin/pipeline/jobs/{job.id}/cancel")
         assert response.status_code == 200
         assert "Cannot cancel" in response.text
+        assert response.headers.get("HX-Trigger") == "refreshJobList"
 
 
 class TestJobDetail:
