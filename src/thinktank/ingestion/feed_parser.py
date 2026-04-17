@@ -26,6 +26,7 @@ class FeedEntry:
     duration_seconds: int | None
     show_name: str | None
     description: str | None
+    guid: str | None = None
 
 
 def parse_feed(xml_content: str) -> list[FeedEntry]:
@@ -78,6 +79,11 @@ def parse_feed(xml_content: str) -> list[FeedEntry]:
         # Description
         description = entry.get("summary") or entry.get("description")
 
+        # GUID: feedparser normalizes <guid> to entry.id; fall back to None.
+        # Needed for per-episode podcast:person matching (T6.7).
+        raw_guid = entry.get("id") or entry.get("guid")
+        guid = raw_guid.strip() if isinstance(raw_guid, str) and raw_guid.strip() else None
+
         entries.append(
             FeedEntry(
                 title=title,
@@ -86,6 +92,7 @@ def parse_feed(xml_content: str) -> list[FeedEntry]:
                 duration_seconds=duration_seconds,
                 show_name=show_name,
                 description=description,
+                guid=guid,
             )
         )
 

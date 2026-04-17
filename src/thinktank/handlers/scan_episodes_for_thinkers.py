@@ -25,7 +25,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.ingestion.name_matcher import match_thinkers_in_text
-from thinktank.ingestion.podcast_person_parser import extract_podcast_persons
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 from thinktank.models.source import Source, SourceThinker
@@ -49,8 +48,13 @@ async def handle_scan_episodes_for_thinkers(
             "content_ids": ["uuid-str", ...],
             "source_id": "uuid-str",
             "descriptions": {"content-id-str": "description text", ...},
-            "raw_xml": "optional - raw RSS XML for podcast:person extraction"
+            "content_persons": {"content-id-str": [{"name": ..., "role": ...}, ...], ...}
         }
+
+    ``content_persons`` is populated by fetch_podcast_feed (T6.8) from the
+    feed's ``podcast:person`` tags keyed by episode GUID, then rekeyed to
+    content id. Each episode's persons list is scoped to just that episode
+    so unrelated people in the same feed don't cross-pollinate (T6.7).
 
     Args:
         session: Active database session.
@@ -60,7 +64,7 @@ async def handle_scan_episodes_for_thinkers(
     content_ids = job.payload.get("content_ids", [])
     source_id_str = job.payload.get("source_id")
     descriptions = job.payload.get("descriptions", {})
-    raw_xml = job.payload.get("raw_xml")
+    content_persons: dict[str, list[dict]] = job.payload.get("content_persons", {})
 
     log = logger.bind(
         job_id=str(job.id),
@@ -108,10 +112,10 @@ async def handle_scan_episodes_for_thinkers(
     thinkers = thinker_result.scalars().all()
     thinker_names = [{"id": t.id, "name": t.name} for t in thinkers]
 
-    # e. Extract podcast:person data if raw_xml provided
-    person_by_guid: dict[str, list[dict]] = {}
-    if raw_xml:
-        person_by_guid = extract_podcast_persons(raw_xml)
+    # e. podcast:person data is now pre-extracted per episode in
+    #    job.payload.content_persons (T6.7/T6.8). Build a lowercase
+    #    name -> thinker_id lookup once for O(1) per-person matching.
+    thinker_name_lookup = {t["name"].lower(): t["id"] for t in thinker_names}
 
     # f. Process each content item
     promoted_count = 0
@@ -149,30 +153,28 @@ async def handle_scan_episodes_for_thinkers(
                 content.title, description, thinker_names, source_owner_name
             )
 
-        # Also check podcast:person data for additional matches
-        # Find the content's GUID-based person data (try content URL or title as key)
-        # Since we may not have the GUID stored on content, check all persons
-        # against thinker names for high-confidence matches
-        if person_by_guid:
-            thinker_name_lower_map = {
-                t["name"].lower(): t["id"]
-                for t in thinker_names
-                if t["id"] not in host_id_set
-            }
+        # T6.7: look up podcast:person tags for THIS episode only. Previously
+        # the handler iterated every person across every GUID in the feed and
+        # attached them to every episode in the batch, wrongly linking people
+        # to episodes they weren't actually on.
+        episode_persons = content_persons.get(content_id_str, [])
+        if episode_persons:
             matched_ids_from_text = {m["thinker_id"] for m in matches}
-
-            for _guid, persons in person_by_guid.items():
-                for person in persons:
-                    person_name_lower = person["name"].lower()
-                    if person_name_lower in thinker_name_lower_map:
-                        tid = thinker_name_lower_map[person_name_lower]
-                        if tid not in matched_ids_from_text:
-                            matches.append({
-                                "thinker_id": tid,
-                                "role": "guest",
-                                "confidence": 10,
-                            })
-                            matched_ids_from_text.add(tid)
+            for person in episode_persons:
+                person_name_lower = (person.get("name") or "").lower()
+                if not person_name_lower:
+                    continue
+                tid = thinker_name_lookup.get(person_name_lower)
+                if tid is None or tid in host_id_set:
+                    continue
+                if tid in matched_ids_from_text:
+                    continue
+                matches.append({
+                    "thinker_id": tid,
+                    "role": "guest",
+                    "confidence": 10,
+                })
+                matched_ids_from_text.add(tid)
 
         # Promotion: host sources always promote; guest sources only promote
         # when there is at least one match.

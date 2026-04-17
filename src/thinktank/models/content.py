@@ -46,6 +46,10 @@ class Content(Base):
         unique=True,
         nullable=True,
     )
+    source_guid: Mapped[Optional[str]] = mapped_column(
+        sa.Text,
+        nullable=True,
+    )
     title: Mapped[str] = mapped_column(sa.Text)
     body_text: Mapped[Optional[str]] = mapped_column(sa.Text, nullable=True)
     word_count: Mapped[Optional[int]] = mapped_column(sa.Integer, nullable=True)
