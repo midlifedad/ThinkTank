@@ -21,16 +21,16 @@ The column is nullable because it is only populated for podcast sources
 with stable GUIDs; YouTube and existing cataloged rows keep NULL.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "010_content_source_guid"
-down_revision: Union[str, Sequence[str], None] = "008_renormalize_urls"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "008_renormalize_urls"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

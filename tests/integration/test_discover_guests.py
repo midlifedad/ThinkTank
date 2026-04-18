@@ -14,9 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.factories import create_job, create_source, create_thinker
-from thinktank.handlers.discover_guests_podcastindex import (
-    handle_discover_guests_podcastindex,
-)
+from thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
 from thinktank.models.source import Source, SourceThinker
 
 pytestmark = pytest.mark.anyio
@@ -30,20 +28,13 @@ def _mock_podcastindex_client(return_value):
     mock_instance = AsyncMock()
     mock_instance.search_by_person = AsyncMock(return_value=return_value)
     mock_cls = lambda api_key, api_secret: mock_instance  # noqa: E731
-    return patch(
-        "thinktank.handlers.discover_guests_podcastindex.PodcastIndexClient",
-        mock_cls,
-    )
+    return patch("thinktank.handlers.discover_guests_podcastindex.PodcastIndexClient", mock_cls)
 
 
 async def test_podcastindex_registers_source(session: AsyncSession):
     """Podcast Index handler creates Source rows from API results."""
     thinker = await create_thinker(session, name="Jane Doe")
-    job = await create_job(
-        session,
-        job_type="discover_guests_podcastindex",
-        payload={"thinker_id": str(thinker.id)},
-    )
+    job = await create_job(session, job_type="discover_guests_podcastindex", payload={"thinker_id": str(thinker.id)})
     await session.commit()
 
     api_data = {
@@ -57,10 +48,7 @@ async def test_podcastindex_registers_source(session: AsyncSession):
 
     with (
         _mock_podcastindex_client(api_data),
-        patch.dict(
-            "os.environ",
-            {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"},
-        ),
+        patch.dict("os.environ", {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"}),
     ):
         await handle_discover_guests_podcastindex(session, job)
 
@@ -81,16 +69,8 @@ async def test_podcastindex_skips_existing(session: AsyncSession):
     """Podcast Index handler skips sources that already exist."""
     thinker = await create_thinker(session, name="Jane Doe")
     existing_url = "https://feeds.example.com/existing-pi.xml"
-    await create_source(
-        session,
-        thinker_id=thinker.id,
-        url=existing_url,
-    )
-    job = await create_job(
-        session,
-        job_type="discover_guests_podcastindex",
-        payload={"thinker_id": str(thinker.id)},
-    )
+    await create_source(session, url=existing_url)
+    job = await create_job(session, job_type="discover_guests_podcastindex", payload={"thinker_id": str(thinker.id)})
     await session.commit()
 
     api_data = {
@@ -104,10 +84,7 @@ async def test_podcastindex_skips_existing(session: AsyncSession):
 
     with (
         _mock_podcastindex_client(api_data),
-        patch.dict(
-            "os.environ",
-            {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"},
-        ),
+        patch.dict("os.environ", {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"}),
     ):
         await handle_discover_guests_podcastindex(session, job)
 
@@ -120,19 +97,12 @@ async def test_podcastindex_skips_existing(session: AsyncSession):
 async def test_podcastindex_rate_limited(session: AsyncSession):
     """Podcast Index handler raises ValueError when rate-limited."""
     thinker = await create_thinker(session, name="Jane Doe")
-    job = await create_job(
-        session,
-        job_type="discover_guests_podcastindex",
-        payload={"thinker_id": str(thinker.id)},
-    )
+    job = await create_job(session, job_type="discover_guests_podcastindex", payload={"thinker_id": str(thinker.id)})
     await session.commit()
 
     with (
         _mock_podcastindex_client(None),
-        patch.dict(
-            "os.environ",
-            {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"},
-        ),
+        patch.dict("os.environ", {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"}),
         pytest.raises(ValueError, match="Rate limited"),
     ):
         await handle_discover_guests_podcastindex(session, job)
@@ -141,11 +111,7 @@ async def test_podcastindex_rate_limited(session: AsyncSession):
 async def test_podcastindex_skips_no_feedurl(session: AsyncSession):
     """Podcast Index handler skips items without feedUrl."""
     thinker = await create_thinker(session, name="Jane Doe")
-    job = await create_job(
-        session,
-        job_type="discover_guests_podcastindex",
-        payload={"thinker_id": str(thinker.id)},
-    )
+    job = await create_job(session, job_type="discover_guests_podcastindex", payload={"thinker_id": str(thinker.id)})
     await session.commit()
 
     api_data = {
@@ -159,10 +125,7 @@ async def test_podcastindex_skips_no_feedurl(session: AsyncSession):
 
     with (
         _mock_podcastindex_client(api_data),
-        patch.dict(
-            "os.environ",
-            {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"},
-        ),
+        patch.dict("os.environ", {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"}),
     ):
         await handle_discover_guests_podcastindex(session, job)
 
@@ -185,16 +148,8 @@ class TestConcurrentDiscoveryRace:
         async with session_factory() as setup:
             t1 = await create_thinker(setup, name="Thinker One")
             t2 = await create_thinker(setup, name="Thinker Two")
-            job1 = await create_job(
-                setup,
-                job_type="discover_guests_podcastindex",
-                payload={"thinker_id": str(t1.id)},
-            )
-            job2 = await create_job(
-                setup,
-                job_type="discover_guests_podcastindex",
-                payload={"thinker_id": str(t2.id)},
-            )
+            job1 = await create_job(setup, job_type="discover_guests_podcastindex", payload={"thinker_id": str(t1.id)})
+            job2 = await create_job(setup, job_type="discover_guests_podcastindex", payload={"thinker_id": str(t2.id)})
             await setup.commit()
             job1_id, job2_id = job1.id, job2.id
 

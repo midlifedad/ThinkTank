@@ -105,18 +105,16 @@ async def handle_fetch_podcast_feed(session: AsyncSession, job: Job) -> None:
         )
         return
 
-    # d. source.thinker_id is deprecated — thinker lookup happens via junction if needed
-
-    # e. Read global config values
+    # d. Read global config values
     global_min_duration = await get_config_value(session, "min_duration_seconds", 600)
     global_skip_patterns = await get_config_value(session, "skip_title_patterns", _DEFAULT_SKIP_PATTERNS)
 
-    # f. Compute effective filter config from source overrides
+    # e. Compute effective filter config from source overrides
     effective_min_duration, effective_skip_patterns = get_source_filter_config(
         source.config, global_min_duration, global_skip_patterns
     )
 
-    # g. Fetch the RSS feed
+    # f. Fetch the RSS feed
     async with httpx.AsyncClient(follow_redirects=True) as client:
         response = await client.get(source.url, timeout=60.0)
         raise_for_status_with_backoff(response)
@@ -217,7 +215,6 @@ async def handle_fetch_podcast_feed(session: AsyncSession, job: Job) -> None:
         content = Content(
             id=uuid.uuid4(),
             source_id=source.id,
-            source_owner_id=None,  # DEPRECATED — use content_thinkers junction
             content_type="episode",
             url=entry.url,
             canonical_url=canonical,

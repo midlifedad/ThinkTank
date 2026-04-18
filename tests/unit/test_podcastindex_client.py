@@ -141,9 +141,7 @@ class TestSearchByPerson:
         """Raises httpx.HTTPStatusError on 4xx/5xx responses."""
         mock_response = MagicMock()
         mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Unauthorized",
-            request=MagicMock(),
-            response=MagicMock(status_code=401),
+            "Unauthorized", request=MagicMock(), response=MagicMock(status_code=401)
         )
 
         with (

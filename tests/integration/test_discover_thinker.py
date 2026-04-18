@@ -17,9 +17,7 @@ from thinktank.models.job import Job
 pytestmark = pytest.mark.anyio
 
 
-async def test_skips_guest_discovery_when_podcastindex_unavailable(
-    session: AsyncSession,
-):
+async def test_skips_guest_discovery_when_podcastindex_unavailable(session: AsyncSession):
     """No PodcastIndex creds in DB or env -> no discover_guests job enqueued (ME-07).
 
     Previously the handler always enqueued discover_guests_podcastindex even with
@@ -27,11 +25,7 @@ async def test_skips_guest_discovery_when_podcastindex_unavailable(
     queue slots + backoff bookkeeping.
     """
     thinker = await create_thinker(session, approval_status="approved", active=True)
-    trigger_job = await create_job(
-        session,
-        job_type="discover_thinker",
-        payload={"thinker_id": str(thinker.id)},
-    )
+    trigger_job = await create_job(session, job_type="discover_thinker", payload={"thinker_id": str(thinker.id)})
     await session.commit()
 
     with patch.dict("os.environ", {}, clear=False):
@@ -46,28 +40,18 @@ async def test_skips_guest_discovery_when_podcastindex_unavailable(
     assert result.scalars().all() == []
 
 
-async def test_enqueues_guest_discovery_when_podcastindex_configured(
-    session: AsyncSession,
-):
+async def test_enqueues_guest_discovery_when_podcastindex_configured(session: AsyncSession):
     """With PodcastIndex API key present -> discover_guests job enqueued."""
     thinker = await create_thinker(session, approval_status="approved", active=True)
-    trigger_job = await create_job(
-        session,
-        job_type="discover_thinker",
-        payload={"thinker_id": str(thinker.id)},
-    )
+    trigger_job = await create_job(session, job_type="discover_thinker", payload={"thinker_id": str(thinker.id)})
     await session.commit()
 
-    with patch.dict(
-        "os.environ",
-        {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"},
-    ):
+    with patch.dict("os.environ", {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"}):
         await handle_discover_thinker(session, trigger_job)
 
     result = await session.execute(
         select(Job).where(
-            Job.job_type == "discover_guests_podcastindex",
-            Job.payload["thinker_id"].astext == str(thinker.id),
+            Job.job_type == "discover_guests_podcastindex", Job.payload["thinker_id"].astext == str(thinker.id)
         )
     )
     jobs = result.scalars().all()
@@ -77,17 +61,10 @@ async def test_enqueues_guest_discovery_when_podcastindex_configured(
 async def test_skips_when_thinker_not_approved(session: AsyncSession):
     """Thinker in pending status -> no jobs enqueued regardless of creds."""
     thinker = await create_thinker(session, approval_status="pending_llm", active=True)
-    trigger_job = await create_job(
-        session,
-        job_type="discover_thinker",
-        payload={"thinker_id": str(thinker.id)},
-    )
+    trigger_job = await create_job(session, job_type="discover_thinker", payload={"thinker_id": str(thinker.id)})
     await session.commit()
 
-    with patch.dict(
-        "os.environ",
-        {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"},
-    ):
+    with patch.dict("os.environ", {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"}):
         await handle_discover_thinker(session, trigger_job)
 
     result = await session.execute(select(Job).where(Job.job_type == "discover_guests_podcastindex"))

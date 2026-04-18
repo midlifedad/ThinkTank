@@ -23,12 +23,8 @@ from tests.factories import (
     create_source_thinker,
     create_thinker,
 )
-from thinktank.handlers.rescan_cataloged_for_thinker import (
-    handle_rescan_cataloged_for_thinker,
-)
-from thinktank.handlers.scan_episodes_for_thinkers import (
-    handle_scan_episodes_for_thinkers,
-)
+from thinktank.handlers.rescan_cataloged_for_thinker import handle_rescan_cataloged_for_thinker
+from thinktank.handlers.scan_episodes_for_thinkers import handle_scan_episodes_for_thinkers
 from thinktank.models.content import ContentThinker
 
 pytestmark = pytest.mark.anyio
@@ -45,22 +41,12 @@ class TestScanEpisodesForThinkersContract:
         """Host-owned source promotes ALL cataloged episodes regardless of title match."""
         thinker = await create_thinker(session, name="Host Thinker")
         source = await create_source(session)
-        await create_source_thinker(
-            session,
-            source_id=source.id,
-            thinker_id=thinker.id,
-            relationship_type="host",
-        )
+        await create_source_thinker(session, source_id=source.id, thinker_id=thinker.id, relationship_type="host")
 
         # Create 3 cataloged episodes with unrelated titles
         contents = []
         for i in range(3):
-            c = await create_content(
-                session,
-                source_id=source.id,
-                title=f"Unrelated Episode {i}",
-                status="cataloged",
-            )
+            c = await create_content(session, source_id=source.id, title=f"Unrelated Episode {i}", status="cataloged")
             contents.append(c)
 
         job = await create_job(
@@ -82,11 +68,7 @@ class TestScanEpisodesForThinkersContract:
             assert c.status == "pending", f"Content {c.title} should be pending"
 
         # ContentThinker rows should exist for each with role=primary
-        result = await session.execute(
-            select(ContentThinker).where(
-                ContentThinker.thinker_id == thinker.id,
-            )
-        )
+        result = await session.execute(select(ContentThinker).where(ContentThinker.thinker_id == thinker.id))
         attributions = result.scalars().all()
         assert len(attributions) == 3
         for attr in attributions:
@@ -104,24 +86,13 @@ class TestScanEpisodesForThinkersContract:
         host = await create_thinker(session, name="Lex Fridman")
         guest = await create_thinker(session, name="Jensen Huang")
         source = await create_source(session)
-        await create_source_thinker(
-            session,
-            source_id=source.id,
-            thinker_id=host.id,
-            relationship_type="host",
-        )
+        await create_source_thinker(session, source_id=source.id, thinker_id=host.id, relationship_type="host")
 
         episode = await create_content(
-            session,
-            source_id=source.id,
-            title="Jensen Huang: NVIDIA and the Future of AI",
-            status="cataloged",
+            session, source_id=source.id, title="Jensen Huang: NVIDIA and the Future of AI", status="cataloged"
         )
         unrelated = await create_content(
-            session,
-            source_id=source.id,
-            title="Solo ramble about life",
-            status="cataloged",
+            session, source_id=source.id, title="Solo ramble about life", status="cataloged"
         )
 
         job = await create_job(
@@ -168,18 +139,10 @@ class TestScanEpisodesForThinkersContract:
         still appears as 'primary' only -- no duplicate 'guest' row."""
         host = await create_thinker(session, name="Lex Fridman")
         source = await create_source(session)
-        await create_source_thinker(
-            session,
-            source_id=source.id,
-            thinker_id=host.id,
-            relationship_type="host",
-        )
+        await create_source_thinker(session, source_id=source.id, thinker_id=host.id, relationship_type="host")
 
         episode = await create_content(
-            session,
-            source_id=source.id,
-            title="Lex Fridman reflects on 500 episodes",
-            status="cataloged",
+            session, source_id=source.id, title="Lex Fridman reflects on 500 episodes", status="cataloged"
         )
 
         job = await create_job(
@@ -196,10 +159,7 @@ class TestScanEpisodesForThinkersContract:
         await handle_scan_episodes_for_thinkers(session, job)
 
         result = await session.execute(
-            select(ContentThinker).where(
-                ContentThinker.content_id == episode.id,
-                ContentThinker.thinker_id == host.id,
-            )
+            select(ContentThinker).where(ContentThinker.content_id == episode.id, ContentThinker.thinker_id == host.id)
         )
         rows = result.scalars().all()
         assert len(rows) == 1
@@ -212,22 +172,13 @@ class TestScanEpisodesForThinkersContract:
         # No host SourceThinker -> guest source
 
         matching = await create_content(
-            session,
-            source_id=source.id,
-            title="Interview with Sam Harris",
-            status="cataloged",
+            session, source_id=source.id, title="Interview with Sam Harris", status="cataloged"
         )
         non_matching_1 = await create_content(
-            session,
-            source_id=source.id,
-            title="Random Episode About Cooking",
-            status="cataloged",
+            session, source_id=source.id, title="Random Episode About Cooking", status="cataloged"
         )
         non_matching_2 = await create_content(
-            session,
-            source_id=source.id,
-            title="Another Unrelated Episode",
-            status="cataloged",
+            session, source_id=source.id, title="Another Unrelated Episode", status="cataloged"
         )
 
         job = await create_job(
@@ -261,25 +212,10 @@ class TestScanEpisodesForThinkersContract:
         """Content with status != 'cataloged' is not modified by scan handler."""
         thinker = await create_thinker(session, name="Some Thinker")
         source = await create_source(session)
-        await create_source_thinker(
-            session,
-            source_id=source.id,
-            thinker_id=thinker.id,
-            relationship_type="host",
-        )
+        await create_source_thinker(session, source_id=source.id, thinker_id=thinker.id, relationship_type="host")
 
-        pending_content = await create_content(
-            session,
-            source_id=source.id,
-            title="Already Pending",
-            status="pending",
-        )
-        done_content = await create_content(
-            session,
-            source_id=source.id,
-            title="Already Done",
-            status="done",
-        )
+        pending_content = await create_content(session, source_id=source.id, title="Already Pending", status="pending")
+        done_content = await create_content(session, source_id=source.id, title="Already Done", status="done")
 
         job = await create_job(
             session,
@@ -316,18 +252,8 @@ class TestScanEpisodesForThinkersContract:
         bob = await create_thinker(session, name="Bob Baker")
         source = await create_source(session)
 
-        ep1 = await create_content(
-            session,
-            source_id=source.id,
-            title="Episode One: Deep Dive",
-            status="cataloged",
-        )
-        ep2 = await create_content(
-            session,
-            source_id=source.id,
-            title="Episode Two: Follow Up",
-            status="cataloged",
-        )
+        ep1 = await create_content(session, source_id=source.id, title="Episode One: Deep Dive", status="cataloged")
+        ep2 = await create_content(session, source_id=source.id, title="Episode Two: Follow Up", status="cataloged")
 
         job = await create_job(
             session,
@@ -372,10 +298,7 @@ class TestScanEpisodesForThinkersContract:
         source = await create_source(session)
 
         content = await create_content(
-            session,
-            source_id=source.id,
-            title="Jordan Peterson on Meaning",
-            status="cataloged",
+            session, source_id=source.id, title="Jordan Peterson on Meaning", status="cataloged"
         )
 
         job = await create_job(
@@ -402,20 +325,11 @@ class TestScanEpisodesForThinkersContract:
         source = await create_source(session)
 
         content = await create_content(
-            session,
-            source_id=source.id,
-            title="Naval Ravikant on Wealth",
-            status="cataloged",
+            session, source_id=source.id, title="Naval Ravikant on Wealth", status="cataloged"
         )
 
         # Pre-existing attribution
-        await create_content_thinker(
-            session,
-            content_id=content.id,
-            thinker_id=thinker.id,
-            role="guest",
-            confidence=9,
-        )
+        await create_content_thinker(session, content_id=content.id, thinker_id=thinker.id, role="guest", confidence=9)
 
         job = await create_job(
             session,
@@ -432,8 +346,7 @@ class TestScanEpisodesForThinkersContract:
 
         result = await session.execute(
             select(ContentThinker).where(
-                ContentThinker.content_id == content.id,
-                ContentThinker.thinker_id == thinker.id,
+                ContentThinker.content_id == content.id, ContentThinker.thinker_id == thinker.id
             )
         )
         rows = result.scalars().all()
@@ -443,26 +356,11 @@ class TestScanEpisodesForThinkersContract:
         """Scan handler skips content that is not status='cataloged'."""
         thinker = await create_thinker(session, name="Test Thinker Skip")
         source = await create_source(session)
-        await create_source_thinker(
-            session,
-            source_id=source.id,
-            thinker_id=thinker.id,
-            relationship_type="host",
-        )
+        await create_source_thinker(session, source_id=source.id, thinker_id=thinker.id, relationship_type="host")
 
         # Create content with various non-cataloged statuses
-        pending = await create_content(
-            session,
-            source_id=source.id,
-            title="Pending Content",
-            status="pending",
-        )
-        skipped = await create_content(
-            session,
-            source_id=source.id,
-            title="Skipped Content",
-            status="skipped",
-        )
+        pending = await create_content(session, source_id=source.id, title="Pending Content", status="pending")
+        skipped = await create_content(session, source_id=source.id, title="Skipped Content", status="skipped")
 
         job = await create_job(
             session,
@@ -478,11 +376,7 @@ class TestScanEpisodesForThinkersContract:
         await handle_scan_episodes_for_thinkers(session, job)
 
         # No ContentThinker rows should be created for non-cataloged content
-        result = await session.execute(
-            select(ContentThinker).where(
-                ContentThinker.thinker_id == thinker.id,
-            )
-        )
+        result = await session.execute(select(ContentThinker).where(ContentThinker.thinker_id == thinker.id))
         assert len(result.scalars().all()) == 0
 
 
@@ -505,10 +399,7 @@ class TestRescanCatalogedForThinkerContract:
             status="cataloged",
         )
         non_matching = await create_content(
-            session,
-            source_id=source.id,
-            title="Random Episode About Gardening",
-            status="cataloged",
+            session, source_id=source.id, title="Random Episode About Gardening", status="cataloged"
         )
 
         job = await create_job(
@@ -541,10 +432,7 @@ class TestRescanCatalogedForThinkerContract:
         source = await create_source(session)
 
         pending_content = await create_content(
-            session,
-            source_id=source.id,
-            title="Bret Weinstein on Evolution",
-            status="pending",
+            session, source_id=source.id, title="Bret Weinstein on Evolution", status="pending"
         )
 
         job = await create_job(
@@ -572,20 +460,11 @@ class TestRescanCatalogedForThinkerContract:
         source = await create_source(session)
 
         content = await create_content(
-            session,
-            source_id=source.id,
-            title="Tyler Cowen on Progress",
-            status="cataloged",
+            session, source_id=source.id, title="Tyler Cowen on Progress", status="cataloged"
         )
 
         # Pre-existing attribution
-        await create_content_thinker(
-            session,
-            content_id=content.id,
-            thinker_id=thinker.id,
-            role="guest",
-            confidence=9,
-        )
+        await create_content_thinker(session, content_id=content.id, thinker_id=thinker.id, role="guest", confidence=9)
         await session.commit()
 
         job = await create_job(
@@ -603,8 +482,7 @@ class TestRescanCatalogedForThinkerContract:
         # Still only 1 ContentThinker row
         result = await session.execute(
             select(ContentThinker).where(
-                ContentThinker.content_id == content.id,
-                ContentThinker.thinker_id == thinker.id,
+                ContentThinker.content_id == content.id, ContentThinker.thinker_id == thinker.id
             )
         )
         rows = result.scalars().all()

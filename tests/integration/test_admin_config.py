@@ -11,8 +11,7 @@ from tests.factories import create_system_config
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -65,10 +64,7 @@ class TestRateLimitsEditor:
     async def test_rate_limits_partial_loads_custom(self, admin_client, session: AsyncSession):
         """Seeded custom rate_limits are shown in the partial."""
         await create_system_config(
-            session,
-            key="rate_limits",
-            value={"youtube": 300, "podcastindex": 600, "anthropic": 100},
-            set_by="test",
+            session, key="rate_limits", value={"youtube": 300, "podcastindex": 600, "anthropic": 100}, set_by="test"
         )
         await session.commit()
 

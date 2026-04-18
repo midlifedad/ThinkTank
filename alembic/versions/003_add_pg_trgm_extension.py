@@ -9,16 +9,16 @@ index on candidate_thinkers.normalized_name for efficient fuzzy name matching
 at the 0.7 similarity threshold (spec Section 5.5, DISC-04).
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "003_add_pg_trgm"
-down_revision: Union[str, Sequence[str], None] = "002_partial_claim"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "002_partial_claim"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

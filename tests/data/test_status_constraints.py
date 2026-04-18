@@ -13,17 +13,8 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_content,
-    create_job,
-    create_source,
-    create_thinker,
-)
-from thinktank.models.constants import (
-    ALLOWED_CONTENT_STATUSES,
-    ALLOWED_JOB_STATUSES,
-    ALLOWED_SOURCE_APPROVAL_STATUSES,
-)
+from tests.factories import create_content, create_job, create_source, create_thinker
+from thinktank.models.constants import ALLOWED_CONTENT_STATUSES, ALLOWED_JOB_STATUSES, ALLOWED_SOURCE_APPROVAL_STATUSES
 
 # ---------- Content.status ----------
 
@@ -31,16 +22,12 @@ from thinktank.models.constants import (
 @pytest.mark.asyncio
 async def test_invalid_content_status_raises(session: AsyncSession):
     """Content.status outside ALLOWED_CONTENT_STATUSES is rejected."""
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id)
+    await create_thinker(session)
+    source = await create_source(session)
     await session.commit()
 
     with pytest.raises(IntegrityError):
-        await create_content(
-            session,
-            source_id=source.id,
-            status="not_a_real_status",
-        )
+        await create_content(session, source_id=source.id, status="not_a_real_status")
         await session.commit()
     await session.rollback()
 
@@ -49,8 +36,8 @@ async def test_invalid_content_status_raises(session: AsyncSession):
 @pytest.mark.parametrize("status", ALLOWED_CONTENT_STATUSES)
 async def test_valid_content_status_accepted(session: AsyncSession, status: str):
     """Every value in ALLOWED_CONTENT_STATUSES inserts successfully."""
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id)
+    await create_thinker(session)
+    source = await create_source(session)
     content = await create_content(session, source_id=source.id, status=status)
     await session.commit()
     assert content.status == status

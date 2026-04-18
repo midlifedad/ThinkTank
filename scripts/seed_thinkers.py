@@ -136,21 +136,26 @@ async def seed_thinkers(session: AsyncSession) -> int:
         thinker_id = uuid.uuid4()
 
         # Upsert thinker
-        stmt = insert(Thinker).values(
-            id=thinker_id,
-            name=entry["name"],
-            slug=entry["slug"],
-            tier=entry["tier"],
-            bio=entry["bio"],
-            approval_status="pending_llm",
-        ).on_conflict_do_update(
-            index_elements=["slug"],
-            set_={
-                "name": entry["name"],
-                "tier": entry["tier"],
-                "bio": entry["bio"],
-            },
-        ).returning(Thinker.id)
+        stmt = (
+            insert(Thinker)
+            .values(
+                id=thinker_id,
+                name=entry["name"],
+                slug=entry["slug"],
+                tier=entry["tier"],
+                bio=entry["bio"],
+                approval_status="pending_llm",
+            )
+            .on_conflict_do_update(
+                index_elements=["slug"],
+                set_={
+                    "name": entry["name"],
+                    "tier": entry["tier"],
+                    "bio": entry["bio"],
+                },
+            )
+            .returning(Thinker.id)
+        )
 
         result = await session.execute(stmt)
         actual_id = result.scalar_one()

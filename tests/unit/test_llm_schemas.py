@@ -59,11 +59,7 @@ class TestThinkerApprovalResponse:
 
 class TestSourceApprovalResponse:
     def test_valid_approved_with_backfill(self):
-        resp = SourceApprovalResponse(
-            decision="approved",
-            reasoning="Good source",
-            approved_backfill_days=30,
-        )
+        resp = SourceApprovalResponse(decision="approved", reasoning="Good source", approved_backfill_days=30)
         assert resp.decision == "approved"
         assert resp.approved_backfill_days == 30
 
@@ -98,25 +94,17 @@ class TestCandidateReviewResponse:
 
     def test_valid_duplicate(self):
         resp = CandidateReviewResponse(
-            decision="duplicate",
-            reasoning="Already exists",
-            duplicate_of="existing-thinker-slug",
+            decision="duplicate", reasoning="Already exists", duplicate_of="existing-thinker-slug"
         )
         assert resp.decision == "duplicate"
         assert resp.duplicate_of == "existing-thinker-slug"
 
     def test_valid_need_more_appearances(self):
-        resp = CandidateReviewResponse(
-            decision="need_more_appearances",
-            reasoning="Only seen once",
-        )
+        resp = CandidateReviewResponse(decision="need_more_appearances", reasoning="Only seen once")
         assert resp.decision == "need_more_appearances"
 
     def test_valid_escalate_to_human(self):
-        resp = CandidateReviewResponse(
-            decision="escalate_to_human",
-            reasoning="Ambiguous",
-        )
+        resp = CandidateReviewResponse(decision="escalate_to_human", reasoning="Ambiguous")
         assert resp.decision == "escalate_to_human"
 
     def test_invalid_decision_rejected(self):
@@ -129,10 +117,7 @@ class TestCandidateReviewResponse:
 
 class TestHealthCheckResponse:
     def test_valid_healthy(self):
-        resp = HealthCheckResponse(
-            status="healthy",
-            findings=["All systems normal"],
-        )
+        resp = HealthCheckResponse(status="healthy", findings=["All systems normal"])
         assert resp.status == "healthy"
         assert resp.findings == ["All systems normal"]
 
@@ -170,10 +155,7 @@ class TestDailyDigestResponse:
         assert len(resp.highlights) == 2
 
     def test_minimal_valid(self):
-        resp = DailyDigestResponse(
-            summary="Normal day",
-            highlights=["Nothing notable"],
-        )
+        resp = DailyDigestResponse(summary="Normal day", highlights=["Nothing notable"])
         assert resp.flagged_items is None
         assert resp.recommendations is None
 

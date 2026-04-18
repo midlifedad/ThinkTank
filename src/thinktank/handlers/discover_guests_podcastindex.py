@@ -89,7 +89,6 @@ async def handle_discover_guests_podcastindex(session: AsyncSession, job: Job) -
             pg_insert(Source)
             .values(
                 id=new_source_id,
-                thinker_id=None,
                 source_type="podcast_rss",
                 name=item.get("feedTitle", "Unknown Podcast"),
                 url=normalized,

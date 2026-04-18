@@ -101,7 +101,6 @@ class ContentResponse(BaseModel):
 
     id: uuid.UUID
     source_id: uuid.UUID
-    source_owner_id: uuid.UUID | None = None
     title: str
     content_type: str
     status: str

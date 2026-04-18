@@ -18,12 +18,7 @@ class TestReclaimStaleJobs:
         Uses NOW() (TIMESTAMPTZ) so the test helper matches the timezone
         handling of reclaim.py's SELECT/UPDATE after HANDLERS LO-06.
         """
-        job = await create_job(
-            session,
-            status="running",
-            worker_id="stale-worker-1",
-            **overrides,
-        )
+        job = await create_job(session, status="running", worker_id="stale-worker-1", **overrides)
         # Set started_at using PG's own clock for consistency with reclaim query
         await session.execute(
             text("UPDATE jobs SET started_at = NOW() - MAKE_INTERVAL(mins => :mins) WHERE id = :job_id"),
@@ -37,11 +32,7 @@ class TestReclaimStaleJobs:
         from thinktank.queue.reclaim import reclaim_stale_jobs
 
         # Set timeout to 30 minutes
-        await create_system_config(
-            session,
-            key="stale_job_timeout_minutes",
-            value={"value": 30},
-        )
+        await create_system_config(session, key="stale_job_timeout_minutes", value={"value": 30})
 
         # Create a job that started 35 minutes ago (past 30-min timeout)
         stale_job = await self._create_running_job_started_minutes_ago(session, 35, attempts=0, max_attempts=3)
@@ -55,11 +46,7 @@ class TestReclaimStaleJobs:
         """A running job within the timeout should NOT be reclaimed."""
         from thinktank.queue.reclaim import reclaim_stale_jobs
 
-        await create_system_config(
-            session,
-            key="stale_job_timeout_minutes",
-            value={"value": 30},
-        )
+        await create_system_config(session, key="stale_job_timeout_minutes", value={"value": 30})
 
         # Create a job that started 25 minutes ago (within 30-min timeout)
         await self._create_running_job_started_minutes_ago(session, 25, attempts=0, max_attempts=3)
@@ -71,11 +58,7 @@ class TestReclaimStaleJobs:
         """Reclaimed job with attempts < max_attempts should get status='retrying'."""
         from thinktank.queue.reclaim import reclaim_stale_jobs
 
-        await create_system_config(
-            session,
-            key="stale_job_timeout_minutes",
-            value={"value": 30},
-        )
+        await create_system_config(session, key="stale_job_timeout_minutes", value={"value": 30})
 
         stale_job = await self._create_running_job_started_minutes_ago(session, 35, attempts=0, max_attempts=3)
 
@@ -97,11 +80,7 @@ class TestReclaimStaleJobs:
         """Reclaimed job at max_attempts should get status='failed' and completed_at."""
         from thinktank.queue.reclaim import reclaim_stale_jobs
 
-        await create_system_config(
-            session,
-            key="stale_job_timeout_minutes",
-            value={"value": 30},
-        )
+        await create_system_config(session, key="stale_job_timeout_minutes", value={"value": 30})
 
         # Job with attempts=2, max_attempts=3: next attempt (3) >= max_attempts
         stale_job = await self._create_running_job_started_minutes_ago(session, 35, attempts=2, max_attempts=3)
@@ -109,8 +88,7 @@ class TestReclaimStaleJobs:
         await reclaim_stale_jobs(session)
 
         result = await session.execute(
-            text("SELECT status, completed_at, attempts FROM jobs WHERE id = :id"),
-            {"id": str(stale_job.id)},
+            text("SELECT status, completed_at, attempts FROM jobs WHERE id = :id"), {"id": str(stale_job.id)}
         )
         row = result.fetchone()
         assert row[0] == "failed"  # status
@@ -121,11 +99,7 @@ class TestReclaimStaleJobs:
         """Should return empty list when no stale jobs exist."""
         from thinktank.queue.reclaim import reclaim_stale_jobs
 
-        await create_system_config(
-            session,
-            key="stale_job_timeout_minutes",
-            value={"value": 30},
-        )
+        await create_system_config(session, key="stale_job_timeout_minutes", value={"value": 30})
 
         reclaimed = await reclaim_stale_jobs(session)
         assert reclaimed == []
@@ -134,18 +108,13 @@ class TestReclaimStaleJobs:
         """Jobs in pending, done, or failed status should never be reclaimed."""
         from thinktank.queue.reclaim import reclaim_stale_jobs
 
-        await create_system_config(
-            session,
-            key="stale_job_timeout_minutes",
-            value={"value": 30},
-        )
+        await create_system_config(session, key="stale_job_timeout_minutes", value={"value": 30})
 
         # Create non-running jobs with old started_at
         for status in ("pending", "done", "failed"):
             job = await create_job(session, status=status, attempts=0, max_attempts=3)
             await session.execute(
-                text("UPDATE jobs SET started_at = NOW() - INTERVAL '2 hours' WHERE id = :id"),
-                {"id": str(job.id)},
+                text("UPDATE jobs SET started_at = NOW() - INTERVAL '2 hours' WHERE id = :id"), {"id": str(job.id)}
             )
 
         await session.flush()
@@ -157,11 +126,7 @@ class TestReclaimStaleJobs:
         """Only stale running jobs should be reclaimed, not fresh ones."""
         from thinktank.queue.reclaim import reclaim_stale_jobs
 
-        await create_system_config(
-            session,
-            key="stale_job_timeout_minutes",
-            value={"value": 30},
-        )
+        await create_system_config(session, key="stale_job_timeout_minutes", value={"value": 30})
 
         # Stale job (35 min ago)
         stale = await self._create_running_job_started_minutes_ago(session, 35, attempts=0, max_attempts=3)
@@ -198,11 +163,7 @@ class TestReclaimStaleJobs:
 
         from thinktank.queue.reclaim import reclaim_stale_jobs
 
-        await create_system_config(
-            session,
-            key="stale_job_timeout_minutes",
-            value={"value": 30},
-        )
+        await create_system_config(session, key="stale_job_timeout_minutes", value={"value": 30})
 
         # max_attempts is high so the job is still retryable; attempts=10
         # triggers the uncapped SQL path (2^11 = 2048 minutes).
@@ -211,8 +172,7 @@ class TestReclaimStaleJobs:
         await reclaim_stale_jobs(session)
 
         result = await session.execute(
-            text("SELECT status, scheduled_at, NOW() AS now_ts FROM jobs WHERE id = :id"),
-            {"id": str(stale.id)},
+            text("SELECT status, scheduled_at, NOW() AS now_ts FROM jobs WHERE id = :id"), {"id": str(stale.id)}
         )
         row = result.fetchone()
         assert row[0] == "retrying"

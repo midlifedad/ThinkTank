@@ -60,11 +60,7 @@ class TestBuildThinkerListQueryCount:
     """``_build_thinker_list`` must not scale query count with N thinkers."""
 
     async def test_thinker_list_is_bounded_regardless_of_count(self, session: AsyncSession) -> None:
-        from tests.factories import (
-            create_category,
-            create_thinker,
-            create_thinker_category,
-        )
+        from tests.factories import create_category, create_thinker, create_thinker_category
         from thinktank.admin.routers.thinkers import _build_thinker_list
 
         # Two shared categories.
@@ -93,11 +89,7 @@ class TestBuildThinkerListQueryCount:
 
     async def test_thinker_list_query_count_independent_of_n(self, session: AsyncSession) -> None:
         """Query count with 5 thinkers must equal query count with 15 thinkers."""
-        from tests.factories import (
-            create_category,
-            create_thinker,
-            create_thinker_category,
-        )
+        from tests.factories import create_category, create_thinker, create_thinker_category
         from thinktank.admin.routers.thinkers import _build_thinker_list
 
         cat = await create_category(session, name="Policy", slug="policy-qc-n")
@@ -123,11 +115,7 @@ class TestBuildSourceListQueryCount:
     """``_build_source_list`` must not scale query count with N sources."""
 
     async def test_source_list_is_bounded_regardless_of_count(self, session: AsyncSession) -> None:
-        from tests.factories import (
-            create_source,
-            create_source_thinker,
-            create_thinker,
-        )
+        from tests.factories import create_source, create_source_thinker, create_thinker
         from thinktank.admin.routers.sources import _build_source_list
 
         # Two shared thinkers, each linked to every source.
@@ -136,23 +124,9 @@ class TestBuildSourceListQueryCount:
 
         n_rows = 10
         for i in range(n_rows):
-            src = await create_source(
-                session,
-                name=f"QC Source {i}",
-                url=f"https://example.com/qc-src-{i}.xml",
-            )
-            await create_source_thinker(
-                session,
-                source_id=src.id,
-                thinker_id=thinker_a.id,
-                relationship_type="host",
-            )
-            await create_source_thinker(
-                session,
-                source_id=src.id,
-                thinker_id=thinker_b.id,
-                relationship_type="guest",
-            )
+            src = await create_source(session, name=f"QC Source {i}", url=f"https://example.com/qc-src-{i}.xml")
+            await create_source_thinker(session, source_id=src.id, thinker_id=thinker_a.id, relationship_type="host")
+            await create_source_thinker(session, source_id=src.id, thinker_id=thinker_b.id, relationship_type="guest")
         await session.commit()
 
         result, query_count = await _run_with_query_count(session, lambda: _build_source_list(session))
@@ -164,11 +138,7 @@ class TestBuildSourceListQueryCount:
         )
 
     async def test_source_list_query_count_independent_of_n(self, session: AsyncSession) -> None:
-        from tests.factories import (
-            create_source,
-            create_source_thinker,
-            create_thinker,
-        )
+        from tests.factories import create_source, create_source_thinker, create_thinker
         from thinktank.admin.routers.sources import _build_source_list
 
         thinker = await create_thinker(session, name="QC N-Source Thinker", slug="qc-n-src-thinker")
@@ -176,16 +146,9 @@ class TestBuildSourceListQueryCount:
         async def _seed(n: int, tag: str) -> None:
             for i in range(n):
                 src = await create_source(
-                    session,
-                    name=f"NSource {tag}-{i}",
-                    url=f"https://example.com/n-src-{tag}-{i}.xml",
+                    session, name=f"NSource {tag}-{i}", url=f"https://example.com/n-src-{tag}-{i}.xml"
                 )
-                await create_source_thinker(
-                    session,
-                    source_id=src.id,
-                    thinker_id=thinker.id,
-                    relationship_type="host",
-                )
+                await create_source_thinker(session, source_id=src.id, thinker_id=thinker.id, relationship_type="host")
             await session.commit()
 
         await _seed(5, "small")

@@ -8,10 +8,7 @@ days and times.
 from datetime import UTC, datetime
 from unittest.mock import patch
 
-from thinktank.llm.time_utils import (
-    seconds_until_next_monday_utc,
-    seconds_until_next_utc_hour,
-)
+from thinktank.llm.time_utils import seconds_until_next_monday_utc, seconds_until_next_utc_hour
 
 
 class TestSecondsUntilNextUtcHour:

@@ -15,8 +15,7 @@ from thinktank.models.job import Job
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -91,8 +90,7 @@ class TestSchedulerSave:
     async def test_save_frequency(self, admin_client, session: AsyncSession):
         """POST save with frequency_hours=4 persists to system_config."""
         response = await admin_client.post(
-            "/admin/pipeline/scheduler/refresh_due_sources/save",
-            data={"frequency_hours": "4"},
+            "/admin/pipeline/scheduler/refresh_due_sources/save", data={"frequency_hours": "4"}
         )
         assert response.status_code == 200
         assert "saved" in response.text.lower()
@@ -108,8 +106,7 @@ class TestSchedulerSave:
     async def test_save_frequency_creates_config(self, admin_client, session: AsyncSession):
         """No existing row -- POST save creates new system_config row."""
         response = await admin_client.post(
-            "/admin/pipeline/scheduler/scan_for_candidates/save",
-            data={"frequency_hours": "12"},
+            "/admin/pipeline/scheduler/scan_for_candidates/save", data={"frequency_hours": "12"}
         )
         assert response.status_code == 200
 
@@ -137,8 +134,7 @@ class TestSchedulerSave:
         await session.commit()
 
         response = await admin_client.post(
-            "/admin/pipeline/scheduler/refresh_due_sources/save",
-            data={"frequency_hours": "2"},
+            "/admin/pipeline/scheduler/refresh_due_sources/save", data={"frequency_hours": "2"}
         )
         assert response.status_code == 200
 
@@ -153,10 +149,7 @@ class TestSchedulerSave:
 
     async def test_save_invalid_task_key(self, admin_client):
         """POST save with unknown task key returns 404."""
-        response = await admin_client.post(
-            "/admin/pipeline/scheduler/nonexistent/save",
-            data={"frequency_hours": "4"},
-        )
+        response = await admin_client.post("/admin/pipeline/scheduler/nonexistent/save", data={"frequency_hours": "4"})
         assert response.status_code == 404
 
 

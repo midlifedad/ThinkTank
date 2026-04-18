@@ -14,7 +14,6 @@ Usage:
 """
 
 import asyncio
-import re
 import uuid
 
 from sqlalchemy import select
@@ -153,16 +152,13 @@ async def seed_sources(session: AsyncSession) -> int:
 
     for entry in INITIAL_SOURCES:
         # Check for existing source by URL
-        existing = await session.execute(
-            select(Source.id).where(Source.url == entry["url"])
-        )
+        existing = await session.execute(select(Source.id).where(Source.url == entry["url"]))
         if existing.scalar_one_or_none() is not None:
             count += 1
             continue
 
         source = Source(
             id=uuid.uuid4(),
-            thinker_id=None,
             source_type=entry["source_type"],
             name=entry["name"],
             slug=entry["slug"],

@@ -15,11 +15,7 @@ class TestIsWorkersActive:
         """When workers_active = true, should return True."""
         from thinktank.queue.kill_switch import is_workers_active
 
-        await create_system_config(
-            session,
-            key="workers_active",
-            value=True,
-        )
+        await create_system_config(session, key="workers_active", value=True)
 
         result = await is_workers_active(session)
         assert result is True
@@ -28,11 +24,7 @@ class TestIsWorkersActive:
         """When workers_active = false, should return False."""
         from thinktank.queue.kill_switch import is_workers_active
 
-        await create_system_config(
-            session,
-            key="workers_active",
-            value=False,
-        )
+        await create_system_config(session, key="workers_active", value=False)
 
         result = await is_workers_active(session)
         assert result is False
@@ -49,11 +41,7 @@ class TestIsWorkersActive:
         """When JSONB value is {"value": false}, should return False."""
         from thinktank.queue.kill_switch import is_workers_active
 
-        await create_system_config(
-            session,
-            key="workers_active",
-            value={"value": False},
-        )
+        await create_system_config(session, key="workers_active", value={"value": False})
 
         result = await is_workers_active(session)
         assert result is False
@@ -62,11 +50,7 @@ class TestIsWorkersActive:
         """When JSONB value is {"value": true}, should return True."""
         from thinktank.queue.kill_switch import is_workers_active
 
-        await create_system_config(
-            session,
-            key="workers_active",
-            value={"value": True},
-        )
+        await create_system_config(session, key="workers_active", value={"value": True})
 
         result = await is_workers_active(session)
         assert result is True
@@ -80,11 +64,7 @@ class TestIsWorkersActive:
         """
         from thinktank.queue.kill_switch import is_workers_active
 
-        await create_system_config(
-            session,
-            key="workers_active",
-            value="false",
-        )
+        await create_system_config(session, key="workers_active", value="false")
 
         result = await is_workers_active(session)
         assert result is False
@@ -93,11 +73,7 @@ class TestIsWorkersActive:
         """JSONB string "true" evaluates truthy."""
         from thinktank.queue.kill_switch import is_workers_active
 
-        await create_system_config(
-            session,
-            key="workers_active",
-            value="true",
-        )
+        await create_system_config(session, key="workers_active", value="true")
 
         result = await is_workers_active(session)
         assert result is True
@@ -106,11 +82,7 @@ class TestIsWorkersActive:
         """{"value": "false"} must coerce to False (same trap as above)."""
         from thinktank.queue.kill_switch import is_workers_active
 
-        await create_system_config(
-            session,
-            key="workers_active",
-            value={"value": "false"},
-        )
+        await create_system_config(session, key="workers_active", value={"value": "false"})
 
         result = await is_workers_active(session)
         assert result is False

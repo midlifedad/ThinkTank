@@ -112,10 +112,7 @@ class TestClaimJob:
         result = await claim_job(session, "worker-1", job_types=["process_content"])
         assert result is None
 
-    async def test_concurrent_claims_mutual_exclusion(
-        self,
-        session_factory,
-    ):
+    async def test_concurrent_claims_mutual_exclusion(self, session_factory):
         """Two workers claiming the same single job: exactly one wins."""
         # Create one job using a dedicated session
         async with session_factory() as setup_session:
@@ -128,10 +125,7 @@ class TestClaimJob:
             async with session_factory() as sess:
                 return await claim_job(sess, worker_id)
 
-        results = await asyncio.gather(
-            do_claim("worker-a"),
-            do_claim("worker-b"),
-        )
+        results = await asyncio.gather(do_claim("worker-a"), do_claim("worker-b"))
 
         # Exactly one should succeed
         claimed = [r for r in results if r is not None]
@@ -166,12 +160,7 @@ class TestCompleteJob:
         assert job.completed_at is not None
 
     async def test_clears_error_fields(self, session: AsyncSession):
-        job = await create_job(
-            session,
-            status="running",
-            error="previous error",
-            error_category="http_error",
-        )
+        job = await create_job(session, status="running", error="previous error", error_category="http_error")
         await session.commit()
 
         await complete_job(session, job.id)
@@ -186,21 +175,10 @@ class TestFailJob:
 
     async def test_retries_when_under_max_attempts(self, session: AsyncSession):
         """With attempts < max_attempts, set status='retrying' with backoff."""
-        job = await create_job(
-            session,
-            status="running",
-            attempts=1,
-            max_attempts=3,
-            job_type="discover_thinker",
-        )
+        job = await create_job(session, status="running", attempts=1, max_attempts=3, job_type="discover_thinker")
         await session.commit()
 
-        await fail_job(
-            session,
-            job.id,
-            error_msg="Connection refused",
-            error_category=ErrorCategory.HTTP_ERROR,
-        )
+        await fail_job(session, job.id, error_msg="Connection refused", error_category=ErrorCategory.HTTP_ERROR)
 
         await session.refresh(job)
         assert job.status == "retrying"
@@ -213,21 +191,10 @@ class TestFailJob:
 
     async def test_fails_at_max_attempts(self, session: AsyncSession):
         """With attempts >= max_attempts, set status='failed' and completed_at."""
-        job = await create_job(
-            session,
-            status="running",
-            attempts=3,
-            max_attempts=3,
-            job_type="discover_thinker",
-        )
+        job = await create_job(session, status="running", attempts=3, max_attempts=3, job_type="discover_thinker")
         await session.commit()
 
-        await fail_job(
-            session,
-            job.id,
-            error_msg="Max retries exceeded",
-            error_category=ErrorCategory.HTTP_TIMEOUT,
-        )
+        await fail_job(session, job.id, error_msg="Max retries exceeded", error_category=ErrorCategory.HTTP_TIMEOUT)
 
         await session.refresh(job)
         assert job.status == "failed"
@@ -247,10 +214,7 @@ class TestFailJob:
         await session.commit()
 
         await fail_job(
-            session,
-            job.id,
-            error_msg="Transcription failed",
-            error_category=ErrorCategory.TRANSCRIPTION_FAILED,
+            session, job.id, error_msg="Transcription failed", error_category=ErrorCategory.TRANSCRIPTION_FAILED
         )
 
         await session.refresh(job)
@@ -259,12 +223,7 @@ class TestFailJob:
 
     async def test_explicit_max_attempts_override(self, session: AsyncSession):
         """When max_attempts is explicitly provided, use it over per-type defaults."""
-        job = await create_job(
-            session,
-            status="running",
-            attempts=2,
-            job_type="process_content",
-        )
+        job = await create_job(session, status="running", attempts=2, job_type="process_content")
         await session.commit()
 
         await fail_job(
@@ -280,21 +239,11 @@ class TestFailJob:
 
     async def test_backoff_timing(self, session: AsyncSession):
         """Backoff should be 2^attempts minutes from now."""
-        job = await create_job(
-            session,
-            status="running",
-            attempts=2,
-            max_attempts=4,
-        )
+        job = await create_job(session, status="running", attempts=2, max_attempts=4)
         await session.commit()
 
         before = _now()
-        await fail_job(
-            session,
-            job.id,
-            error_msg="Retry",
-            error_category=ErrorCategory.HTTP_ERROR,
-        )
+        await fail_job(session, job.id, error_msg="Retry", error_category=ErrorCategory.HTTP_ERROR)
         after = _now()
 
         await session.refresh(job)
@@ -308,12 +257,7 @@ class TestFailJob:
         job = await create_job(session, status="running", attempts=1, max_attempts=3)
         await session.commit()
 
-        await fail_job(
-            session,
-            job.id,
-            error_msg="Rate limited",
-            error_category=ErrorCategory.RATE_LIMITED,
-        )
+        await fail_job(session, job.id, error_msg="Rate limited", error_category=ErrorCategory.RATE_LIMITED)
 
         await session.refresh(job)
         assert job.error_category == "rate_limited"

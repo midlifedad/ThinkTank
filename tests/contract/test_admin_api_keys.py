@@ -8,8 +8,7 @@ from httpx import ASGITransport, AsyncClient
 from thinktank.models.config_table import SystemConfig
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -63,23 +62,20 @@ class TestSetApiKey:
 
     async def test_set_key_returns_200(self, admin_client):
         resp = await admin_client.post(
-            "/admin/api-keys/set",
-            data={"key_name": "anthropic_api_key", "key_value": "sk-test-123456789"},
+            "/admin/api-keys/set", data={"key_name": "anthropic_api_key", "key_value": "sk-test-123456789"}
         )
         assert resp.status_code == 200
 
     async def test_set_key_shows_configured(self, admin_client):
         resp = await admin_client.post(
-            "/admin/api-keys/set",
-            data={"key_name": "anthropic_api_key", "key_value": "sk-test-123456789"},
+            "/admin/api-keys/set", data={"key_name": "anthropic_api_key", "key_value": "sk-test-123456789"}
         )
         assert "Configured" in resp.text
         assert "****6789" in resp.text
 
     async def test_set_key_persists_in_db(self, admin_client, session):
         await admin_client.post(
-            "/admin/api-keys/set",
-            data={"key_name": "youtube_api_key", "key_value": "yt-key-abcdef"},
+            "/admin/api-keys/set", data={"key_name": "youtube_api_key", "key_value": "yt-key-abcdef"}
         )
         from sqlalchemy import select
 
@@ -91,22 +87,17 @@ class TestSetApiKey:
     async def test_update_existing_key(self, admin_client):
         # Set initial value
         await admin_client.post(
-            "/admin/api-keys/set",
-            data={"key_name": "anthropic_api_key", "key_value": "sk-old-value1234"},
+            "/admin/api-keys/set", data={"key_name": "anthropic_api_key", "key_value": "sk-old-value1234"}
         )
         # Update to new value
         resp = await admin_client.post(
-            "/admin/api-keys/set",
-            data={"key_name": "anthropic_api_key", "key_value": "sk-new-value5678"},
+            "/admin/api-keys/set", data={"key_name": "anthropic_api_key", "key_value": "sk-new-value5678"}
         )
         assert resp.status_code == 200
         assert "****5678" in resp.text
 
     async def test_rejects_unknown_key(self, admin_client):
-        resp = await admin_client.post(
-            "/admin/api-keys/set",
-            data={"key_name": "fake_key", "key_value": "whatever"},
-        )
+        resp = await admin_client.post("/admin/api-keys/set", data={"key_name": "fake_key", "key_value": "whatever"})
         assert resp.status_code == 400
 
 
@@ -116,8 +107,7 @@ class TestDeleteApiKey:
     async def test_delete_existing_key(self, admin_client):
         # Set a key first
         await admin_client.post(
-            "/admin/api-keys/set",
-            data={"key_name": "youtube_api_key", "key_value": "yt-key-12345678"},
+            "/admin/api-keys/set", data={"key_name": "youtube_api_key", "key_value": "yt-key-12345678"}
         )
         # Delete it
         resp = await admin_client.post("/admin/api-keys/delete/youtube_api_key")

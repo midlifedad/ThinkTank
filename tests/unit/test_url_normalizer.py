@@ -94,29 +94,14 @@ class TestTrackerPrefixes:
     @pytest.mark.parametrize(
         "raw, expected",
         [
-            (
-                "https://chartable.com/track/ABC/traffic.libsyn.com/ep.mp3",
-                "https://traffic.libsyn.com/ep.mp3",
-            ),
-            (
-                "https://op3.dev/e/feeds.example.com/ep.mp3",
-                "https://feeds.example.com/ep.mp3",
-            ),
-            (
-                "https://pdst.fm/e/traffic.simplecastaudio.com/ep.mp3",
-                "https://traffic.simplecastaudio.com/ep.mp3",
-            ),
+            ("https://chartable.com/track/ABC/traffic.libsyn.com/ep.mp3", "https://traffic.libsyn.com/ep.mp3"),
+            ("https://op3.dev/e/feeds.example.com/ep.mp3", "https://feeds.example.com/ep.mp3"),
+            ("https://pdst.fm/e/traffic.simplecastaudio.com/ep.mp3", "https://traffic.simplecastaudio.com/ep.mp3"),
             # Scheme-qualified inner URLs (some trackers keep http:// or https://
             # prefix on the wrapped URL).
-            (
-                "https://chartable.com/track/ABC/https://traffic.libsyn.com/ep.mp3",
-                "https://traffic.libsyn.com/ep.mp3",
-            ),
+            ("https://chartable.com/track/ABC/https://traffic.libsyn.com/ep.mp3", "https://traffic.libsyn.com/ep.mp3"),
             # Tracker prefix with trailing query params on the wrapped URL
-            (
-                "https://op3.dev/e/feeds.example.com/ep.mp3?ref=home",
-                "https://feeds.example.com/ep.mp3",
-            ),
+            ("https://op3.dev/e/feeds.example.com/ep.mp3?ref=home", "https://feeds.example.com/ep.mp3"),
         ],
     )
     def test_strip_tracker_prefixes(self, raw, expected):
@@ -139,14 +124,8 @@ class TestYouTubeHostCanonicalization:
     @pytest.mark.parametrize(
         "raw, expected",
         [
-            (
-                "https://m.youtube.com/watch?v=dQw4w9WgXcQ",
-                "https://youtube.com/watch?v=dQw4w9WgXcQ",
-            ),
-            (
-                "https://music.youtube.com/watch?v=dQw4w9WgXcQ",
-                "https://youtube.com/watch?v=dQw4w9WgXcQ",
-            ),
+            ("https://m.youtube.com/watch?v=dQw4w9WgXcQ", "https://youtube.com/watch?v=dQw4w9WgXcQ"),
+            ("https://music.youtube.com/watch?v=dQw4w9WgXcQ", "https://youtube.com/watch?v=dQw4w9WgXcQ"),
         ],
     )
     def test_canonicalizes_mobile_and_music_hosts(self, raw, expected):

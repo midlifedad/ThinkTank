@@ -25,12 +25,7 @@ from thinktank.http_utils import (
 def _make_response(status_code: int, headers: dict[str, str] | None = None) -> httpx.Response:
     """Build an httpx.Response tied to a request for raise_for_status to work."""
     request = httpx.Request("GET", "https://example.com/api")
-    return httpx.Response(
-        status_code,
-        headers=headers or {},
-        request=request,
-        content=b"",
-    )
+    return httpx.Response(status_code, headers=headers or {}, request=request, content=b"")
 
 
 class TestParseRetryAfter:

@@ -13,15 +13,8 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_content,
-    create_job,
-    create_source,
-    create_thinker,
-)
-from thinktank.handlers.discover_guests_podcastindex import (
-    handle_discover_guests_podcastindex,
-)
+from tests.factories import create_content, create_job, create_source, create_thinker
+from thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
 from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
 from thinktank.models.candidate import CandidateThinker
 from thinktank.models.source import Source, SourceThinker
@@ -34,19 +27,10 @@ class TestScanForCandidatesContract:
 
     async def test_scan_for_candidates_contract(self, session: AsyncSession):
         """Content with one guest name produces exactly 1 candidate."""
-        owner = await create_thinker(session, name="Host Person")
-        source = await create_source(session, thinker_id=owner.id)
-        content = await create_content(
-            session,
-            source_id=source.id,
-            source_owner_id=owner.id,
-            title="Interview with Alice Johnson",
-        )
-        job = await create_job(
-            session,
-            job_type="scan_for_candidates",
-            payload={"content_ids": [str(content.id)]},
-        )
+        await create_thinker(session, name="Host Person")
+        source = await create_source(session)
+        content = await create_content(session, source_id=source.id, title="Interview with Alice Johnson")
+        job = await create_job(session, job_type="scan_for_candidates", payload={"content_ids": [str(content.id)]})
         await session.commit()
 
         await handle_scan_for_candidates(session, job)
@@ -70,9 +54,7 @@ class TestDiscoverGuestsPodcastindexContract:
         """API with 1 result with feedUrl -> exactly 1 Source created."""
         thinker = await create_thinker(session, name="Carol Davis")
         job = await create_job(
-            session,
-            job_type="discover_guests_podcastindex",
-            payload={"thinker_id": str(thinker.id)},
+            session, job_type="discover_guests_podcastindex", payload={"thinker_id": str(thinker.id)}
         )
         await session.commit()
 
@@ -93,10 +75,7 @@ class TestDiscoverGuestsPodcastindexContract:
                 "thinktank.handlers.discover_guests_podcastindex.PodcastIndexClient",
                 lambda api_key, api_secret: mock_instance,
             ),
-            patch.dict(
-                "os.environ",
-                {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"},
-            ),
+            patch.dict("os.environ", {"PODCASTINDEX_API_KEY": "test-key", "PODCASTINDEX_API_SECRET": "test-secret"}),
         ):
             await handle_discover_guests_podcastindex(session, job)
 
@@ -110,7 +89,6 @@ class TestDiscoverGuestsPodcastindexContract:
         result = await session.execute(select(Source).where(Source.approval_status == "pending_llm"))
         source = result.scalar_one()
         assert source.approval_status == "pending_llm"
-        assert source.thinker_id is None  # thinker_id deprecated; use junction
         assert source.name == "Tech Insights Podcast"
 
         # Verify junction row links source to thinker

@@ -31,15 +31,15 @@ timezone-aware datetimes (``datetime.now(UTC)``); factories,
 handlers, admin routers, and feed parsing have been updated to match.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "007a_tz_content"
-down_revision: Union[str, Sequence[str], None] = "009_index_hot_fks"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "009_index_hot_fks"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 _TIMESTAMP_COLUMNS: tuple[tuple[str, str], ...] = (
@@ -64,16 +64,14 @@ _TIMESTAMP_COLUMNS: tuple[tuple[str, str], ...] = (
 def upgrade() -> None:
     for table, column in _TIMESTAMP_COLUMNS:
         op.execute(
-            f'ALTER TABLE {table} '
-            f'ALTER COLUMN {column} TYPE TIMESTAMP WITH TIME ZONE '
-            f"USING {column} AT TIME ZONE 'UTC'"
+            f"ALTER TABLE {table} ALTER COLUMN {column} TYPE TIMESTAMP WITH TIME ZONE USING {column} AT TIME ZONE 'UTC'"
         )
 
 
 def downgrade() -> None:
     for table, column in reversed(_TIMESTAMP_COLUMNS):
         op.execute(
-            f'ALTER TABLE {table} '
-            f'ALTER COLUMN {column} TYPE TIMESTAMP WITHOUT TIME ZONE '
+            f"ALTER TABLE {table} "
+            f"ALTER COLUMN {column} TYPE TIMESTAMP WITHOUT TIME ZONE "
             f"USING {column} AT TIME ZONE 'UTC'"
         )

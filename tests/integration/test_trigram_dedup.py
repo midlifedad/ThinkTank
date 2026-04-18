@@ -17,11 +17,7 @@ pytestmark = pytest.mark.anyio
 
 async def test_similar_candidate_found(session: AsyncSession):
     """Insert candidate 'John Smith', search for 'john smith' -> match found > 0.7."""
-    await create_candidate_thinker(
-        session,
-        name="John Smith",
-        normalized_name="john smith",
-    )
+    await create_candidate_thinker(session, name="John Smith", normalized_name="john smith")
     await session.commit()
 
     matches = await find_similar_candidates(session, "john smith")
@@ -34,11 +30,7 @@ async def test_similar_candidate_found(session: AsyncSession):
 
 async def test_dissimilar_candidate_not_found(session: AsyncSession):
     """Insert candidate 'John Smith', search for 'jane doe' -> no match."""
-    await create_candidate_thinker(
-        session,
-        name="John Smith",
-        normalized_name="john smith",
-    )
+    await create_candidate_thinker(session, name="John Smith", normalized_name="john smith")
     await session.commit()
 
     matches = await find_similar_candidates(session, "jane doe")
@@ -60,10 +52,7 @@ async def test_existing_thinker_blocks_candidate(session: AsyncSession):
 async def test_candidate_appearance_incremented(session: AsyncSession):
     """Insert candidate with count=1, match found -> count becomes 2, last_seen_at updated."""
     candidate = await create_candidate_thinker(
-        session,
-        name="John Smith",
-        normalized_name="john smith",
-        appearance_count=1,
+        session, name="John Smith", normalized_name="john smith", appearance_count=1
     )
     await session.commit()
 
@@ -85,11 +74,7 @@ async def test_candidate_appearance_incremented(session: AsyncSession):
 
 async def test_threshold_respected(session: AsyncSession):
     """Insert candidate 'John', search for 'Jonathan' -> similarity below 0.7, no match."""
-    await create_candidate_thinker(
-        session,
-        name="John",
-        normalized_name="john",
-    )
+    await create_candidate_thinker(session, name="John", normalized_name="john")
     await session.commit()
 
     matches = await find_similar_candidates(session, "jonathan")

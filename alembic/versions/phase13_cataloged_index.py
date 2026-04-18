@@ -9,14 +9,14 @@ scanning for thinker matches. This partial index makes queries like
 SELECT ... WHERE status = 'cataloged' efficient for the rescan handler.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision: str = "phase13_cataloged_idx"
-down_revision: Union[str, Sequence[str]] = "004_sources_first_class"
+down_revision: str | Sequence[str] = "004_sources_first_class"
 branch_labels = None
 depends_on = None
 

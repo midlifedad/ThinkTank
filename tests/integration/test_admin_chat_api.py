@@ -24,8 +24,7 @@ from thinktank.models.thinker import Thinker
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -77,13 +76,9 @@ class TestChatSend:
         ]
 
         with patch(
-            "thinktank.admin.routers.chat.stream_agent_response",
-            side_effect=_make_mock_stream_generator(*mock_events),
+            "thinktank.admin.routers.chat.stream_agent_response", side_effect=_make_mock_stream_generator(*mock_events)
         ):
-            response = await admin_client.post(
-                "/admin/chat/send",
-                data={"message": "Hi", "session_id": ""},
-            )
+            response = await admin_client.post("/admin/chat/send", data={"message": "Hi", "session_id": ""})
 
         assert response.status_code == 200
         assert "text/event-stream" in response.headers.get("content-type", "")
@@ -116,12 +111,10 @@ class TestChatSend:
         ]
 
         with patch(
-            "thinktank.admin.routers.chat.stream_agent_response",
-            side_effect=_make_mock_stream_generator(*mock_events),
+            "thinktank.admin.routers.chat.stream_agent_response", side_effect=_make_mock_stream_generator(*mock_events)
         ):
             response = await admin_client.post(
-                "/admin/chat/send",
-                data={"message": "Hello", "session_id": session.session_id},
+                "/admin/chat/send", data={"message": "Hello", "session_id": session.session_id}
             )
 
         assert response.status_code == 200
@@ -157,8 +150,7 @@ class TestChatConfirm:
         )
 
         response = await admin_client.post(
-            f"/admin/chat/confirm/{proposal_id}",
-            data={"session_id": chat_session.session_id},
+            f"/admin/chat/confirm/{proposal_id}", data={"session_id": chat_session.session_id}
         )
 
         assert response.status_code == 200
@@ -178,8 +170,7 @@ class TestChatConfirm:
         chat_session = chat_sessions.create()
 
         response = await admin_client.post(
-            "/admin/chat/confirm/nonexistent-id",
-            data={"session_id": chat_session.session_id},
+            "/admin/chat/confirm/nonexistent-id", data={"session_id": chat_session.session_id}
         )
 
         assert response.status_code == 404
@@ -191,19 +182,12 @@ class TestChatHistory:
     async def test_chat_history_returns_messages(self, admin_client):
         """GET /admin/chat/history returns user and assistant messages."""
         chat_session = chat_sessions.create()
+        chat_sessions.add_message(chat_session.session_id, ChatMessage(role="user", content="How many thinkers?"))
         chat_sessions.add_message(
-            chat_session.session_id,
-            ChatMessage(role="user", content="How many thinkers?"),
-        )
-        chat_sessions.add_message(
-            chat_session.session_id,
-            ChatMessage(role="assistant", content="There are 42 active thinkers."),
+            chat_session.session_id, ChatMessage(role="assistant", content="There are 42 active thinkers.")
         )
 
-        response = await admin_client.get(
-            "/admin/chat/history",
-            params={"session_id": chat_session.session_id},
-        )
+        response = await admin_client.get("/admin/chat/history", params={"session_id": chat_session.session_id})
 
         assert response.status_code == 200
         messages = response.json()
@@ -216,10 +200,7 @@ class TestChatHistory:
 
     async def test_chat_history_missing_session(self, admin_client):
         """GET /admin/chat/history with nonexistent session returns 404."""
-        response = await admin_client.get(
-            "/admin/chat/history",
-            params={"session_id": "nonexistent-session"},
-        )
+        response = await admin_client.get("/admin/chat/history", params={"session_id": "nonexistent-session"})
 
         assert response.status_code == 404
 
@@ -230,9 +211,7 @@ class TestQueryDatabaseTool:
     async def test_query_database_rejects_non_select(self, session: AsyncSession):
         """execute_tool with INSERT SQL returns an error."""
         result = await execute_tool(
-            "query_database",
-            {"sql": "INSERT INTO thinkers (name) VALUES ('test')", "explanation": "test"},
-            session,
+            "query_database", {"sql": "INSERT INTO thinkers (name) VALUES ('test')", "explanation": "test"}, session
         )
         assert "error" in result
         assert "SELECT" in result["error"]
@@ -240,29 +219,21 @@ class TestQueryDatabaseTool:
     async def test_query_database_rejects_update(self, session: AsyncSession):
         """execute_tool with UPDATE SQL returns an error."""
         result = await execute_tool(
-            "query_database",
-            {"sql": "UPDATE thinkers SET name='test'", "explanation": "test"},
-            session,
+            "query_database", {"sql": "UPDATE thinkers SET name='test'", "explanation": "test"}, session
         )
         assert "error" in result
 
     async def test_query_database_adds_limit(self, session: AsyncSession):
         """execute_tool adds LIMIT 50 when no LIMIT clause present."""
         # We can verify by running a query -- the result should work
-        result = await execute_tool(
-            "query_database",
-            {"sql": "SELECT 1 as num", "explanation": "test"},
-            session,
-        )
+        result = await execute_tool("query_database", {"sql": "SELECT 1 as num", "explanation": "test"}, session)
         assert "rows" in result
         assert result["row_count"] >= 1
 
     async def test_query_database_preserves_existing_limit(self, session: AsyncSession):
         """execute_tool preserves existing LIMIT clause."""
         result = await execute_tool(
-            "query_database",
-            {"sql": "SELECT 1 as num LIMIT 10", "explanation": "test"},
-            session,
+            "query_database", {"sql": "SELECT 1 as num LIMIT 10", "explanation": "test"}, session
         )
         assert "rows" in result
 
@@ -272,11 +243,7 @@ class TestExecuteConfirmedAction:
 
     async def test_add_thinker(self, session: AsyncSession):
         """add_thinker creates a thinker and an LLM approval job."""
-        result = await execute_confirmed_action(
-            "add_thinker",
-            {"name": "Sam Harris"},
-            session,
-        )
+        result = await execute_confirmed_action("add_thinker", {"name": "Sam Harris"}, session)
 
         assert result["success"] is True
         assert "Sam Harris" in result["message"]
@@ -299,11 +266,7 @@ class TestExecuteConfirmedAction:
         await session.commit()
         job_id = str(job.id)
 
-        result = await execute_confirmed_action(
-            "cancel_job",
-            {"job_id": job_id},
-            session,
-        )
+        result = await execute_confirmed_action("cancel_job", {"job_id": job_id}, session)
 
         assert result["success"] is True
 
@@ -320,11 +283,7 @@ class TestExecuteConfirmedAction:
         job = await create_job(session, status="running", job_type="fetch_podcast_feed")
         await session.commit()
 
-        result = await execute_confirmed_action(
-            "cancel_job",
-            {"job_id": str(job.id)},
-            session,
-        )
+        result = await execute_confirmed_action("cancel_job", {"job_id": str(job.id)}, session)
 
         assert "error" in result
         assert "not" in result["error"].lower() or "pending" in result["error"].lower()

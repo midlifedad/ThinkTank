@@ -33,27 +33,12 @@ pytestmark = pytest.mark.anyio
 
 async def test_scan_creates_candidates(session: AsyncSession):
     """Content with guest names in title creates CandidateThinker rows."""
-    owner = await create_thinker(session, name="Host Person")
-    source = await create_source(session, thinker_id=owner.id)
+    await create_thinker(session, name="Host Person")
+    source = await create_source(session)
 
-    content1 = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Interview with John Smith",
-    )
-    content2 = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Conversation: Jane Doe",
-    )
-    content3 = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="feat. Alice Walker on AI",
-    )
+    content1 = await create_content(session, source_id=source.id, title="Interview with John Smith")
+    content2 = await create_content(session, source_id=source.id, title="Conversation: Jane Doe")
+    content3 = await create_content(session, source_id=source.id, title="feat. Alice Walker on AI")
     job = await create_job(
         session,
         job_type="scan_for_candidates",
@@ -87,21 +72,12 @@ async def test_scan_creates_candidates(session: AsyncSession):
 async def test_scan_skips_existing_thinkers(session: AsyncSession):
     """Names matching existing thinkers via trigram are skipped."""
     # Create an existing thinker named "John Smith"
-    owner = await create_thinker(session, name="Host Person")
+    await create_thinker(session, name="Host Person")
     _existing = await create_thinker(session, name="John Smith")
-    source = await create_source(session, thinker_id=owner.id)
+    source = await create_source(session)
 
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Interview with John Smith",
-    )
-    job = await create_job(
-        session,
-        job_type="scan_for_candidates",
-        payload={"content_ids": [str(content.id)]},
-    )
+    content = await create_content(session, source_id=source.id, title="Interview with John Smith")
+    job = await create_job(session, job_type="scan_for_candidates", payload={"content_ids": [str(content.id)]})
     await session.commit()
 
     await handle_scan_for_candidates(session, job)
@@ -113,28 +89,16 @@ async def test_scan_skips_existing_thinkers(session: AsyncSession):
 
 async def test_scan_increments_existing_candidate(session: AsyncSession):
     """Names matching existing candidates get appearance_count incremented."""
-    owner = await create_thinker(session, name="Host Person")
-    source = await create_source(session, thinker_id=owner.id)
+    await create_thinker(session, name="Host Person")
+    source = await create_source(session)
 
     existing_candidate = await create_candidate_thinker(
-        session,
-        name="john smith",
-        normalized_name="john smith",
-        appearance_count=2,
+        session, name="john smith", normalized_name="john smith", appearance_count=2
     )
     original_last_seen = existing_candidate.last_seen_at
 
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Interview with John Smith",
-    )
-    job = await create_job(
-        session,
-        job_type="scan_for_candidates",
-        payload={"content_ids": [str(content.id)]},
-    )
+    content = await create_content(session, source_id=source.id, title="Interview with John Smith")
+    job = await create_job(session, job_type="scan_for_candidates", payload={"content_ids": [str(content.id)]})
     await session.commit()
 
     await handle_scan_for_candidates(session, job)
@@ -147,26 +111,15 @@ async def test_scan_increments_existing_candidate(session: AsyncSession):
 
 async def test_quota_pause(session: AsyncSession):
     """Quota exhaustion stops candidate creation."""
-    owner = await create_thinker(session, name="Host Person")
-    source = await create_source(session, thinker_id=owner.id)
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Interview with John Smith",
-    )
-    job = await create_job(
-        session,
-        job_type="scan_for_candidates",
-        payload={"content_ids": [str(content.id)]},
-    )
+    await create_thinker(session, name="Host Person")
+    source = await create_source(session)
+    content = await create_content(session, source_id=source.id, title="Interview with John Smith")
+    job = await create_job(session, job_type="scan_for_candidates", payload={"content_ids": [str(content.id)]})
     await session.commit()
 
     # Mock check_daily_quota to return exhausted
     with patch(
-        "thinktank.handlers.scan_for_candidates.check_daily_quota",
-        new_callable=AsyncMock,
-        return_value=(False, 20, 20),
+        "thinktank.handlers.scan_for_candidates.check_daily_quota", new_callable=AsyncMock, return_value=(False, 20, 20)
     ):
         await handle_scan_for_candidates(session, job)
 
@@ -176,26 +129,14 @@ async def test_quota_pause(session: AsyncSession):
 
 async def test_quota_triggers_review(session: AsyncSession):
     """80% quota triggers llm_approval_check job creation."""
-    owner = await create_thinker(session, name="Host Person")
-    source = await create_source(session, thinker_id=owner.id)
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Interview with John Smith",
-    )
-    job = await create_job(
-        session,
-        job_type="scan_for_candidates",
-        payload={"content_ids": [str(content.id)]},
-    )
+    await create_thinker(session, name="Host Person")
+    source = await create_source(session)
+    content = await create_content(session, source_id=source.id, title="Interview with John Smith")
+    job = await create_job(session, job_type="scan_for_candidates", payload={"content_ids": [str(content.id)]})
     await session.commit()
 
     # Mock should_trigger_llm_review to always return True
-    with patch(
-        "thinktank.handlers.scan_for_candidates.should_trigger_llm_review",
-        return_value=True,
-    ):
+    with patch("thinktank.handlers.scan_for_candidates.should_trigger_llm_review", return_value=True):
         await handle_scan_for_candidates(session, job)
 
     # Check for llm_approval_check job
@@ -210,26 +151,15 @@ async def test_quota_triggers_review(session: AsyncSession):
 
 async def test_cascade_pause_pending_queue(session: AsyncSession):
     """Pending queue > 40 causes early return with no candidates created."""
-    owner = await create_thinker(session, name="Host Person")
-    source = await create_source(session, thinker_id=owner.id)
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=owner.id,
-        title="Interview with John Smith",
-    )
-    job = await create_job(
-        session,
-        job_type="scan_for_candidates",
-        payload={"content_ids": [str(content.id)]},
-    )
+    await create_thinker(session, name="Host Person")
+    source = await create_source(session)
+    content = await create_content(session, source_id=source.id, title="Interview with John Smith")
+    job = await create_job(session, job_type="scan_for_candidates", payload={"content_ids": [str(content.id)]})
     await session.commit()
 
     # Mock pending count > 40
     with patch(
-        "thinktank.handlers.scan_for_candidates.get_pending_candidate_count",
-        new_callable=AsyncMock,
-        return_value=41,
+        "thinktank.handlers.scan_for_candidates.get_pending_candidate_count", new_callable=AsyncMock, return_value=41
     ):
         await handle_scan_for_candidates(session, job)
 
@@ -249,11 +179,7 @@ class TestConcurrentDailyQuota:
     async def test_concurrent_quota_inserts_respect_limit(self, session_factory):
         """Limit=3 with 2 pre-seeded; two concurrent workers, only one can win."""
         async with session_factory() as setup:
-            await create_system_config(
-                setup,
-                key="max_candidates_per_day",
-                value={"value": 3},
-            )
+            await create_system_config(setup, key="max_candidates_per_day", value={"value": 3})
             # Pre-seed 2 candidates "today"
             await create_candidate_thinker(setup, name="Existing 1", normalized_name="existing 1")
             await create_candidate_thinker(setup, name="Existing 2", normalized_name="existing 2")
@@ -264,12 +190,7 @@ class TestConcurrentDailyQuota:
             async with session_factory() as s:
                 can_continue, _count, _limit = await check_daily_quota(s)
                 if can_continue:
-                    s.add(
-                        CandidateThinker(
-                            name=f"New {worker_idx}",
-                            normalized_name=f"new {worker_idx}",
-                        )
-                    )
+                    s.add(CandidateThinker(name=f"New {worker_idx}", normalized_name=f"new {worker_idx}"))
                 await s.commit()
                 return can_continue
 

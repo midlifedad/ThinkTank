@@ -135,7 +135,6 @@ async def add_source(
     """Create a new source with pending_llm status. Thinker is optional."""
     source = Source(
         id=uuid.uuid4(),
-        thinker_id=None,
         name=name,
         url=url,
         source_type=source_type,

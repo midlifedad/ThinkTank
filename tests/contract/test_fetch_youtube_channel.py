@@ -16,15 +16,8 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_content,
-    create_job,
-    create_source,
-    create_system_config,
-)
-from thinktank.handlers.fetch_youtube_channel import (
-    handle_fetch_youtube_channel,
-)
+from tests.factories import create_content, create_job, create_source, create_system_config
+from thinktank.handlers.fetch_youtube_channel import handle_fetch_youtube_channel
 from thinktank.models.content import Content
 from thinktank.models.job import Job
 
@@ -78,16 +71,8 @@ class TestFetchYouTubeChannelContract:
             config=config or {},
         )
         # Add YouTube API key to system_config
-        await create_system_config(
-            session,
-            key="youtube_api_key",
-            value="test-youtube-api-key-123",
-        )
-        job = await create_job(
-            session,
-            job_type="fetch_youtube_channel",
-            payload={"source_id": str(source.id)},
-        )
+        await create_system_config(session, key="youtube_api_key", value="test-youtube-api-key-123")
+        job = await create_job(session, job_type="fetch_youtube_channel", payload={"source_id": str(source.id)})
         await session.commit()
         return source, job
 

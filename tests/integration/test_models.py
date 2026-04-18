@@ -10,6 +10,7 @@ Tests verify:
 import uuid
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +24,7 @@ from tests.factories import (
     create_llm_review,
     create_rate_limit_usage,
     create_source,
+    create_source_thinker,
     create_system_config,
     create_thinker,
     create_thinker_category,
@@ -39,6 +41,7 @@ from thinktank.models import (
     LLMReview,
     RateLimitUsage,
     Source,
+    SourceThinker,
     SystemConfig,
     Thinker,
     ThinkerCategory,
@@ -95,14 +98,21 @@ async def test_create_thinker_with_category(session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_create_source_for_thinker(session: AsyncSession):
-    """Source can be created with a thinker FK and the relationship works."""
+async def test_create_source_linked_to_thinker(session: AsyncSession):
+    """Source can be linked to a thinker via the source_thinkers junction."""
     thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id, name="Test Podcast")
+    source = await create_source(session, name="Test Podcast")
+    await create_source_thinker(session, source_id=source.id, thinker_id=thinker.id, relationship_type="host")
     result = await session.get(Source, source.id)
     assert result is not None
-    assert result.thinker_id == thinker.id
     assert result.name == "Test Podcast"
+    junc = await session.execute(
+        select(SourceThinker).where(
+            SourceThinker.source_id == source.id,
+            SourceThinker.thinker_id == thinker.id,
+        )
+    )
+    assert junc.scalar_one().relationship_type == "host"
 
 
 # ---------- Content ----------
@@ -110,19 +120,12 @@ async def test_create_source_for_thinker(session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_create_content_with_source(session: AsyncSession):
-    """Content can be created through the thinker->source->content chain."""
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id)
-    content = await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=thinker.id,
-        title="Great Episode",
-    )
+    """Content can be created via a source."""
+    source = await create_source(session)
+    content = await create_content(session, source_id=source.id, title="Great Episode")
     result = await session.get(Content, content.id)
     assert result is not None
     assert result.source_id == source.id
-    assert result.source_owner_id == thinker.id
     assert result.title == "Great Episode"
 
 
@@ -133,8 +136,8 @@ async def test_create_content_with_source(session: AsyncSession):
 async def test_create_content_thinker(session: AsyncSession):
     """ContentThinker junction links content to thinker with role and confidence."""
     thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id)
-    content = await create_content(session, source_id=source.id, source_owner_id=thinker.id)
+    source = await create_source(session)
+    content = await create_content(session, source_id=source.id)
     await create_content_thinker(session, content_id=content.id, thinker_id=thinker.id, role="primary", confidence=10)
     result = await session.get(ContentThinker, (content.id, thinker.id))
     assert result is not None
@@ -177,10 +180,7 @@ async def test_create_llm_review(session: AsyncSession):
     """LLMReview persists with context_snapshot JSONB."""
     snapshot = {"queue_depth": 42, "thinkers_pending": 5}
     review = await create_llm_review(
-        session,
-        context_snapshot=snapshot,
-        decision="approved",
-        decision_reasoning="Looks good",
+        session, context_snapshot=snapshot, decision="approved", decision_reasoning="Looks good"
     )
     result = await session.get(LLMReview, review.id)
     assert result is not None
@@ -241,21 +241,11 @@ async def test_thinker_slug_unique_constraint(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_content_canonical_url_unique(session: AsyncSession):
     """Two content items with the same canonical_url should raise IntegrityError."""
-    thinker = await create_thinker(session)
-    source = await create_source(session, thinker_id=thinker.id)
-    await create_content(
-        session,
-        source_id=source.id,
-        source_owner_id=thinker.id,
-        canonical_url="https://example.com/same",
-    )
+    await create_thinker(session)
+    source = await create_source(session)
+    await create_content(session, source_id=source.id, canonical_url="https://example.com/same")
     with pytest.raises(IntegrityError):
-        await create_content(
-            session,
-            source_id=source.id,
-            source_owner_id=thinker.id,
-            canonical_url="https://example.com/same",
-        )
+        await create_content(session, source_id=source.id, canonical_url="https://example.com/same")
 
 
 # ---------- FK constraint tests ----------
@@ -264,12 +254,11 @@ async def test_content_canonical_url_unique(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_source_fk_constraint(session: AsyncSession):
     """Content with nonexistent source_id should raise IntegrityError."""
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     with pytest.raises(IntegrityError):
         await create_content(
             session,
             source_id=uuid.uuid4(),  # nonexistent
-            source_owner_id=thinker.id,
         )
 
 
@@ -281,9 +270,7 @@ async def test_thinker_profile_relationship(session: AsyncSession):
     """Thinker with a profile -- can access profile via relationship."""
     thinker = await create_thinker(session)
     profile = await create_thinker_profile(
-        session,
-        thinker_id=thinker.id,
-        education=[{"school": "MIT", "degree": "PhD"}],
+        session, thinker_id=thinker.id, education=[{"school": "MIT", "degree": "PhD"}]
     )
     result = await session.get(ThinkerProfile, profile.id)
     assert result is not None
@@ -295,12 +282,7 @@ async def test_thinker_profile_relationship(session: AsyncSession):
 async def test_thinker_metrics_relationship(session: AsyncSession):
     """Thinker with metrics -- metrics persist correctly."""
     thinker = await create_thinker(session)
-    metrics = await create_thinker_metrics(
-        session,
-        thinker_id=thinker.id,
-        platform="twitter",
-        followers=50000,
-    )
+    metrics = await create_thinker_metrics(session, thinker_id=thinker.id, platform="twitter", followers=50000)
     result = await session.get(ThinkerMetrics, metrics.id)
     assert result is not None
     assert result.thinker_id == thinker.id
@@ -315,16 +297,8 @@ async def test_thinker_metrics_daily_uniqueness(session: AsyncSession):
 
     thinker = await create_thinker(session)
     day = datetime(2026, 4, 17, 12, 0, tzinfo=UTC)
-    await create_thinker_metrics(
-        session,
-        thinker_id=thinker.id,
-        platform="twitter",
-        snapshotted_at=day,
-    )
+    await create_thinker_metrics(session, thinker_id=thinker.id, platform="twitter", snapshotted_at=day)
     with pytest.raises(IntegrityError):
         await create_thinker_metrics(
-            session,
-            thinker_id=thinker.id,
-            platform="twitter",
-            snapshotted_at=day.replace(hour=23),
+            session, thinker_id=thinker.id, platform="twitter", snapshotted_at=day.replace(hour=23)
         )

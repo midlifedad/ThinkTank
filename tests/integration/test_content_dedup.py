@@ -43,10 +43,9 @@ def _make_httpx_mock(fixture_name: str):
 @patch("thinktank.handlers.fetch_podcast_feed.httpx.AsyncClient")
 async def test_url_normalization_dedup(mock_client_cls: MagicMock, session: AsyncSession):
     """Insert content with canonical_url. Feed with same URL + tracking params -> dedup catches it."""
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/dedup-url.xml",
         approval_status="approved",
         active=True,
@@ -63,7 +62,6 @@ async def test_url_normalization_dedup(mock_client_cls: MagicMock, session: Asyn
     await create_content(
         session,
         source_id=source.id,
-        source_owner_id=thinker.id,
         url="https://cdn.example.com/episodes/climate.mp3",
         canonical_url=canonical,
         title="Climate Adaptation Strategies",
@@ -73,11 +71,7 @@ async def test_url_normalization_dedup(mock_client_cls: MagicMock, session: Asyn
     # Now poll the duplicates feed -- the climate episode should be deduped by URL
     mock_client_cls.return_value = _make_httpx_mock("podcast_duplicates.xml")
 
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job)
@@ -102,10 +96,9 @@ async def test_fingerprint_dedup(mock_client_cls: MagicMock, session: AsyncSessi
     """Pre-insert content with fingerprint. Feed with different URL but same title/date/duration -> dedup catches it."""
     from datetime import datetime
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/dedup-fp.xml",
         approval_status="approved",
         active=True,
@@ -114,15 +107,10 @@ async def test_fingerprint_dedup(mock_client_cls: MagicMock, session: AsyncSessi
 
     # Pre-insert content matching the first quantum episode from podcast_duplicates.xml
     # Title: "Understanding Quantum Computing", pubDate: 2026-03-04 09:00, duration: 3600
-    fp = compute_fingerprint(
-        "Understanding Quantum Computing",
-        datetime(2026, 3, 4, 9, 0, 0),
-        3600,
-    )
+    fp = compute_fingerprint("Understanding Quantum Computing", datetime(2026, 3, 4, 9, 0, 0), 3600)
     await create_content(
         session,
         source_id=source.id,
-        source_owner_id=thinker.id,
         url="https://other-platform.com/quantum",
         canonical_url="https://other-platform.com/quantum",
         content_fingerprint=fp,
@@ -135,11 +123,7 @@ async def test_fingerprint_dedup(mock_client_cls: MagicMock, session: AsyncSessi
     # Poll duplicates feed -- both quantum episodes should be caught by fingerprint
     mock_client_cls.return_value = _make_httpx_mock("podcast_duplicates.xml")
 
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job)
@@ -158,18 +142,13 @@ async def test_fingerprint_dedup(mock_client_cls: MagicMock, session: AsyncSessi
 
 async def test_null_fingerprint_not_deduped(session: AsyncSession):
     """Content with no title (NULL fingerprint) can have multiple rows with NULL fingerprint."""
-    thinker = await create_thinker(session)
-    source = await create_source(
-        session,
-        thinker_id=thinker.id,
-        url="https://example.com/feed/null-fp.xml",
-    )
+    await create_thinker(session)
+    source = await create_source(session, url="https://example.com/feed/null-fp.xml")
 
     # Create two content rows with NULL fingerprint (empty titles produce NULL fingerprint)
     await create_content(
         session,
         source_id=source.id,
-        source_owner_id=thinker.id,
         url="https://example.com/ep1",
         canonical_url="https://example.com/ep1",
         content_fingerprint=None,
@@ -178,7 +157,6 @@ async def test_null_fingerprint_not_deduped(session: AsyncSession):
     await create_content(
         session,
         source_id=source.id,
-        source_owner_id=thinker.id,
         url="https://example.com/ep2",
         canonical_url="https://example.com/ep2",
         content_fingerprint=None,

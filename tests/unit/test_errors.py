@@ -90,11 +90,7 @@ class TestCategorizeErrorAnthropic:
 
     def test_rate_limit_error_returns_llm_api_error(self):
         """anthropic.RateLimitError maps to LLM_API_ERROR."""
-        exc = anthropic.RateLimitError(
-            message="Rate limited",
-            response=_mock_httpx_response(429),
-            body=None,
-        )
+        exc = anthropic.RateLimitError(message="Rate limited", response=_mock_httpx_response(429), body=None)
         assert categorize_error(exc) == ErrorCategory.LLM_API_ERROR
 
     def test_api_connection_error_returns_llm_timeout(self):
@@ -109,11 +105,7 @@ class TestCategorizeErrorAnthropic:
 
     def test_api_status_error_returns_llm_api_error(self):
         """anthropic.APIStatusError maps to LLM_API_ERROR."""
-        exc = anthropic.APIStatusError(
-            message="Server error",
-            response=_mock_httpx_response(500),
-            body=None,
-        )
+        exc = anthropic.APIStatusError(message="Server error", response=_mock_httpx_response(500), body=None)
         assert categorize_error(exc) == ErrorCategory.LLM_API_ERROR
 
     def test_pydantic_validation_error_returns_llm_parse_error(self):
@@ -147,45 +139,24 @@ class TestCategorizeErrorHttpx:
         """httpx.HTTPStatusError with 429 maps to RATE_LIMITED."""
         import httpx
 
-        response = httpx.Response(
-            status_code=429,
-            request=httpx.Request("GET", "https://api.example.com/search"),
-        )
-        exc = httpx.HTTPStatusError(
-            message="429 Too Many Requests",
-            request=response.request,
-            response=response,
-        )
+        response = httpx.Response(status_code=429, request=httpx.Request("GET", "https://api.example.com/search"))
+        exc = httpx.HTTPStatusError(message="429 Too Many Requests", request=response.request, response=response)
         assert categorize_error(exc) == ErrorCategory.RATE_LIMITED
 
     def test_httpx_500_returns_http_error(self):
         """httpx.HTTPStatusError with non-429 maps to HTTP_ERROR."""
         import httpx
 
-        response = httpx.Response(
-            status_code=500,
-            request=httpx.Request("GET", "https://api.example.com/search"),
-        )
-        exc = httpx.HTTPStatusError(
-            message="500 Server Error",
-            request=response.request,
-            response=response,
-        )
+        response = httpx.Response(status_code=500, request=httpx.Request("GET", "https://api.example.com/search"))
+        exc = httpx.HTTPStatusError(message="500 Server Error", request=response.request, response=response)
         assert categorize_error(exc) == ErrorCategory.HTTP_ERROR
 
     def test_httpx_403_returns_http_error(self):
         """httpx.HTTPStatusError with 403 maps to HTTP_ERROR."""
         import httpx
 
-        response = httpx.Response(
-            status_code=403,
-            request=httpx.Request("GET", "https://api.example.com/search"),
-        )
-        exc = httpx.HTTPStatusError(
-            message="403 Forbidden",
-            request=response.request,
-            response=response,
-        )
+        response = httpx.Response(status_code=403, request=httpx.Request("GET", "https://api.example.com/search"))
+        exc = httpx.HTTPStatusError(message="403 Forbidden", request=response.request, response=response)
         assert categorize_error(exc) == ErrorCategory.HTTP_ERROR
 
     def test_podcastindex_error_member_exists(self):
@@ -230,9 +201,7 @@ class TestCategorizeErrorDatabase:
         from sqlalchemy.exc import OperationalError
 
         exc = OperationalError(
-            statement="SELECT 1",
-            params=None,
-            orig=Exception("server closed the connection unexpectedly"),
+            statement="SELECT 1", params=None, orig=Exception("server closed the connection unexpectedly")
         )
         assert categorize_error(exc) == ErrorCategory.DATABASE_ERROR
 
@@ -242,8 +211,7 @@ def _mock_httpx_response(status_code: int):
     import httpx
 
     return httpx.Response(
-        status_code=status_code,
-        request=httpx.Request("POST", "https://api.anthropic.com/v1/messages"),
+        status_code=status_code, request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")
     )
 
 

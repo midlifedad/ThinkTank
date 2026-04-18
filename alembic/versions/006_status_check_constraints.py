@@ -42,7 +42,7 @@ Deploy hardening (per Troy's review):
    constraints symmetrically.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 from sqlalchemy import text
@@ -55,9 +55,9 @@ from thinktank.models.constants import (
 
 # revision identifiers, used by Alembic.
 revision: str = "006_status_check"
-down_revision: Union[str, Sequence[str], None] = "005_fk_ondelete"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "005_fk_ondelete"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def _in_list(column: str, values: tuple[str, ...]) -> str:
@@ -74,12 +74,7 @@ def _preflight(table: str, column: str, values: tuple[str, ...]) -> None:
     """
     bind = op.get_bind()
     allowed_set = set(values)
-    offenders = bind.execute(
-        text(
-            f"SELECT DISTINCT {column} FROM {table} "
-            f"WHERE {column} IS NOT NULL"
-        )
-    ).scalars().all()
+    offenders = bind.execute(text(f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL")).scalars().all()
     bad = [v for v in offenders if v not in allowed_set]
     if bad:
         raise RuntimeError(
@@ -97,10 +92,8 @@ def _add_check_not_valid(name: str, table: str, expr: str) -> None:
     full table scan; VALIDATE CONSTRAINT only needs ShareUpdateExclusive,
     so concurrent writers keep running.
     """
-    op.execute(
-        f'ALTER TABLE {table} ADD CONSTRAINT {name} CHECK ({expr}) NOT VALID'
-    )
-    op.execute(f'ALTER TABLE {table} VALIDATE CONSTRAINT {name}')
+    op.execute(f"ALTER TABLE {table} ADD CONSTRAINT {name} CHECK ({expr}) NOT VALID")
+    op.execute(f"ALTER TABLE {table} VALIDATE CONSTRAINT {name}")
 
 
 def upgrade() -> None:
@@ -128,7 +121,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_constraint("ck_job_status", "jobs", type_="check")
-    op.drop_constraint(
-        "ck_source_approval_status", "sources", type_="check"
-    )
+    op.drop_constraint("ck_source_approval_status", "sources", type_="check")
     op.drop_constraint("ck_content_status", "content", type_="check")

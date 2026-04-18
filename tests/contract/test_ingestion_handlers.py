@@ -20,13 +20,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_content,
-    create_job,
-    create_source,
-    create_source_thinker,
-    create_thinker,
-)
+from tests.factories import create_content, create_job, create_source, create_source_thinker, create_thinker
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
 from thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
 from thinktank.handlers.tag_content_thinkers import handle_tag_content_thinkers
@@ -69,20 +63,15 @@ class TestFetchPodcastFeedContract:
         """Approved source + RSS feed -> content rows + tag job with descriptions."""
         mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
-        thinker = await create_thinker(session, name="Contract Thinker")
+        await create_thinker(session, name="Contract Thinker")
         source = await create_source(
             session,
-            thinker_id=thinker.id,
             url="https://example.com/feed/contract-fetch.xml",
             approval_status="approved",
             active=True,
             backfill_complete=False,
         )
-        job = await create_job(
-            session,
-            job_type="fetch_podcast_feed",
-            payload={"source_id": str(source.id)},
-        )
+        job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
         await session.commit()
 
         await handle_fetch_podcast_feed(session, job)
@@ -125,12 +114,11 @@ class TestRefreshDueSourcesContract:
 
     async def test_refresh_due_sources_contract(self, session: AsyncSession):
         """Due sources -> fetch_podcast_feed jobs created."""
-        thinker = await create_thinker(session, name="Contract Thinker 2")
+        await create_thinker(session, name="Contract Thinker 2")
 
         # Due source (never fetched)
         source1 = await create_source(
             session,
-            thinker_id=thinker.id,
             url="https://example.com/feed/contract-due1.xml",
             approval_status="approved",
             active=True,
@@ -141,18 +129,13 @@ class TestRefreshDueSourcesContract:
         # Not due source (not approved)
         await create_source(
             session,
-            thinker_id=thinker.id,
             url="https://example.com/feed/contract-notdue.xml",
             approval_status="pending_llm",
             active=True,
             refresh_interval_hours=6,
         )
 
-        job = await create_job(
-            session,
-            job_type="refresh_due_sources",
-            payload={},
-        )
+        job = await create_job(session, job_type="refresh_due_sources", payload={})
         await session.commit()
 
         await handle_refresh_due_sources(session, job)
@@ -175,14 +158,9 @@ class TestTagContentThinkersContract:
         """Content + thinkers -> ContentThinker attributions with correct roles."""
         owner = await create_thinker(session, name="Contract Owner")
         guest = await create_thinker(session, name="Contract Guest")
-        source = await create_source(session, thinker_id=owner.id)
+        source = await create_source(session)
         await create_source_thinker(session, source_id=source.id, thinker_id=owner.id, relationship_type="host")
-        content = await create_content(
-            session,
-            source_id=source.id,
-            source_owner_id=owner.id,
-            title="Interview with Contract Guest",
-        )
+        content = await create_content(session, source_id=source.id, title="Interview with Contract Guest")
 
         job = await create_job(
             session,

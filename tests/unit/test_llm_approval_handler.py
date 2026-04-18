@@ -9,11 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from thinktank.llm.schemas import (
-    CandidateReviewResponse,
-    SourceApprovalResponse,
-    ThinkerApprovalResponse,
-)
+from thinktank.llm.schemas import CandidateReviewResponse, SourceApprovalResponse, ThinkerApprovalResponse
 from thinktank.models.job import Job
 from thinktank.models.review import LLMReview
 
@@ -55,14 +51,10 @@ class TestHandlerDispatchesThinkerApproval:
                 return_value=mock_context,
             ) as mock_snapshot,
             patch(
-                "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
-                return_value=("system", "user"),
+                "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt", return_value=("system", "user")
             ),
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
-            patch(
-                "thinktank.handlers.llm_approval_check.apply_decision",
-                new_callable=AsyncMock,
-            ) as mock_apply,
+            patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock) as mock_apply,
         ):
             mock_client.review = AsyncMock(return_value=(mock_result, 500, 1200))
             mock_client.model = "claude-sonnet-4-20250514"
@@ -99,14 +91,10 @@ class TestHandlerDispatchesSourceApproval:
                 return_value=mock_context,
             ) as mock_snapshot,
             patch(
-                "thinktank.handlers.llm_approval_check.build_source_approval_prompt",
-                return_value=("system", "user"),
+                "thinktank.handlers.llm_approval_check.build_source_approval_prompt", return_value=("system", "user")
             ),
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
-            patch(
-                "thinktank.handlers.llm_approval_check.apply_decision",
-                new_callable=AsyncMock,
-            ),
+            patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock),
         ):
             mock_client.review = AsyncMock(return_value=(mock_result, 400, 1100))
             mock_client.model = "claude-sonnet-4-20250514"
@@ -141,14 +129,10 @@ class TestHandlerDispatchesCandidateReview:
                 return_value=mock_context,
             ) as mock_snapshot,
             patch(
-                "thinktank.handlers.llm_approval_check.build_candidate_review_prompt",
-                return_value=("system", "user"),
+                "thinktank.handlers.llm_approval_check.build_candidate_review_prompt", return_value=("system", "user")
             ),
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
-            patch(
-                "thinktank.handlers.llm_approval_check.apply_decision",
-                new_callable=AsyncMock,
-            ),
+            patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock),
         ):
             mock_client.review = AsyncMock(return_value=(mock_result, 300, 900))
             mock_client.model = "claude-sonnet-4-20250514"
@@ -171,9 +155,7 @@ class TestHandlerCreatesAuditTrail:
 
         mock_context = {"proposed_thinker": {"name": "Test"}}
         mock_result = ThinkerApprovalResponse(
-            decision="approved",
-            reasoning="Valid thinker",
-            flagged_items=["minor concern"],
+            decision="approved", reasoning="Valid thinker", flagged_items=["minor concern"]
         )
 
         session = AsyncMock()
@@ -194,10 +176,7 @@ class TestHandlerCreatesAuditTrail:
                 return_value=("system_prompt_text", "user_prompt_text"),
             ),
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
-            patch(
-                "thinktank.handlers.llm_approval_check.apply_decision",
-                new_callable=AsyncMock,
-            ),
+            patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock),
         ):
             mock_client.review = AsyncMock(return_value=(mock_result, 500, 1200))
             mock_client.model = "claude-sonnet-4-20250514"
@@ -249,14 +228,10 @@ class TestHandlerCallsApplyDecision:
                 return_value=mock_context,
             ),
             patch(
-                "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt",
-                return_value=("system", "user"),
+                "thinktank.handlers.llm_approval_check.build_thinker_approval_prompt", return_value=("system", "user")
             ),
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
-            patch(
-                "thinktank.handlers.llm_approval_check.apply_decision",
-                new_callable=AsyncMock,
-            ) as mock_apply,
+            patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock) as mock_apply,
         ):
             mock_client.review = AsyncMock(return_value=(mock_result, 500, 1200))
             mock_client.model = "claude-sonnet-4-20250514"

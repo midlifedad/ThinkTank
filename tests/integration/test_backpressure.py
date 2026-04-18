@@ -57,11 +57,7 @@ class TestGetEffectivePriorityIntegration:
         from thinktank.queue.backpressure import get_effective_priority
 
         # Set threshold
-        await create_system_config(
-            session,
-            key="max_pending_transcriptions",
-            value={"value": 500},
-        )
+        await create_system_config(session, key="max_pending_transcriptions", value={"value": 500})
 
         # Create 501 pending process_content jobs
         for _ in range(501):
@@ -78,11 +74,7 @@ class TestGetEffectivePriorityIntegration:
         from thinktank.queue.backpressure import get_effective_priority
 
         # Set threshold
-        await create_system_config(
-            session,
-            key="max_pending_transcriptions",
-            value={"value": 500},
-        )
+        await create_system_config(session, key="max_pending_transcriptions", value={"value": 500})
 
         # Create 399 pending process_content jobs (below 80% of 500 = 400)
         for _ in range(399):
@@ -98,11 +90,7 @@ class TestGetEffectivePriorityIntegration:
         from thinktank.queue.backpressure import get_effective_priority
 
         # Set threshold
-        await create_system_config(
-            session,
-            key="max_pending_transcriptions",
-            value={"value": 500},
-        )
+        await create_system_config(session, key="max_pending_transcriptions", value={"value": 500})
 
         # Create 450 pending process_content jobs (in 80-100% band)
         for _ in range(450):
@@ -118,11 +106,7 @@ class TestGetEffectivePriorityIntegration:
         from thinktank.queue.backpressure import get_effective_priority
 
         # Set threshold
-        await create_system_config(
-            session,
-            key="max_pending_transcriptions",
-            value={"value": 500},
-        )
+        await create_system_config(session, key="max_pending_transcriptions", value={"value": 500})
 
         # Create 1000 pending process_content jobs (way above threshold)
         for _ in range(600):
@@ -138,11 +122,7 @@ class TestGetEffectivePriorityIntegration:
         """Demotion should never exceed priority 10."""
         from thinktank.queue.backpressure import get_effective_priority
 
-        await create_system_config(
-            session,
-            key="max_pending_transcriptions",
-            value={"value": 500},
-        )
+        await create_system_config(session, key="max_pending_transcriptions", value={"value": 500})
 
         for _ in range(501):
             await create_job(session, job_type="process_content", status="pending")

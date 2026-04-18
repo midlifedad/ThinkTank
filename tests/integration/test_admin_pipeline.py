@@ -16,8 +16,7 @@ from thinktank.models.job import Job
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -123,8 +122,7 @@ class TestJobList:
         assert "Page 2 of 2" in response.text
 
     @pytest.mark.xfail(
-        strict=False,
-        reason="pre-existing flake: recent_date (2h ago UTC) can fall on prior UTC day near midnight",
+        strict=False, reason="pre-existing flake: recent_date (2h ago UTC) can fall on prior UTC day near midnight"
     )
     async def test_job_list_filter_by_date(self, admin_client, session: AsyncSession):
         """Date range filter shows only jobs within the range."""
@@ -182,8 +180,7 @@ class TestManualTrigger:
         """POST trigger with thinker_id creates discover_guests_podcastindex job with thinker_id in payload."""
         thinker_uuid = str(uuid.uuid4())
         response = await admin_client.post(
-            "/admin/pipeline/trigger/discover_guests_podcastindex",
-            data={"thinker_id": thinker_uuid},
+            "/admin/pipeline/trigger/discover_guests_podcastindex", data={"thinker_id": thinker_uuid}
         )
         assert response.status_code == 200
         assert "queued successfully" in response.text
@@ -284,11 +281,7 @@ class TestJobDetail:
     async def test_job_detail_loads(self, admin_client, session: AsyncSession):
         """Job detail shows all fields for a seeded job."""
         job = await create_job(
-            session,
-            job_type="fetch_podcast_feed",
-            status="done",
-            payload={"key": "value"},
-            priority=3,
+            session, job_type="fetch_podcast_feed", status="done", payload={"key": "value"}, priority=3
         )
         await session.commit()
 

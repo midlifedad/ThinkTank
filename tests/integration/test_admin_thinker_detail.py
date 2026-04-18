@@ -23,8 +23,7 @@ from tests.factories import (
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -91,19 +90,9 @@ class TestThinkerSources:
     async def test_sources_partial_shows_sources(self, admin_client, session: AsyncSession):
         """GET sources partial with seeded sources shows both source names."""
         thinker = await create_thinker(session, name="Sourced", slug="sourced")
-        source_a = await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Feed Alpha",
-            url="https://example.com/alpha.xml",
-        )
+        source_a = await create_source(session, name="Feed Alpha", url="https://example.com/alpha.xml")
         await create_source_thinker(session, source_id=source_a.id, thinker_id=thinker.id, relationship_type="host")
-        source_b = await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Feed Beta",
-            url="https://example.com/beta.xml",
-        )
+        source_b = await create_source(session, name="Feed Beta", url="https://example.com/beta.xml")
         await create_source_thinker(session, source_id=source_b.id, thinker_id=thinker.id, relationship_type="host")
         await session.commit()
 
@@ -128,27 +117,12 @@ class TestThinkerContent:
     async def test_content_partial_shows_content(self, admin_client, session: AsyncSession):
         """GET content partial with seeded content shows titles."""
         thinker = await create_thinker(session, name="Has Content", slug="has-content")
-        source = await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Content Source",
-            url="https://example.com/contentfeed.xml",
-        )
-        content_a = await create_content(
-            session,
-            source_id=source.id,
-            source_owner_id=thinker.id,
-            title="Episode Alpha",
-        )
+        source = await create_source(session, name="Content Source", url="https://example.com/contentfeed.xml")
+        content_a = await create_content(session, source_id=source.id, title="Episode Alpha")
         await create_content_thinker(
             session, content_id=content_a.id, thinker_id=thinker.id, role="primary", confidence=10
         )
-        content_b = await create_content(
-            session,
-            source_id=source.id,
-            source_owner_id=thinker.id,
-            title="Episode Beta",
-        )
+        content_b = await create_content(session, source_id=source.id, title="Episode Beta")
         await create_content_thinker(
             session, content_id=content_b.id, thinker_id=thinker.id, role="primary", confidence=10
         )
@@ -242,10 +216,7 @@ class TestCandidateQueue:
     async def test_candidate_queue_shows_appearance_count(self, admin_client, session: AsyncSession):
         """Candidate with appearance_count=5 shows that count."""
         await create_candidate_thinker(
-            session,
-            name="Frequent Candidate",
-            normalized_name="frequent candidate",
-            appearance_count=5,
+            session, name="Frequent Candidate", normalized_name="frequent candidate", appearance_count=5
         )
         await session.commit()
 
@@ -261,16 +232,12 @@ class TestCandidatePromote:
     async def test_promote_creates_thinker(self, admin_client, session: AsyncSession):
         """POST promote creates a new Thinker and updates candidate status."""
         candidate = await create_candidate_thinker(
-            session,
-            name="Promotable Expert",
-            normalized_name="promotable expert",
-            status="pending_llm",
+            session, name="Promotable Expert", normalized_name="promotable expert", status="pending_llm"
         )
         await session.commit()
 
         response = await admin_client.post(
-            f"/admin/thinkers/candidates/{candidate.id}/promote",
-            data={"reason": "Great expert"},
+            f"/admin/thinkers/candidates/{candidate.id}/promote", data={"reason": "Great expert"}
         )
         assert response.status_code == 200
 
@@ -297,17 +264,11 @@ class TestCandidatePromote:
     async def test_promote_creates_llm_job(self, admin_client, session: AsyncSession):
         """After promotion, an llm_approval_check job exists for the new thinker."""
         candidate = await create_candidate_thinker(
-            session,
-            name="LLM Check Expert",
-            normalized_name="llm check expert",
-            status="pending_llm",
+            session, name="LLM Check Expert", normalized_name="llm check expert", status="pending_llm"
         )
         await session.commit()
 
-        await admin_client.post(
-            f"/admin/thinkers/candidates/{candidate.id}/promote",
-            data={"reason": "Needs review"},
-        )
+        await admin_client.post(f"/admin/thinkers/candidates/{candidate.id}/promote", data={"reason": "Needs review"})
 
         from thinktank.models.job import Job
         from thinktank.models.thinker import Thinker
@@ -326,16 +287,12 @@ class TestCandidatePromote:
     async def test_promote_returns_updated_queue(self, admin_client, session: AsyncSession):
         """Response shows candidate as promoted or success message."""
         candidate = await create_candidate_thinker(
-            session,
-            name="Queue Update Expert",
-            normalized_name="queue update expert",
-            status="pending_llm",
+            session, name="Queue Update Expert", normalized_name="queue update expert", status="pending_llm"
         )
         await session.commit()
 
         response = await admin_client.post(
-            f"/admin/thinkers/candidates/{candidate.id}/promote",
-            data={"reason": "Good fit"},
+            f"/admin/thinkers/candidates/{candidate.id}/promote", data={"reason": "Good fit"}
         )
         assert response.status_code == 200
         assert "promoted" in response.text.lower()
@@ -347,16 +304,12 @@ class TestCandidateReject:
     async def test_reject_updates_status(self, admin_client, session: AsyncSession):
         """POST reject updates candidate status to rejected with admin reviewer."""
         candidate = await create_candidate_thinker(
-            session,
-            name="Rejectable Candidate",
-            normalized_name="rejectable candidate",
-            status="pending_llm",
+            session, name="Rejectable Candidate", normalized_name="rejectable candidate", status="pending_llm"
         )
         await session.commit()
 
         response = await admin_client.post(
-            f"/admin/thinkers/candidates/{candidate.id}/reject",
-            data={"reason": "Not relevant"},
+            f"/admin/thinkers/candidates/{candidate.id}/reject", data={"reason": "Not relevant"}
         )
         assert response.status_code == 200
 
@@ -383,10 +336,7 @@ class TestCandidateReject:
         original_first_seen = candidate.first_seen_at
         await session.commit()
 
-        await admin_client.post(
-            f"/admin/thinkers/candidates/{candidate.id}/reject",
-            data={"reason": "Not a good fit"},
-        )
+        await admin_client.post(f"/admin/thinkers/candidates/{candidate.id}/reject", data={"reason": "Not a good fit"})
 
         from thinktank.models.candidate import CandidateThinker
 

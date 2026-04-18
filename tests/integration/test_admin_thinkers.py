@@ -7,7 +7,13 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import create_category, create_source, create_thinker, create_thinker_category
+from tests.factories import (
+    create_category,
+    create_source,
+    create_source_thinker,
+    create_thinker,
+    create_thinker_category,
+)
 
 
 async def _verify_thinker(session: AsyncSession, thinker_id):
@@ -24,8 +30,7 @@ async def _verify_thinker(session: AsyncSession, thinker_id):
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -86,9 +91,9 @@ class TestThinkerList:
 
     async def test_list_shows_source_count(self, admin_client, session: AsyncSession):
         """Thinker with sources shows correct source count."""
-        thinker = await create_thinker(session, name="Source Thinker", slug="source-thinker")
-        await create_source(session, thinker_id=thinker.id, name="Source 1", url="https://example.com/feed1.xml")
-        await create_source(session, thinker_id=thinker.id, name="Source 2", url="https://example.com/feed2.xml")
+        await create_thinker(session, name="Source Thinker", slug="source-thinker")
+        await create_source(session, name="Source 1", url="https://example.com/feed1.xml")
+        await create_source(session, name="Source 2", url="https://example.com/feed2.xml")
         await session.commit()
 
         response = await admin_client.get("/admin/thinkers/partials/list")
@@ -156,8 +161,7 @@ class TestThinkerAdd:
     async def test_add_thinker_creates_record(self, admin_client, session: AsyncSession):
         """POST /admin/thinkers/add creates thinker with awaiting_llm status."""
         response = await admin_client.post(
-            "/admin/thinkers/add",
-            data={"name": "Nassim Taleb", "tier": "1", "bio": "Antifragile author"},
+            "/admin/thinkers/add", data={"name": "Nassim Taleb", "tier": "1", "bio": "Antifragile author"}
         )
         assert response.status_code == 200
         assert "Nassim Taleb" in response.text
@@ -175,10 +179,7 @@ class TestThinkerAdd:
 
     async def test_add_thinker_creates_llm_job(self, admin_client, session: AsyncSession):
         """Adding a thinker creates an llm_approval_check job."""
-        await admin_client.post(
-            "/admin/thinkers/add",
-            data={"name": "Tyler Cowen", "tier": "2", "bio": "Economist"},
-        )
+        await admin_client.post("/admin/thinkers/add", data={"name": "Tyler Cowen", "tier": "2", "bio": "Economist"})
 
         from thinktank.models.job import Job
 
@@ -218,8 +219,7 @@ class TestThinkerAdd:
     async def test_add_thinker_returns_updated_list(self, admin_client, session: AsyncSession):
         """Response contains the new thinker name and success message."""
         response = await admin_client.post(
-            "/admin/thinkers/add",
-            data={"name": "Sam Harris", "tier": "2", "bio": "Neuroscientist"},
+            "/admin/thinkers/add", data={"name": "Sam Harris", "tier": "2", "bio": "Neuroscientist"}
         )
         assert response.status_code == 200
         assert "Sam Harris" in response.text
@@ -319,25 +319,16 @@ class TestThinkerToggle:
     async def test_toggle_preserves_data(self, admin_client, session: AsyncSession):
         """After deactivation, all thinker fields remain unchanged."""
         thinker = await create_thinker(
-            session,
-            name="Preserved Thinker",
-            slug="preserved",
-            tier=1,
-            bio="Important bio",
-            active=True,
+            session, name="Preserved Thinker", slug="preserved", tier=1, bio="Important bio", active=True
         )
-        await create_source(
-            session,
-            thinker_id=thinker.id,
-            name="Preserved Source",
-            url="https://example.com/preserved.xml",
-        )
+        source = await create_source(session, name="Preserved Source", url="https://example.com/preserved.xml")
+        await create_source_thinker(session, source_id=source.id, thinker_id=thinker.id, relationship_type="host")
         await session.commit()
 
         # Toggle to deactivate
         await admin_client.post(f"/admin/thinkers/{thinker.id}/toggle-active")
 
-        from thinktank.models.source import Source
+        from thinktank.models.source import Source, SourceThinker
 
         updated = await _verify_thinker(session, thinker.id)
         assert updated.active is False
@@ -345,8 +336,10 @@ class TestThinkerToggle:
         assert updated.tier == 1
         assert updated.bio == "Important bio"
 
-        # Sources still linked
-        source_result = await session.execute(select(Source).where(Source.thinker_id == thinker.id))
+        # Sources still linked via junction
+        source_result = await session.execute(
+            select(Source).join(SourceThinker).where(SourceThinker.thinker_id == thinker.id)
+        )
         sources = source_result.scalars().all()
         assert len(sources) == 1
         assert sources[0].name == "Preserved Source"

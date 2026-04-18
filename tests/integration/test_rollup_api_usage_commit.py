@@ -36,15 +36,9 @@ async def test_rollup_persists_across_session_boundary(session_factory):
     async with session_factory() as seed_session:
         for _ in range(4):
             await create_rate_limit_usage(
-                seed_session,
-                api_name="podcastindex",
-                worker_id="w-seed",
-                called_at=three_hours_ago,
+                seed_session, api_name="podcastindex", worker_id="w-seed", called_at=three_hours_ago
             )
-        job = await create_job(
-            seed_session,
-            job_type="rollup_api_usage",
-        )
+        job = await create_job(seed_session, job_type="rollup_api_usage")
         await seed_session.commit()
         job_id = job.id
 

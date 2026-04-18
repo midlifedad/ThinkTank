@@ -6,19 +6,12 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_job,
-    create_llm_review,
-    create_source,
-    create_system_config,
-    create_thinker,
-)
+from tests.factories import create_job, create_llm_review, create_source, create_system_config, create_thinker
 
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -114,10 +107,10 @@ class TestSourceHealthPartial:
         assert response.status_code == 200
 
     async def test_shows_source_counts(self, admin_client, session: AsyncSession):
-        thinker = await create_thinker(session)
-        await create_source(session, thinker_id=thinker.id, approval_status="approved", active=True)
-        await create_source(session, thinker_id=thinker.id, approval_status="approved", error_count=5, active=True)
-        await create_source(session, thinker_id=thinker.id, approval_status="pending_llm", active=False)
+        await create_thinker(session)
+        await create_source(session, approval_status="approved", active=True)
+        await create_source(session, approval_status="approved", error_count=5, active=True)
+        await create_source(session, approval_status="pending_llm", active=False)
         await session.commit()
 
         response = await admin_client.get("/admin/partials/source-health")
@@ -254,12 +247,7 @@ class TestActivityFeedPartial:
     async def test_shows_completed_jobs(self, admin_client, session: AsyncSession):
         from datetime import UTC, datetime
 
-        await create_job(
-            session,
-            job_type="fetch_podcast_feed",
-            status="done",
-            completed_at=datetime.now(UTC),
-        )
+        await create_job(session, job_type="fetch_podcast_feed", status="done", completed_at=datetime.now(UTC))
         await session.commit()
 
         response = await admin_client.get("/admin/partials/activity-feed")

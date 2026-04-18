@@ -13,11 +13,7 @@ Covers:
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from thinktank.discovery.quota import (
-    check_daily_quota,
-    get_pending_candidate_count,
-    should_trigger_llm_review,
-)
+from thinktank.discovery.quota import check_daily_quota, get_pending_candidate_count, should_trigger_llm_review
 
 
 class TestShouldTriggerLlmReview:
@@ -54,11 +50,7 @@ class TestCheckDailyQuota:
         mock_result.scalar_one_or_none.return_value = 0
         mock_session.execute.return_value = mock_result
 
-        with patch(
-            "thinktank.discovery.quota.get_config_value",
-            new_callable=AsyncMock,
-            return_value=20,
-        ):
+        with patch("thinktank.discovery.quota.get_config_value", new_callable=AsyncMock, return_value=20):
             can_continue, count, limit = await check_daily_quota(mock_session)
 
         assert can_continue is True
@@ -72,11 +64,7 @@ class TestCheckDailyQuota:
         mock_result.scalar_one_or_none.return_value = 20
         mock_session.execute.return_value = mock_result
 
-        with patch(
-            "thinktank.discovery.quota.get_config_value",
-            new_callable=AsyncMock,
-            return_value=20,
-        ):
+        with patch("thinktank.discovery.quota.get_config_value", new_callable=AsyncMock, return_value=20):
             can_continue, count, limit = await check_daily_quota(mock_session)
 
         assert can_continue is False
@@ -90,11 +78,7 @@ class TestCheckDailyQuota:
         mock_result.scalar_one_or_none.return_value = 15
         mock_session.execute.return_value = mock_result
 
-        with patch(
-            "thinktank.discovery.quota.get_config_value",
-            new_callable=AsyncMock,
-            return_value=20,
-        ):
+        with patch("thinktank.discovery.quota.get_config_value", new_callable=AsyncMock, return_value=20):
             can_continue, count, limit = await check_daily_quota(mock_session)
 
         assert can_continue is True
@@ -109,9 +93,7 @@ class TestCheckDailyQuota:
         mock_session.execute.return_value = mock_result
 
         with patch(
-            "thinktank.discovery.quota.get_config_value",
-            new_callable=AsyncMock,
-            return_value=50,
+            "thinktank.discovery.quota.get_config_value", new_callable=AsyncMock, return_value=50
         ) as mock_get_config:
             can_continue, count, limit = await check_daily_quota(mock_session)
 
@@ -127,11 +109,7 @@ class TestCheckDailyQuota:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
 
-        with patch(
-            "thinktank.discovery.quota.get_config_value",
-            new_callable=AsyncMock,
-            return_value=20,
-        ):
+        with patch("thinktank.discovery.quota.get_config_value", new_callable=AsyncMock, return_value=20):
             can_continue, count, limit = await check_daily_quota(mock_session)
 
         assert can_continue is True

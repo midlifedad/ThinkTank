@@ -95,12 +95,7 @@ class TestWorkerLoopLifecycle:
 
         # Create a pending job with max_attempts=1 so it goes to failed immediately
         async with session_factory() as session:
-            job = await create_job(
-                session,
-                job_type="fail_job_type",
-                status="pending",
-                max_attempts=1,
-            )
+            job = await create_job(session, job_type="fail_job_type", status="pending", max_attempts=1)
             job_id = job.id
             await session.commit()
 
@@ -116,12 +111,7 @@ class TestWorkerLoopLifecycle:
 
         from thinktank.worker.config import WorkerSettings
 
-        settings = WorkerSettings(
-            poll_interval=0.1,
-            max_idle_backoff=0.5,
-            max_concurrency=2,
-            reclaim_interval=600.0,
-        )
+        settings = WorkerSettings(poll_interval=0.1, max_idle_backoff=0.5, max_concurrency=2, reclaim_interval=600.0)
 
         loop_task = asyncio.create_task(worker_loop(session_factory, settings=settings, shutdown_event=shutdown))
         stop_task = asyncio.create_task(stop_after_processing())
@@ -161,12 +151,7 @@ class TestWorkerLoopLifecycle:
 
         from thinktank.worker.config import WorkerSettings
 
-        settings = WorkerSettings(
-            poll_interval=0.1,
-            max_idle_backoff=0.5,
-            max_concurrency=2,
-            reclaim_interval=600.0,
-        )
+        settings = WorkerSettings(poll_interval=0.1, max_idle_backoff=0.5, max_concurrency=2, reclaim_interval=600.0)
 
         loop_task = asyncio.create_task(worker_loop(session_factory, settings=settings, shutdown_event=shutdown))
         stop_task = asyncio.create_task(stop_after_delay())
@@ -185,12 +170,7 @@ class TestWorkerLoopLifecycle:
         # No handler registered for this type
 
         async with session_factory() as session:
-            job = await create_job(
-                session,
-                job_type="nonexistent_handler_type",
-                status="pending",
-                max_attempts=1,
-            )
+            job = await create_job(session, job_type="nonexistent_handler_type", status="pending", max_attempts=1)
             job_id = job.id
             await session.commit()
 
@@ -202,12 +182,7 @@ class TestWorkerLoopLifecycle:
 
         from thinktank.worker.config import WorkerSettings
 
-        settings = WorkerSettings(
-            poll_interval=0.1,
-            max_idle_backoff=0.5,
-            max_concurrency=2,
-            reclaim_interval=600.0,
-        )
+        settings = WorkerSettings(poll_interval=0.1, max_idle_backoff=0.5, max_concurrency=2, reclaim_interval=600.0)
 
         loop_task = asyncio.create_task(worker_loop(session_factory, settings=settings, shutdown_event=shutdown))
         stop_task = asyncio.create_task(stop_after_delay())

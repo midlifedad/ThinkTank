@@ -51,20 +51,15 @@ async def test_basic_feed_poll(mock_client_cls: MagicMock, session: AsyncSession
     """Approved source + basic feed -> 3 content rows with correct metadata."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
-    thinker = await create_thinker(session, name="Test Thinker")
+    await create_thinker(session, name="Test Thinker")
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/basic.xml",
         approval_status="approved",
         active=True,
         backfill_complete=False,
     )
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job)
@@ -80,9 +75,7 @@ async def test_basic_feed_poll(mock_client_cls: MagicMock, session: AsyncSession
     assert "The Future of Energy" in titles
     assert "Crypto Markets Q4 Review" in titles
 
-    # Phase 13: source_owner_id is no longer set by fetch_podcast_feed
     for c in content_rows:
-        assert c.source_owner_id is None
         assert c.content_type == "episode"
         assert c.show_name == "ThinkTank Test Podcast"
 
@@ -92,20 +85,15 @@ async def test_duplicate_poll_no_new_rows(mock_client_cls: MagicMock, session: A
     """Polling same feed twice -> second poll inserts 0 new rows (URL dedup)."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/basic-dup.xml",
         approval_status="approved",
         active=True,
         backfill_complete=False,
     )
-    job1 = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job1 = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     # First poll
@@ -121,11 +109,7 @@ async def test_duplicate_poll_no_new_rows(mock_client_cls: MagicMock, session: A
     # Reload source since it was committed
     await session.refresh(source)
 
-    job2 = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job2 = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     # Second poll
@@ -141,19 +125,11 @@ async def test_unapproved_source_skipped(mock_client_cls: MagicMock, session: As
     """Source with approval_status='pending_llm' -> no content, no error."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
-        session,
-        thinker_id=thinker.id,
-        url="https://example.com/feed/unapproved.xml",
-        approval_status="pending_llm",
-        active=True,
+        session, url="https://example.com/feed/unapproved.xml", approval_status="pending_llm", active=True
     )
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     # Should not raise, just return
@@ -171,19 +147,11 @@ async def test_inactive_source_skipped(mock_client_cls: MagicMock, session: Asyn
     """Source with active=False -> no content inserted."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
-        session,
-        thinker_id=thinker.id,
-        url="https://example.com/feed/inactive.xml",
-        approval_status="approved",
-        active=False,
+        session, url="https://example.com/feed/inactive.xml", approval_status="approved", active=False
     )
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job)
@@ -197,20 +165,15 @@ async def test_short_episodes_skipped(mock_client_cls: MagicMock, session: Async
     """Short episodes get status='skipped', long episode gets 'pending'."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_short_episodes.xml")
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/short.xml",
         approval_status="approved",
         active=True,
         backfill_complete=False,
     )
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job)
@@ -234,20 +197,15 @@ async def test_skip_title_patterns(mock_client_cls: MagicMock, session: AsyncSes
     """Trailer, Best of, and Announcement episodes get status='skipped'."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_skip_titles.xml")
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/skip-titles.xml",
         approval_status="approved",
         active=True,
         backfill_complete=False,
     )
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job)
@@ -269,10 +227,9 @@ async def test_source_last_fetched_updated(mock_client_cls: MagicMock, session: 
     """After successful poll, source.last_fetched is set and item_count matches."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/fetched.xml",
         approval_status="approved",
         active=True,
@@ -281,11 +238,7 @@ async def test_source_last_fetched_updated(mock_client_cls: MagicMock, session: 
     )
     assert source.last_fetched is None
 
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job)
@@ -301,20 +254,15 @@ async def test_backfill_then_incremental(mock_client_cls: MagicMock, session: As
     """First poll: backfill_complete set True. Second poll: incremental, no new rows."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/backfill.xml",
         approval_status="approved",
         active=True,
         backfill_complete=False,
     )
-    job1 = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job1 = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     # First poll (backfill)
@@ -326,11 +274,7 @@ async def test_backfill_then_incremental(mock_client_cls: MagicMock, session: As
     # Second poll (incremental) with same feed
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
-    job2 = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job2 = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job2)
@@ -346,20 +290,15 @@ async def test_tag_job_enqueued_with_descriptions(mock_client_cls: MagicMock, se
     """After successful poll, tag_content_thinkers job has content_ids, source_id, and descriptions."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_basic.xml")
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/tag.xml",
         approval_status="approved",
         active=True,
         backfill_complete=False,
     )
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job)
@@ -399,21 +338,16 @@ async def test_per_source_duration_override(mock_client_cls: MagicMock, session:
     """Source with min_duration_override=300, feed has 400s episode -> NOT skipped."""
     mock_client_cls.return_value = _make_httpx_mock("podcast_short_episodes.xml")
 
-    thinker = await create_thinker(session)
+    await create_thinker(session)
     source = await create_source(
         session,
-        thinker_id=thinker.id,
         url="https://example.com/feed/override.xml",
         approval_status="approved",
         active=True,
         backfill_complete=False,
         config={"min_duration_override": 200},
     )
-    job = await create_job(
-        session,
-        job_type="fetch_podcast_feed",
-        payload={"source_id": str(source.id)},
-    )
+    job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
     await session.commit()
 
     await handle_fetch_podcast_feed(session, job)

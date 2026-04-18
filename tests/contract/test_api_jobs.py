@@ -21,11 +21,7 @@ class TestJobsEndpointContract:
         await create_job(session, job_type="discover_thinker", status="pending")
         await create_job(session, job_type="discover_thinker", status="done")
         await create_job(
-            session,
-            job_type="fetch_podcast_feed",
-            status="failed",
-            error="Timeout",
-            error_category="network",
+            session, job_type="fetch_podcast_feed", status="failed", error="Timeout", error_category="network"
         )
         await session.commit()
 

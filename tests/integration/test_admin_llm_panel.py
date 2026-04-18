@@ -8,19 +8,12 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_category,
-    create_llm_review,
-    create_source,
-    create_system_config,
-    create_thinker,
-)
+from tests.factories import create_category, create_llm_review, create_source, create_system_config, create_thinker
 
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -68,11 +61,7 @@ class TestPendingPartial:
         assert response.status_code == 200
 
     async def test_shows_pending_review(self, admin_client, session: AsyncSession):
-        await create_llm_review(
-            session,
-            review_type="thinker_approval",
-            decision=None,
-        )
+        await create_llm_review(session, review_type="thinker_approval", decision=None)
         await session.commit()
 
         response = await admin_client.get("/admin/llm/partials/pending")
@@ -81,10 +70,7 @@ class TestPendingPartial:
 
     async def test_completed_review_not_in_pending(self, admin_client, session: AsyncSession):
         await create_llm_review(
-            session,
-            review_type="thinker_approval",
-            decision="approve",
-            decision_reasoning="Looks good",
+            session, review_type="thinker_approval", decision="approve", decision_reasoning="Looks good"
         )
         await session.commit()
 
@@ -97,10 +83,7 @@ class TestPendingPartial:
         await create_system_config(session, key="llm_timeout_hours", value=2, set_by="test")
         # Create a review from 3 hours ago (should be timed out)
         await create_llm_review(
-            session,
-            review_type="source_approval",
-            decision=None,
-            created_at=_now() - timedelta(hours=3),
+            session, review_type="source_approval", decision=None, created_at=_now() - timedelta(hours=3)
         )
         await session.commit()
 
@@ -152,12 +135,7 @@ class TestOverride:
     """Test the human override endpoint."""
 
     async def test_override_updates_review(self, admin_client, session: AsyncSession):
-        review = await create_llm_review(
-            session,
-            review_type="thinker_approval",
-            decision=None,
-            context_snapshot={},
-        )
+        review = await create_llm_review(session, review_type="thinker_approval", decision=None, context_snapshot={})
         await session.commit()
 
         response = await admin_client.post(
@@ -181,10 +159,7 @@ class TestOverride:
     async def test_override_applies_to_thinker(self, admin_client, session: AsyncSession):
         thinker = await create_thinker(session, approval_status="pending_llm")
         review = await create_llm_review(
-            session,
-            review_type="thinker_approval",
-            decision=None,
-            context_snapshot={"thinker_id": str(thinker.id)},
+            session, review_type="thinker_approval", decision=None, context_snapshot={"thinker_id": str(thinker.id)}
         )
         await session.commit()
 
@@ -204,13 +179,10 @@ class TestOverride:
         assert thinker.approval_status == "approved"
 
     async def test_override_applies_to_source(self, admin_client, session: AsyncSession):
-        thinker = await create_thinker(session)
-        source = await create_source(session, thinker_id=thinker.id, approval_status="pending_llm")
+        await create_thinker(session)
+        source = await create_source(session, approval_status="pending_llm")
         review = await create_llm_review(
-            session,
-            review_type="source_approval",
-            decision=None,
-            context_snapshot={"source_id": str(source.id)},
+            session, review_type="source_approval", decision=None, context_snapshot={"source_id": str(source.id)}
         )
         await session.commit()
 

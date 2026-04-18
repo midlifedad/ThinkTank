@@ -9,11 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from thinktank.ingestion.youtube_client import (
-    SKIP_CATEGORY_IDS,
-    YouTubeClient,
-    _parse_iso_duration,
-)
+from thinktank.ingestion.youtube_client import SKIP_CATEGORY_IDS, YouTubeClient, _parse_iso_duration
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "youtube"
 

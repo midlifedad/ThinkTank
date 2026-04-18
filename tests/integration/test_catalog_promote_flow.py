@@ -19,20 +19,10 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.factories import (
-    create_content,
-    create_job,
-    create_source,
-    create_source_thinker,
-    create_thinker,
-)
+from tests.factories import create_content, create_job, create_source, create_source_thinker, create_thinker
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
-from thinktank.handlers.rescan_cataloged_for_thinker import (
-    handle_rescan_cataloged_for_thinker,
-)
-from thinktank.handlers.scan_episodes_for_thinkers import (
-    handle_scan_episodes_for_thinkers,
-)
+from thinktank.handlers.rescan_cataloged_for_thinker import handle_rescan_cataloged_for_thinker
+from thinktank.handlers.scan_episodes_for_thinkers import handle_scan_episodes_for_thinkers
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 
@@ -142,11 +132,7 @@ class TestFullPipelineGuestSourceEfficiency:
         mock_client_cls.return_value = _mock_httpx_for_xml(xml)
 
         # Step 1: fetch_podcast_feed -> creates cataloged content
-        fetch_job = await create_job(
-            session,
-            job_type="fetch_podcast_feed",
-            payload={"source_id": str(source.id)},
-        )
+        fetch_job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
         await session.commit()
 
         await handle_fetch_podcast_feed(session, fetch_job)
@@ -167,19 +153,13 @@ class TestFullPipelineGuestSourceEfficiency:
 
         # Verify: 2 promoted to pending, 8 still cataloged
         result = await session.execute(
-            select(Content).where(
-                Content.source_id == source.id,
-                Content.status == "pending",
-            )
+            select(Content).where(Content.source_id == source.id, Content.status == "pending")
         )
         pending = result.scalars().all()
         assert len(pending) == 2, f"Expected 2 pending, got {len(pending)}"
 
         result = await session.execute(
-            select(Content).where(
-                Content.source_id == source.id,
-                Content.status == "cataloged",
-            )
+            select(Content).where(Content.source_id == source.id, Content.status == "cataloged")
         )
         still_cataloged = result.scalars().all()
         assert len(still_cataloged) == 8, f"Expected 8 cataloged, got {len(still_cataloged)}"
@@ -210,12 +190,7 @@ class TestFullPipelineHostSourceAllPromoted:
             active=True,
             backfill_complete=False,
         )
-        await create_source_thinker(
-            session,
-            source_id=source.id,
-            thinker_id=lex.id,
-            relationship_type="host",
-        )
+        await create_source_thinker(session, source_id=source.id, thinker_id=lex.id, relationship_type="host")
 
         # Build RSS feed: 5 episodes, none mention Lex in title (shouldn't matter)
         episodes = [
@@ -229,21 +204,14 @@ class TestFullPipelineHostSourceAllPromoted:
         mock_client_cls.return_value = _mock_httpx_for_xml(xml)
 
         # Step 1: fetch_podcast_feed
-        fetch_job = await create_job(
-            session,
-            job_type="fetch_podcast_feed",
-            payload={"source_id": str(source.id)},
-        )
+        fetch_job = await create_job(session, job_type="fetch_podcast_feed", payload={"source_id": str(source.id)})
         await session.commit()
 
         await handle_fetch_podcast_feed(session, fetch_job)
 
         # Verify: all 5 cataloged
         result = await session.execute(
-            select(Content).where(
-                Content.source_id == source.id,
-                Content.status == "cataloged",
-            )
+            select(Content).where(Content.source_id == source.id, Content.status == "cataloged")
         )
         cataloged = result.scalars().all()
         assert len(cataloged) == 5
@@ -256,10 +224,7 @@ class TestFullPipelineHostSourceAllPromoted:
 
         # Verify: ALL 5 promoted to pending (host source)
         result = await session.execute(
-            select(Content).where(
-                Content.source_id == source.id,
-                Content.status == "pending",
-            )
+            select(Content).where(Content.source_id == source.id, Content.status == "pending")
         )
         pending = result.scalars().all()
         assert len(pending) == 5, f"Expected 5 pending (host), got {len(pending)}"
@@ -282,18 +247,12 @@ class TestRescanPromotesAfterNewThinker:
 
         # 1 title mentions "Naval Ravikant", 4 do not
         matching = await create_content(
-            session,
-            source_id=source.id,
-            title="Naval Ravikant on Getting Rich",
-            status="cataloged",
+            session, source_id=source.id, title="Naval Ravikant on Getting Rich", status="cataloged"
         )
         non_matching = []
         for i in range(4):
             c = await create_content(
-                session,
-                source_id=source.id,
-                title=f"Unrelated Episode About Topic {i}",
-                status="cataloged",
+                session, source_id=source.id, title=f"Unrelated Episode About Topic {i}", status="cataloged"
             )
             non_matching.append(c)
 
@@ -335,17 +294,11 @@ class TestRescanPromotesAfterNewThinker:
 
         # Substring false-positive candidate — ILIKE would match but word-boundary rejects
         false_positive = await create_content(
-            session,
-            source_id=source.id,
-            title="Scam Harrison investigates podcast fraud",
-            status="cataloged",
+            session, source_id=source.id, title="Scam Harrison investigates podcast fraud", status="cataloged"
         )
         # Genuine match
         true_positive = await create_content(
-            session,
-            source_id=source.id,
-            title="Guest: Sam Harris on meditation",
-            status="cataloged",
+            session, source_id=source.id, title="Guest: Sam Harris on meditation", status="cataloged"
         )
 
         sam = await create_thinker(session, name="Sam Harris")
@@ -381,33 +334,19 @@ class TestExistingPendingEpisodesNotDemoted:
         # Setup: create source and mixed-status content
         thinker = await create_thinker(session, name="Test Thinker For D05")
         source = await create_source(session)
-        await create_source_thinker(
-            session,
-            source_id=source.id,
-            thinker_id=thinker.id,
-            relationship_type="host",
-        )
+        await create_source_thinker(session, source_id=source.id, thinker_id=thinker.id, relationship_type="host")
 
         # Pre-existing pending episode (should NOT be touched)
         pre_existing = await create_content(
-            session,
-            source_id=source.id,
-            title="Already Pending Episode",
-            status="pending",
+            session, source_id=source.id, title="Already Pending Episode", status="pending"
         )
 
         # Cataloged episodes (should be promoted by host scan)
         cataloged_1 = await create_content(
-            session,
-            source_id=source.id,
-            title="New Cataloged Episode 1",
-            status="cataloged",
+            session, source_id=source.id, title="New Cataloged Episode 1", status="cataloged"
         )
         cataloged_2 = await create_content(
-            session,
-            source_id=source.id,
-            title="New Cataloged Episode 2",
-            status="cataloged",
+            session, source_id=source.id, title="New Cataloged Episode 2", status="cataloged"
         )
 
         job = await create_job(

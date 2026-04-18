@@ -12,7 +12,7 @@ import asyncio
 import uuid
 
 import structlog
-from sqlalchemy import select, text, func
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from scripts.seed_categories import seed_categories
@@ -47,9 +47,7 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
     try:
         await session.execute(text("SELECT 1 FROM categories LIMIT 1"))
     except Exception as exc:
-        raise RuntimeError(
-            "Schema not found. Run 'alembic upgrade head' first."
-        ) from exc
+        raise RuntimeError("Schema not found. Run 'alembic upgrade head' first.") from exc
 
     # Step 2: Seed categories
     await logger.ainfo("bootstrap.seed_categories", step=2)
@@ -62,15 +60,10 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
     await logger.ainfo("bootstrap.seed_config.done", count=config_count)
 
     # Step 4: Validate categories exist before thinkers
-    result = await session.execute(
-        select(func.count()).select_from(Category)
-    )
+    result = await session.execute(select(func.count()).select_from(Category))
     category_total = result.scalar()
     if category_total == 0:
-        raise RuntimeError(
-            "Categories must exist before seeding thinkers. "
-            "seed_categories failed silently."
-        )
+        raise RuntimeError("Categories must exist before seeding thinkers. seed_categories failed silently.")
 
     # Step 5: Seed thinkers
     await logger.ainfo("bootstrap.seed_thinkers", step=5)
@@ -165,10 +158,7 @@ async def bootstrap(session: AsyncSession) -> dict[str, int]:
 
     # Step 7: Activate workers
     await logger.ainfo("bootstrap.activate_workers", step=7)
-    stmt = (
-        select(SystemConfig)
-        .where(SystemConfig.key == "workers_active")
-    )
+    stmt = select(SystemConfig).where(SystemConfig.key == "workers_active")
     result = await session.execute(stmt)
     config = result.scalar_one()
     config.value = True

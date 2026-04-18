@@ -218,7 +218,6 @@ async def handle_fetch_youtube_channel(session: AsyncSession, job: Job) -> None:
         content = Content(
             id=uuid.uuid4(),
             source_id=source.id,
-            source_owner_id=None,  # DEPRECATED -- use content_thinkers junction
             content_type="video",
             url=url,
             canonical_url=canonical,

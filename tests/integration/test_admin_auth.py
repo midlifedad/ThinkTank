@@ -24,8 +24,7 @@ from httpx import ASGITransport, AsyncClient
 pytestmark = pytest.mark.anyio
 
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test",
+    "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
 
@@ -74,18 +73,12 @@ class TestAdminAuthRequired:
 
     async def test_wrong_bearer_rejected(self, admin_client, seeded_admin_token):
         """A bearer header with the wrong token → 401."""
-        resp = await admin_client.post(
-            "/admin/kill-switch/toggle",
-            headers={"Authorization": "Bearer wrong-token"},
-        )
+        resp = await admin_client.post("/admin/kill-switch/toggle", headers={"Authorization": "Bearer wrong-token"})
         assert resp.status_code == 401
 
     async def test_wrong_cookie_rejected(self, admin_client, seeded_admin_token):
         """An admin_session cookie with the wrong value → 401."""
-        resp = await admin_client.post(
-            "/admin/kill-switch/toggle",
-            cookies={"admin_session": "wrong-token"},
-        )
+        resp = await admin_client.post("/admin/kill-switch/toggle", cookies={"admin_session": "wrong-token"})
         assert resp.status_code == 401
 
 
@@ -95,8 +88,7 @@ class TestAdminAuthAccepts:
     async def test_valid_bearer_accepted(self, admin_client, seeded_admin_token):
         """A correct bearer header unlocks the kill switch toggle."""
         resp = await admin_client.post(
-            "/admin/kill-switch/toggle",
-            headers={"Authorization": f"Bearer {seeded_admin_token}"},
+            "/admin/kill-switch/toggle", headers={"Authorization": f"Bearer {seeded_admin_token}"}
         )
         # Any non-401 is acceptable; the point is the auth dependency passed.
         # HTMX partials typically return 200.
@@ -105,10 +97,7 @@ class TestAdminAuthAccepts:
 
     async def test_valid_cookie_accepted(self, admin_client, seeded_admin_token):
         """A correct admin_session cookie unlocks dashboard GET."""
-        resp = await admin_client.get(
-            "/admin/",
-            cookies={"admin_session": seeded_admin_token},
-        )
+        resp = await admin_client.get("/admin/", cookies={"admin_session": seeded_admin_token})
         assert resp.status_code != 401
         assert resp.status_code < 500
 
@@ -124,10 +113,7 @@ class TestAdminLoginEndpoint:
 
     async def test_login_accepts_valid_token_and_sets_cookie(self, admin_client, seeded_admin_token):
         """POST /admin/login with the correct token sets the admin_session cookie."""
-        resp = await admin_client.post(
-            "/admin/login",
-            data={"token": seeded_admin_token},
-        )
+        resp = await admin_client.post("/admin/login", data={"token": seeded_admin_token})
         # Successful login should set the cookie.
         assert resp.status_code in (200, 303)
         set_cookie = resp.headers.get("set-cookie", "")
@@ -135,10 +121,7 @@ class TestAdminLoginEndpoint:
 
     async def test_login_rejects_wrong_token(self, admin_client, seeded_admin_token):
         """POST /admin/login with the wrong token → 401, no cookie set."""
-        resp = await admin_client.post(
-            "/admin/login",
-            data={"token": "nope"},
-        )
+        resp = await admin_client.post("/admin/login", data={"token": "nope"})
         assert resp.status_code == 401
 
 
@@ -148,10 +131,7 @@ class TestAdminAuthTokenNotConfigured:
 
     async def test_missing_admin_token_returns_500(self, admin_client):
         """No secret_admin_api_token seeded → /admin/ returns 500 not 200."""
-        resp = await admin_client.get(
-            "/admin/",
-            headers={"Authorization": "Bearer anything"},
-        )
+        resp = await admin_client.get("/admin/", headers={"Authorization": "Bearer anything"})
         assert resp.status_code == 500
 
 
@@ -162,20 +142,14 @@ class TestAdminPrincipalCookie:
 
     async def test_login_sets_admin_user_cookie(self, admin_client, seeded_admin_token):
         """POST /admin/login with a username form field sets admin_user cookie."""
-        resp = await admin_client.post(
-            "/admin/login",
-            data={"token": seeded_admin_token, "username": "luna"},
-        )
+        resp = await admin_client.post("/admin/login", data={"token": seeded_admin_token, "username": "luna"})
         assert resp.status_code == 200
         set_cookie = resp.headers.get("set-cookie", "")
         assert "admin_user=luna" in set_cookie
 
     async def test_login_without_username_defaults_to_admin(self, admin_client, seeded_admin_token):
         """No username field → admin_user cookie falls back to 'admin'."""
-        resp = await admin_client.post(
-            "/admin/login",
-            data={"token": seeded_admin_token},
-        )
+        resp = await admin_client.post("/admin/login", data={"token": seeded_admin_token})
         assert resp.status_code == 200
         set_cookie = resp.headers.get("set-cookie", "")
         assert "admin_user=admin" in set_cookie
@@ -183,8 +157,7 @@ class TestAdminPrincipalCookie:
     async def test_login_sanitizes_username(self, admin_client, seeded_admin_token):
         """Dangerous characters in username are stripped before cookie set."""
         resp = await admin_client.post(
-            "/admin/login",
-            data={"token": seeded_admin_token, "username": "lu\nna;<script>"},
+            "/admin/login", data={"token": seeded_admin_token, "username": "lu\nna;<script>"}
         )
         assert resp.status_code == 200
         # Newlines, semicolons, and angle brackets are stripped by
@@ -207,8 +180,7 @@ class TestAdminPrincipalCookie:
         from thinktank.models.config_table import SystemConfig
 
         resp = await admin_client.post(
-            "/admin/kill-switch/toggle",
-            cookies={"admin_session": seeded_admin_token, "admin_user": "luna"},
+            "/admin/kill-switch/toggle", cookies={"admin_session": seeded_admin_token, "admin_user": "luna"}
         )
         assert resp.status_code < 500
         assert resp.status_code != 401
