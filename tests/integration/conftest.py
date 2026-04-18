@@ -50,12 +50,22 @@ def _auto_admin_auth_override(request, session_factory):
     (detected via ``request.fixturenames``) to avoid importing the admin
     app for tests that don't need it.
     """
-    # Opt out for the dedicated auth suite -- it needs the real dep.
-    if "test_admin_auth" in request.node.nodeid:
+    # The dedicated CSRF suite exercises the real middleware and must not
+    # have it bypassed.
+    skip_csrf_bypass = "test_admin_csrf" in request.node.nodeid
+    # The dedicated auth suite needs the real require_admin dep (otherwise
+    # it can't test auth). But auth tests POST without CSRF headers and
+    # predate HI-05, so they still need the CSRF bypass.
+    skip_auth_override = "test_admin_auth" in request.node.nodeid
+
+    if "admin_client" not in request.fixturenames:
         yield
         return
 
-    if "admin_client" not in request.fixturenames:
+    if skip_csrf_bypass and skip_auth_override:
+        # Neither file actually sets admin_client == admin_client, but
+        # belt-and-braces: if the node.id somehow matches both, fall back
+        # to no overrides.
         yield
         return
 
@@ -65,6 +75,7 @@ def _auto_admin_auth_override(request, session_factory):
     get_settings.cache_clear()
 
     from thinktank.admin.auth import require_admin
+    from thinktank.admin.csrf import CSRFMiddleware
     from thinktank.admin.dependencies import get_session
     from thinktank.admin.main import app as admin_app
 
@@ -75,10 +86,36 @@ def _auto_admin_auth_override(request, session_factory):
         async with session_factory() as s:
             yield s
 
-    admin_app.dependency_overrides[require_admin] = _fake_require_admin
+    # Pre-existing admin integration tests (written before HI-05 added
+    # CSRF middleware) don't send X-CSRF-Token headers. Find the
+    # CSRFMiddleware instance in the built stack and swap its dispatch_func
+    # for a passthrough; the dedicated ``test_admin_csrf`` suite opts out
+    # via ``skip_csrf_bypass`` and exercises the real enforcement.
+    async def _passthrough(request_, call_next):  # type: ignore[no-untyped-def]
+        return await call_next(request_)
+
+    _csrf_instance = None
+    _original_dispatch_func = None
+    if not skip_csrf_bypass:
+        _stack = admin_app.middleware_stack or admin_app.build_middleware_stack()
+        admin_app.middleware_stack = _stack
+        _node = _stack
+        while _node is not None:
+            if isinstance(_node, CSRFMiddleware):
+                _csrf_instance = _node
+                break
+            _node = getattr(_node, "app", None)
+        if _csrf_instance is not None:
+            _original_dispatch_func = _csrf_instance.dispatch_func
+            _csrf_instance.dispatch_func = _passthrough
+
+    if not skip_auth_override:
+        admin_app.dependency_overrides[require_admin] = _fake_require_admin
     admin_app.dependency_overrides[get_session] = _override_get_session
     try:
         yield
     finally:
         admin_app.dependency_overrides.pop(require_admin, None)
         admin_app.dependency_overrides.pop(get_session, None)
+        if _csrf_instance is not None and _original_dispatch_func is not None:
+            _csrf_instance.dispatch_func = _original_dispatch_func

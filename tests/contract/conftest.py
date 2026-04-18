@@ -45,6 +45,7 @@ def _auto_admin_auth_override(request, session_factory):
     get_settings.cache_clear()
 
     from thinktank.admin.auth import require_admin
+    from thinktank.admin.csrf import CSRFMiddleware
     from thinktank.admin.dependencies import get_session
     from thinktank.admin.main import app as admin_app
 
@@ -55,6 +56,27 @@ def _auto_admin_auth_override(request, session_factory):
         async with session_factory() as s:
             yield s
 
+    # Contract tests predate HI-05 CSRF middleware and POST without
+    # X-CSRF-Token headers. Find the CSRFMiddleware instance in the
+    # built stack and swap its dispatch_func for a passthrough. See
+    # tests/integration/conftest.py for the full rationale.
+    async def _passthrough(request_, call_next):  # type: ignore[no-untyped-def]
+        return await call_next(request_)
+
+    _stack = admin_app.middleware_stack or admin_app.build_middleware_stack()
+    admin_app.middleware_stack = _stack
+    _csrf_instance = None
+    _original_dispatch_func = None
+    _node = _stack
+    while _node is not None:
+        if isinstance(_node, CSRFMiddleware):
+            _csrf_instance = _node
+            break
+        _node = getattr(_node, "app", None)
+    if _csrf_instance is not None:
+        _original_dispatch_func = _csrf_instance.dispatch_func
+        _csrf_instance.dispatch_func = _passthrough
+
     admin_app.dependency_overrides[require_admin] = _fake_require_admin
     admin_app.dependency_overrides[get_session] = _override_get_session
     try:
@@ -62,3 +84,5 @@ def _auto_admin_auth_override(request, session_factory):
     finally:
         admin_app.dependency_overrides.pop(require_admin, None)
         admin_app.dependency_overrides.pop(get_session, None)
+        if _csrf_instance is not None and _original_dispatch_func is not None:
+            _csrf_instance.dispatch_func = _original_dispatch_func
