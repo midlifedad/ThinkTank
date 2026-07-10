@@ -5,6 +5,16 @@ WORKDIR /app
 # Install uv for fast dependency management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
+# Create the project venv WITH access to the base image's system
+# site-packages. The whole reason this image builds on nvcr NeMo is the
+# NVIDIA-tuned nemo/torch/cuda stack preinstalled at system level -- but
+# `uv sync` builds an ISOLATED venv, so `import nemo` crash-looped the
+# service with ModuleNotFoundError on startup. With system-site-packages,
+# uv-managed project deps still take precedence (venv shadows system),
+# while nemo/torch resolve from the base image. Do NOT add nemo to
+# pyproject: reinstalling it via uv would pull a multi-GB untuned build.
+RUN uv venv --system-site-packages
+
 # Install dependencies first (cache layer — no project install yet)
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
