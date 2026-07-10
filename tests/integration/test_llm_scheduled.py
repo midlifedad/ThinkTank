@@ -10,16 +10,23 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.llm.client import LLMUsage
 from thinktank.llm.scheduled import run_daily_digest, run_health_check, run_weekly_audit
 from thinktank.llm.schemas import DailyDigestResponse, HealthCheckResponse, WeeklyAuditResponse
 from thinktank.models.review import LLMReview
+
+
+def _usage(total: int):
+    """Build an LLMUsage whose .total equals the legacy combined count."""
+    out = total // 3
+    return LLMUsage(input_tokens=total - out, output_tokens=out)
 
 
 @pytest.mark.asyncio
 async def test_health_check_creates_review(session: AsyncSession):
     """run_health_check creates an llm_reviews row with correct type and decision."""
     mock_response = HealthCheckResponse(status="healthy", findings=["All systems nominal"])
-    mock_review = AsyncMock(return_value=(mock_response, 150, 1200))
+    mock_review = AsyncMock(return_value=(mock_response, _usage(150), 1200))
 
     with patch("thinktank.llm.scheduled._llm_client") as mock_client:
         mock_client.review = mock_review
@@ -44,7 +51,7 @@ async def test_daily_digest_creates_review(session: AsyncSession):
     mock_response = DailyDigestResponse(
         summary="Quiet day with steady ingestion.", highlights=["10 new episodes processed"]
     )
-    mock_review = AsyncMock(return_value=(mock_response, 200, 1500))
+    mock_review = AsyncMock(return_value=(mock_response, _usage(200), 1500))
 
     with patch("thinktank.llm.scheduled._llm_client") as mock_client:
         mock_client.review = mock_review
@@ -66,7 +73,7 @@ async def test_daily_digest_creates_review(session: AsyncSession):
 async def test_weekly_audit_creates_review(session: AsyncSession):
     """run_weekly_audit creates an llm_reviews row with correct type."""
     mock_response = WeeklyAuditResponse(summary="Strong growth week with 500 new episodes.")
-    mock_review = AsyncMock(return_value=(mock_response, 300, 2000))
+    mock_review = AsyncMock(return_value=(mock_response, _usage(300), 2000))
 
     with patch("thinktank.llm.scheduled._llm_client") as mock_client:
         mock_client.review = mock_review
@@ -108,7 +115,7 @@ async def test_health_check_with_config_adjustments(session: AsyncSession):
     mock_response = HealthCheckResponse(
         status="issues_detected", findings=["High error rate on source X"], config_adjustments={"error_threshold": 10}
     )
-    mock_review = AsyncMock(return_value=(mock_response, 180, 1300))
+    mock_review = AsyncMock(return_value=(mock_response, _usage(180), 1300))
 
     with patch("thinktank.llm.scheduled._llm_client") as mock_client:
         mock_client.review = mock_review

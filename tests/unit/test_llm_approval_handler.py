@@ -9,9 +9,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from thinktank.llm.client import LLMUsage
 from thinktank.llm.schemas import CandidateReviewResponse, SourceApprovalResponse, ThinkerApprovalResponse
 from thinktank.models.job import Job
 from thinktank.models.review import LLMReview
+
+
+def _usage(total: int):
+    """Build an LLMUsage whose .total equals the legacy combined count."""
+    out = total // 3
+    return LLMUsage(input_tokens=total - out, output_tokens=out)
 
 
 def _make_job(review_type: str, target_id: str | None = None, **extra_payload) -> Job:
@@ -56,7 +63,7 @@ class TestHandlerDispatchesThinkerApproval:
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock) as mock_apply,
         ):
-            mock_client.review = AsyncMock(return_value=(mock_result, 500, 1200))
+            mock_client.review = AsyncMock(return_value=(mock_result, _usage(500), 1200))
             mock_client.model = "claude-sonnet-4-20250514"
 
             await handle_llm_approval_check(session, job)
@@ -96,7 +103,7 @@ class TestHandlerDispatchesSourceApproval:
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock),
         ):
-            mock_client.review = AsyncMock(return_value=(mock_result, 400, 1100))
+            mock_client.review = AsyncMock(return_value=(mock_result, _usage(400), 1100))
             mock_client.model = "claude-sonnet-4-20250514"
 
             await handle_llm_approval_check(session, job)
@@ -134,7 +141,7 @@ class TestHandlerDispatchesCandidateReview:
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock),
         ):
-            mock_client.review = AsyncMock(return_value=(mock_result, 300, 900))
+            mock_client.review = AsyncMock(return_value=(mock_result, _usage(300), 900))
             mock_client.model = "claude-sonnet-4-20250514"
 
             await handle_llm_approval_check(session, job)
@@ -178,7 +185,7 @@ class TestHandlerCreatesAuditTrail:
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock),
         ):
-            mock_client.review = AsyncMock(return_value=(mock_result, 500, 1200))
+            mock_client.review = AsyncMock(return_value=(mock_result, _usage(500), 1200))
             mock_client.model = "claude-sonnet-4-20250514"
 
             await handle_llm_approval_check(session, job)
@@ -233,7 +240,7 @@ class TestHandlerCallsApplyDecision:
             patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client,
             patch("thinktank.handlers.llm_approval_check.apply_decision", new_callable=AsyncMock) as mock_apply,
         ):
-            mock_client.review = AsyncMock(return_value=(mock_result, 500, 1200))
+            mock_client.review = AsyncMock(return_value=(mock_result, _usage(500), 1200))
             mock_client.model = "claude-sonnet-4-20250514"
 
             await handle_llm_approval_check(session, job)

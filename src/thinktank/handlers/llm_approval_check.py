@@ -120,9 +120,7 @@ async def handle_llm_approval_check(session: AsyncSession, job: Job) -> None:
     system_prompt, user_prompt = prompt_builder(context)
 
     # 6. Call LLM (exceptions propagate for worker loop retry)
-    result, tokens_used, duration_ms = await _llm_client.review(
-        system_prompt, user_prompt, response_schema, session=session
-    )
+    result, usage, duration_ms = await _llm_client.review(system_prompt, user_prompt, response_schema, session=session)
 
     # 7. Create LLMReview audit trail row
     review = LLMReview(
@@ -137,7 +135,9 @@ async def handle_llm_approval_check(session: AsyncSession, job: Job) -> None:
         modifications=getattr(result, "modifications", None),
         flagged_items=getattr(result, "flagged_items", None),
         model=_llm_client.model,
-        tokens_used=tokens_used,
+        tokens_used=usage.total,
+        input_tokens=usage.input_tokens,
+        output_tokens=usage.output_tokens,
         duration_ms=duration_ms,
     )
     session.add(review)
@@ -159,5 +159,5 @@ async def handle_llm_approval_check(session: AsyncSession, job: Job) -> None:
         review_type=review_type,
         target_id=str(target_id) if target_id else None,
         decision=result.decision,
-        tokens_used=tokens_used,
+        tokens_used=usage.total,
     )
