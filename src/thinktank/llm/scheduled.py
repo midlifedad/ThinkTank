@@ -51,7 +51,11 @@ async def run_health_check(session: AsyncSession) -> LLMReview | None:
         context = await build_health_check_context(session)
         system_prompt, user_prompt = build_health_check_prompt(context)
 
-        result, tokens, duration = await _llm_client.review(system_prompt, user_prompt, HealthCheckResponse)
+        # A2: pass session -- without it the client never loads the DB-backed
+        # API key and every scheduled call failed with "key not configured".
+        result, usage, duration = await _llm_client.review(
+            system_prompt, user_prompt, HealthCheckResponse, session=session
+        )
 
         review = LLMReview(
             review_type="health_check",
@@ -62,7 +66,9 @@ async def run_health_check(session: AsyncSession) -> LLMReview | None:
             decision=result.status,
             decision_reasoning="; ".join(result.findings),
             model=_llm_client.model,
-            tokens_used=tokens,
+            tokens_used=usage.total,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
             duration_ms=duration,
         )
         session.add(review)
@@ -78,7 +84,7 @@ async def run_health_check(session: AsyncSession) -> LLMReview | None:
             "health_check_complete",
             status=result.status,
             findings_count=len(result.findings),
-            tokens_used=tokens,
+            tokens_used=usage.total,
             duration_ms=duration,
         )
 
@@ -105,7 +111,9 @@ async def run_daily_digest(session: AsyncSession) -> LLMReview | None:
         context = await build_daily_digest_context(session)
         system_prompt, user_prompt = build_daily_digest_prompt(context)
 
-        result, tokens, duration = await _llm_client.review(system_prompt, user_prompt, DailyDigestResponse)
+        result, usage, duration = await _llm_client.review(
+            system_prompt, user_prompt, DailyDigestResponse, session=session
+        )
 
         review = LLMReview(
             review_type="daily_digest",
@@ -116,7 +124,9 @@ async def run_daily_digest(session: AsyncSession) -> LLMReview | None:
             decision="digest_generated",
             decision_reasoning=result.summary,
             model=_llm_client.model,
-            tokens_used=tokens,
+            tokens_used=usage.total,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
             duration_ms=duration,
         )
         session.add(review)
@@ -125,7 +135,7 @@ async def run_daily_digest(session: AsyncSession) -> LLMReview | None:
         logger.info(
             "daily_digest_complete",
             highlights_count=len(result.highlights),
-            tokens_used=tokens,
+            tokens_used=usage.total,
             duration_ms=duration,
         )
 
@@ -152,7 +162,9 @@ async def run_weekly_audit(session: AsyncSession) -> LLMReview | None:
         context = await build_weekly_audit_context(session)
         system_prompt, user_prompt = build_weekly_audit_prompt(context)
 
-        result, tokens, duration = await _llm_client.review(system_prompt, user_prompt, WeeklyAuditResponse)
+        result, usage, duration = await _llm_client.review(
+            system_prompt, user_prompt, WeeklyAuditResponse, session=session
+        )
 
         review = LLMReview(
             review_type="weekly_audit",
@@ -163,7 +175,9 @@ async def run_weekly_audit(session: AsyncSession) -> LLMReview | None:
             decision="audit_complete",
             decision_reasoning=result.summary,
             model=_llm_client.model,
-            tokens_used=tokens,
+            tokens_used=usage.total,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
             duration_ms=duration,
         )
         session.add(review)
@@ -184,7 +198,7 @@ async def run_weekly_audit(session: AsyncSession) -> LLMReview | None:
         logger.info(
             "weekly_audit_complete",
             summary=result.summary[:100],
-            tokens_used=tokens,
+            tokens_used=usage.total,
             duration_ms=duration,
         )
 

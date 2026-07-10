@@ -11,6 +11,7 @@ Spec reference: Section 8.1 (LLM Supervisor client).
 """
 
 import time
+from typing import NamedTuple
 
 from anthropic import AsyncAnthropic
 from pydantic import BaseModel
@@ -18,6 +19,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.config import get_settings
 from thinktank.secrets import get_secret
+
+
+class LLMUsage(NamedTuple):
+    """Token usage for one LLM call, split for cost accounting (A2)."""
+
+    input_tokens: int
+    output_tokens: int
+
+    @property
+    def total(self) -> int:
+        return self.input_tokens + self.output_tokens
 
 
 class LLMClient:
@@ -45,8 +57,8 @@ class LLMClient:
         response_schema: type[BaseModel],
         max_tokens: int = 4096,
         session: AsyncSession | None = None,
-    ) -> tuple[BaseModel, int, int]:
-        """Call Claude and return (parsed_output, tokens_used, duration_ms).
+    ) -> tuple[BaseModel, LLMUsage, int]:
+        """Call Claude and return (parsed_output, usage, duration_ms).
 
         Uses tool_use pattern for structured output:
         1. Creates a tool definition from the Pydantic model's JSON schema
@@ -61,7 +73,9 @@ class LLMClient:
             session: Database session for API key lookup.
 
         Returns:
-            Tuple of (parsed_response, tokens_used, duration_ms).
+            Tuple of (parsed_response, LLMUsage, duration_ms). LLMUsage
+            carries the input/output token split for cost accounting;
+            use ``usage.total`` for the combined count.
 
         Raises:
             anthropic.APIConnectionError: On network issues.
@@ -104,6 +118,9 @@ class LLMClient:
         parsed_result = response_schema.model_validate(tool_use_block.input)
 
         duration_ms = int((time.monotonic() - start) * 1000)
-        tokens_used = response.usage.input_tokens + response.usage.output_tokens
+        usage = LLMUsage(
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+        )
 
-        return parsed_result, tokens_used, duration_ms
+        return parsed_result, usage, duration_ms

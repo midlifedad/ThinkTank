@@ -7,14 +7,57 @@ and tool results. Handles the tool-use loop (up to 5 iterations).
 import json
 import uuid
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
 
+import structlog
 from anthropic import AsyncAnthropic
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.agent.session import ChatMessage, chat_sessions
 from thinktank.agent.system_prompt import build_chat_system_prompt
 from thinktank.agent.tools import AGENT_TOOLS, execute_tool
+from thinktank.config import get_settings
+from thinktank.models.api_usage import ApiUsage
 from thinktank.secrets import get_secret
+
+logger = structlog.get_logger(__name__)
+
+
+async def _record_chat_usage(
+    db_session: AsyncSession,
+    call_count: int,
+    input_tokens: int,
+    output_tokens: int,
+) -> None:
+    """Record one chat exchange's Anthropic usage into api_usage (A2).
+
+    Chat calls bypass LLMClient/llm_reviews, so without this they were
+    invisible to cost tracking. Written per-exchange (endpoint='chat')
+    rather than via the hourly rollup; dashboards sum estimated_cost_usd
+    across endpoints. Failures are logged, never raised -- cost accounting
+    must not break a user-facing stream.
+    """
+    if call_count == 0:
+        return
+    try:
+        settings = get_settings()
+        cost = (
+            input_tokens * settings.llm_input_cost_per_mtok + output_tokens * settings.llm_output_cost_per_mtok
+        ) / 1_000_000.0
+        db_session.add(
+            ApiUsage(
+                id=uuid.uuid4(),
+                api_name="anthropic",
+                endpoint="chat",
+                period_start=datetime.now(UTC),
+                call_count=call_count,
+                units_consumed=input_tokens + output_tokens,
+                estimated_cost_usd=cost,
+            )
+        )
+        await db_session.commit()
+    except Exception:
+        logger.exception("chat_usage_recording_failed")
 
 
 async def stream_agent_response(
@@ -62,13 +105,21 @@ async def stream_agent_response(
         messages = chat_sessions.get_anthropic_messages(session_id)
         system_prompt = build_chat_system_prompt()
 
+        # Usage accumulators across the tool-use loop (A2 cost tracking)
+        api_calls = 0
+        total_input_tokens = 0
+        total_output_tokens = 0
+
         # Tool use loop (max 5 iterations)
         for _iteration in range(5):
             full_text = ""
             tool_use_blocks: list[dict] = []
 
             async with client.messages.stream(
-                model="claude-sonnet-4-20250514",
+                # Config-driven model (was hardcoded to a deprecated ID --
+                # the INTEGRATIONS L-01 fix covered LLMClient but missed
+                # this call site).
+                model=get_settings().llm_model,
                 system=system_prompt,
                 messages=messages,
                 tools=AGENT_TOOLS,
@@ -82,6 +133,10 @@ async def stream_agent_response(
 
                 # Get the final message for tool use blocks
                 final_message = await stream.get_final_message()
+
+            api_calls += 1
+            total_input_tokens += final_message.usage.input_tokens
+            total_output_tokens += final_message.usage.output_tokens
 
             # Extract tool use blocks from the final message
             for block in final_message.content:
@@ -164,6 +219,8 @@ async def stream_agent_response(
 
             # Rebuild messages for continuation
             messages = chat_sessions.get_anthropic_messages(session_id)
+
+        await _record_chat_usage(db_session, api_calls, total_input_tokens, total_output_tokens)
 
         yield _sse_event({"type": "done"})
 

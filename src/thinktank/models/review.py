@@ -32,6 +32,11 @@ class LLMReview(Base):
     override_reasoning: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     model: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     tokens_used: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    # A2 (ARCH-REVIEW 2026-05-28): input/output split for token-based cost
+    # accounting. tokens_used stays as the combined total; pre-A2 rows have
+    # NULLs here and are priced at a blended rate by rollup_api_usage.
+    input_tokens: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
     duration_ms: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
 

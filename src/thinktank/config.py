@@ -43,6 +43,13 @@ class Settings(BaseSettings):
     # LLM Supervisor
     llm_model: str = "claude-sonnet-4-20250514"
 
+    # LLM cost accounting, USD per million tokens (A2). Defaults are
+    # Sonnet-class list prices; override via env when the model or its
+    # pricing changes. Pre-A2 llm_reviews rows lack the input/output
+    # split and are priced at the blended midpoint of these two rates.
+    llm_input_cost_per_mtok: float = 3.0
+    llm_output_cost_per_mtok: float = 15.0
+
 
 @lru_cache
 def get_settings() -> Settings:
