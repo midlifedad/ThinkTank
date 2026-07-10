@@ -32,6 +32,14 @@ from thinktank.queue.backpressure import get_effective_priority
 from thinktank.queue.claim import claim_job, complete_job, fail_job
 from thinktank.queue.errors import ErrorCategory, categorize_error
 from thinktank.queue.kill_switch import is_workers_active
+from thinktank.queue.leader import (
+    LOCK_GPU_SCALING,
+    LOCK_LLM_DAILY_DIGEST,
+    LOCK_LLM_ESCALATION,
+    LOCK_LLM_HEALTH_CHECK,
+    LOCK_LLM_WEEKLY_AUDIT,
+    try_advisory_xact_lock,
+)
 from thinktank.queue.reclaim import reclaim_stale_jobs
 from thinktank.queue.retry import get_max_attempts
 from thinktank.scaling.railway import manage_gpu_scaling
@@ -392,6 +400,10 @@ async def _gpu_scaling_scheduler(
             if shutdown_event.is_set():
                 break
             async with session_factory() as session:
+                # A4: singleton tick -- at N replicas, N competing scale
+                # decisions (each with its own idle clock) fight each other.
+                if not await try_advisory_xact_lock(session, LOCK_GPU_SCALING):
+                    continue
                 scaled, gpu_idle_since = await manage_gpu_scaling(session, gpu_idle_since)
                 if scaled:
                     logger.info("gpu_scaling_action", idle_since=str(gpu_idle_since))
@@ -421,6 +433,8 @@ async def _llm_timeout_escalation_scheduler(
             if shutdown_event.is_set():
                 break
             async with session_factory() as session:
+                if not await try_advisory_xact_lock(session, LOCK_LLM_ESCALATION):
+                    continue
                 count = await escalate_timed_out_reviews(session)
                 await session.commit()
                 if count:
@@ -449,6 +463,8 @@ async def _llm_health_check_scheduler(
             if shutdown_event.is_set():
                 break
             async with session_factory() as session:
+                if not await try_advisory_xact_lock(session, LOCK_LLM_HEALTH_CHECK):
+                    continue
                 review = await run_health_check(session)
                 await session.commit()
                 if review:
@@ -478,6 +494,10 @@ async def _llm_digest_scheduler(
             if shutdown_event.is_set():
                 break
             async with session_factory() as session:
+                # A4: replicas all wake at 07:00 UTC -- lock serializes the
+                # overlap; run_daily_digest's period guard catches stragglers.
+                if not await try_advisory_xact_lock(session, LOCK_LLM_DAILY_DIGEST):
+                    continue
                 review = await run_daily_digest(session)
                 await session.commit()
                 if review:
@@ -507,6 +527,8 @@ async def _llm_audit_scheduler(
             if shutdown_event.is_set():
                 break
             async with session_factory() as session:
+                if not await try_advisory_xact_lock(session, LOCK_LLM_WEEKLY_AUDIT):
+                    continue
                 review = await run_weekly_audit(session)
                 await session.commit()
                 if review:

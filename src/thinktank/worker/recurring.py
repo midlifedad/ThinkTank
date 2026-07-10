@@ -33,6 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from thinktank.models.config_table import SystemConfig
 from thinktank.models.job import Job
 from thinktank.queue.backpressure import get_queue_depth
+from thinktank.queue.leader import LOCK_RECURRING_TASKS, try_advisory_xact_lock
 from thinktank.queue.retry import get_max_attempts
 from thinktank.queue.scheduled_tasks import SCHEDULED_TASKS
 
@@ -90,6 +91,13 @@ async def run_due_scheduled_tasks(session: AsyncSession) -> int:
     """
     now = _utcnow()
     enqueued = 0
+
+    # A4: singleton tick. Two replicas ticking together would both read
+    # next_run_at <= now and double-enqueue before either advances the
+    # schedule. Loser skips this tick; its next tick sees the advanced
+    # schedule and correctly no-ops.
+    if not await try_advisory_xact_lock(session, LOCK_RECURRING_TASKS):
+        return 0
 
     for task_def in SCHEDULED_TASKS:
         job_type = task_def["job_type"]

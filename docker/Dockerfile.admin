@@ -18,4 +18,10 @@ COPY src/ src/
 # Now install the project itself (hatchling needs src/)
 RUN uv sync --frozen --no-dev
 
-CMD ["uv", "run", "uvicorn", "thinktank.admin.main:app", "--host", "0.0.0.0", "--port", "8001"]
+# A4: --proxy-headers so the app sees the original https scheme behind
+# Railway's TLS-terminating proxy. Without it, request.url.scheme is
+# "http" and every cookie the admin sets (including the token-bearing
+# admin_session) silently loses its Secure flag in production.
+# --forwarded-allow-ips="*" is required because Railway's proxy address
+# is not static; the service is only reachable through that proxy.
+CMD ["uv", "run", "uvicorn", "thinktank.admin.main:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers", "--forwarded-allow-ips", "*"]
