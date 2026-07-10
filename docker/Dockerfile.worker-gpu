@@ -18,4 +18,13 @@ RUN uv sync --frozen --no-dev
 # Parakeet model cache directory (Railway persistent volume)
 ENV NEMO_CACHE_DIR=/app/.nemo_cache
 
-CMD ["uv", "run", "python", "-m", "thinktank.worker"]
+# A3 (ARCH-REVIEW 2026-05-28): this service is the GPU INFERENCE server,
+# not a queue poller. The CPU worker's process_content handler HTTP-POSTs
+# WAV chunks to http://worker-gpu.railway.internal:8000/transcribe
+# (transcription/gpu_client.py). The previous CMD launched the queue
+# poller instead, so nothing ever served /transcribe and the GPU pass
+# could never succeed. Railway has NO startCommand override -- this CMD
+# is canonical.
+EXPOSE 8000
+
+CMD ["uv", "run", "uvicorn", "thinktank.gpu_worker.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -9,7 +9,10 @@ intelligence via a REST API with an admin dashboard.
 
 The system runs on Railway as four independent services sharing a single
 PostgreSQL database. Each service scales independently and communicates
-through the database (no inter-service RPC).
+through the database, with one exception: the CPU worker's transcription
+handler HTTP-POSTs audio to the GPU inference service
+(`http://worker-gpu.railway.internal:8000/transcribe`) — the only
+inter-service RPC in the system.
 
 ```
                                     ThinkTank Architecture
@@ -73,18 +76,23 @@ pending work and processes items sequentially or in parallel.
 
 **Runtime:** Long-running Python process, no HTTP server.
 
-### Worker GPU Service (`Dockerfile.worker-gpu`)
+### Worker GPU Service (`Dockerfile.worker-gpu`, port 8000)
 
-Specialized worker for GPU-accelerated NLP tasks. Built on NVIDIA NeMo
-container for access to Parakeet ASR and other GPU models.
+GPU inference HTTP service. Built on the NVIDIA NeMo container, it loads
+Parakeet TDT 1.1B into VRAM once at startup (FastAPI lifespan) and serves
+transcription requests from the CPU worker.
 
 **Responsibilities:**
-- Speech-to-text transcription (Parakeet ASR)
-- Audio/video content processing
-- GPU-accelerated NLP pipelines
+- `/transcribe` — multipart WAV upload → transcript text (Parakeet ASR)
+- `/health` — readiness probe (model loaded)
 
-**Runtime:** Long-running Python process with NVIDIA GPU access.
-Model cache persists via `NEMO_CACHE_DIR` on Railway persistent volume.
+**Runtime:** `uvicorn thinktank.gpu_worker.main:app` on port 8000, reached
+via Railway internal networking (`worker-gpu.railway.internal`) from the
+CPU worker's `transcription/gpu_client.py`. It does NOT poll the job
+queue — `process_content` jobs run on the CPU worker, which calls this
+service for the GPU pass. Scaled up/down on demand by the CPU worker's
+scaling scheduler via the Railway API. Model cache persists via
+`NEMO_CACHE_DIR` on a Railway persistent volume.
 
 ### Admin Service (`Dockerfile.admin`, port 8001)
 
