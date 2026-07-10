@@ -4,7 +4,7 @@ All Anthropic API calls are mocked via AsyncMock.
 Tests verify:
 - Correct API call parameters (model, system, messages, tools, tool_choice)
 - Response parsing from tool_use content blocks
-- Return tuple (parsed_response, tokens_used, duration_ms)
+- Return tuple (parsed_response, LLMUsage, duration_ms)
 - API key from environment
 - Exception propagation
 """
@@ -113,12 +113,15 @@ class TestLLMClientReview:
         )
         client._client.messages.create = AsyncMock(return_value=mock_response)
 
-        result, tokens, duration_ms = await client.review("sys", "usr", SampleResponse)
+        result, usage, duration_ms = await client.review("sys", "usr", SampleResponse)
 
         assert isinstance(result, SampleResponse)
         assert result.decision == "approved"
         assert result.reasoning == "Great match"
-        assert tokens == 280  # 200 + 80
+        # A2: usage carries the input/output split for cost accounting.
+        assert usage.input_tokens == 200
+        assert usage.output_tokens == 80
+        assert usage.total == 280
         assert isinstance(duration_ms, int)
         assert duration_ms >= 0
 

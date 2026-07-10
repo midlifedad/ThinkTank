@@ -45,6 +45,12 @@ SCHEDULED_TASKS: list[dict] = [
         "default_hours": 1,
         "job_type": "enqueue_pending_transcriptions",
     },
+    {
+        "key": "rollup_api_usage",
+        "label": "API Usage Rollup",
+        "default_hours": 1,
+        "job_type": "rollup_api_usage",
+    },
     {"key": "llm_health_check", "label": "LLM Health Check", "default_hours": 6, "job_type": None},
     {"key": "llm_daily_digest", "label": "LLM Daily Digest", "default_hours": 24, "job_type": None},
     {"key": "llm_weekly_audit", "label": "LLM Weekly Audit", "default_hours": 168, "job_type": None},
