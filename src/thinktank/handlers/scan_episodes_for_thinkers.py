@@ -29,6 +29,7 @@ from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 from thinktank.models.source import Source, SourceThinker
 from thinktank.models.thinker import Thinker
+from thinktank.queue.retry import get_max_attempts
 
 logger = structlog.get_logger(__name__)
 
@@ -124,6 +125,7 @@ async def handle_scan_episodes_for_thinkers(session: AsyncSession, job: Job) -> 
 
     # f. Process each content item
     promoted_count = 0
+    promoted_content_ids: list[uuid.UUID] = []
     now = _now()
 
     for content_id_str in content_ids:
@@ -184,6 +186,7 @@ async def handle_scan_episodes_for_thinkers(session: AsyncSession, job: Job) -> 
         if is_host_source or matches:
             content.status = "pending"
             promoted_count += 1
+            promoted_content_ids.append(content.id)
 
             if is_host_source:
                 for host_tid in host_thinker_ids:
@@ -214,10 +217,30 @@ async def handle_scan_episodes_for_thinkers(session: AsyncSession, job: Job) -> 
                     )
         # Guest source with no matches: content stays "cataloged" (no action)
 
-    # g. Commit all changes
+    # g. Enqueue transcription for every promoted episode (ARCH-REVIEW A1).
+    # Promotion to 'pending' previously dead-ended: nothing ever created the
+    # process_content job that actually transcribes the episode. Each content
+    # row is promoted from 'cataloged' exactly once (the status guard above),
+    # so this cannot double-enqueue; the enqueue_pending_transcriptions sweep
+    # covers any historical backlog.
+    for promoted_id in promoted_content_ids:
+        session.add(
+            Job(
+                id=uuid.uuid4(),
+                job_type="process_content",
+                payload={"content_id": str(promoted_id)},
+                priority=5,
+                status="pending",
+                attempts=0,
+                max_attempts=get_max_attempts("process_content"),
+                created_at=now,
+            )
+        )
+
+    # h. Commit all changes
     await session.commit()
 
-    # h. Log summary
+    # i. Log summary
     log.info(
         "scan_episodes_for_thinkers_complete",
         promoted_count=promoted_count,

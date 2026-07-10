@@ -33,7 +33,7 @@ DATABASE SCHEMA SUMMARY:
    Job types: fetch_podcast_feed, fetch_youtube_channel, scan_episodes_for_thinkers,
    rescan_cataloged_for_thinker, process_content, discover_thinker,
    scan_for_candidates, discover_guests_podcastindex, llm_approval_check,
-   refresh_due_sources, rollup_api_usage
+   refresh_due_sources, rollup_api_usage, enqueue_pending_transcriptions
 
 5. candidate_thinkers - Potential thinkers surfaced by cascade discovery
    Columns: id (UUID PK), name, normalized_name, appearance_count, first_seen_at,

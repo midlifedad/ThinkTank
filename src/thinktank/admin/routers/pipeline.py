@@ -19,6 +19,8 @@ from thinktank.admin.auth import require_admin
 from thinktank.admin.dependencies import get_session, get_templates
 from thinktank.models.config_table import SystemConfig
 from thinktank.models.job import Job
+from thinktank.queue.scheduled_tasks import SCHEDULED_TASK_MAP as _SCHEDULED_TASK_MAP
+from thinktank.queue.scheduled_tasks import SCHEDULED_TASKS
 
 router = APIRouter(prefix="/admin/pipeline", tags=["pipeline"])
 templates = get_templates()
@@ -29,6 +31,7 @@ ALLOWED_TRIGGER_TYPES = {
     "scan_for_candidates",
     "discover_guests_podcastindex",
     "discover_thinker",
+    "enqueue_pending_transcriptions",
 }
 
 # All known job types for the filter dropdown
@@ -44,29 +47,12 @@ KNOWN_JOB_TYPES = [
     "scan_episodes_for_thinkers",
     "fetch_youtube_channel",
     "rescan_cataloged_for_thinker",
+    "enqueue_pending_transcriptions",
 ]
 
-# Configurable scheduled tasks
-SCHEDULED_TASKS = [
-    {
-        "key": "refresh_due_sources",
-        "label": "Refresh Due Sources",
-        "default_hours": 1,
-        "job_type": "refresh_due_sources",
-    },
-    {
-        "key": "scan_for_candidates",
-        "label": "Scan for Candidates",
-        "default_hours": 24,
-        "job_type": "scan_for_candidates",
-    },
-    {"key": "llm_health_check", "label": "LLM Health Check", "default_hours": 6, "job_type": None},
-    {"key": "llm_daily_digest", "label": "LLM Daily Digest", "default_hours": 24, "job_type": None},
-    {"key": "llm_weekly_audit", "label": "LLM Weekly Audit", "default_hours": 168, "job_type": None},
-]
-
-# Lookup for quick validation
-_SCHEDULED_TASK_MAP = {t["key"]: t for t in SCHEDULED_TASKS}
+# Scheduled task definitions live in thinktank.queue.scheduled_tasks so the
+# worker's recurring-task executor (ARCH-REVIEW A1) and this UI share one
+# source of truth.
 
 PAGE_SIZE = 25
 

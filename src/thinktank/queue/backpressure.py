@@ -80,6 +80,15 @@ async def _get_threshold(session: AsyncSession) -> int:
     return int(row)
 
 
+async def get_max_pending_transcriptions(session: AsyncSession) -> int:
+    """Public accessor for the max_pending_transcriptions threshold.
+
+    Used by the transcription sweep (A1) so it respects the same ceiling
+    the backpressure demotion is calibrated against.
+    """
+    return await _get_threshold(session)
+
+
 async def get_effective_priority(session: AsyncSession, job: Job) -> int:
     """Apply backpressure demotion if transcription queue is deep.
 

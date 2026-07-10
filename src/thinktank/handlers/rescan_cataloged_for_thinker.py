@@ -27,6 +27,7 @@ from thinktank.ingestion.name_matcher import match_thinkers_in_text
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 from thinktank.models.thinker import Thinker
+from thinktank.queue.retry import get_max_attempts
 
 logger = structlog.get_logger(__name__)
 
@@ -130,6 +131,22 @@ async def handle_rescan_cataloged_for_thinker(session: AsyncSession, job: Job) -
             )
         )
         promoted_count += 1
+
+        # Enqueue transcription for the promoted episode (ARCH-REVIEW A1).
+        # Only content still in 'cataloged' reaches this loop, so each row
+        # is promoted -- and enqueued -- at most once.
+        session.add(
+            Job(
+                id=uuid.uuid4(),
+                job_type="process_content",
+                payload={"content_id": str(content.id)},
+                priority=5,
+                status="pending",
+                attempts=0,
+                max_attempts=get_max_attempts("process_content"),
+                created_at=now,
+            )
+        )
 
     await session.commit()
 
