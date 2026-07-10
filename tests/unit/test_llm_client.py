@@ -43,8 +43,13 @@ def _make_mock_response(tool_input: dict, input_tokens: int = 100, output_tokens
 
 class TestLLMClientInit:
     def test_default_model(self):
+        """Model comes from Settings, not a hardcoded ID (A4). Pin the
+        exact string so a settings regression is loud."""
+        from thinktank.config import get_settings
+
         client = LLMClient()
-        assert client.model == "claude-sonnet-4-20250514"
+        assert client.model == get_settings().llm_model
+        assert client.model == "claude-sonnet-5"
 
     def test_client_starts_none(self):
         """Client defers Anthropic creation until first call with session."""
@@ -83,7 +88,7 @@ class TestLLMClientReview:
 
         client._client.messages.create.assert_called_once()
         call_kwargs = client._client.messages.create.call_args[1]
-        assert call_kwargs["model"] == "claude-sonnet-4-20250514"
+        assert call_kwargs["model"] == client.model
         assert call_kwargs["system"] == "system prompt"
         assert call_kwargs["messages"] == [{"role": "user", "content": "user prompt"}]
         assert call_kwargs["max_tokens"] == 4096

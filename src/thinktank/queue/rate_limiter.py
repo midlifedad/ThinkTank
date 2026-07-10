@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.models.config_table import SystemConfig
 from thinktank.models.rate_limit import RateLimitUsage
+from thinktank.queue.leader import stable_lock_key
 
 
 async def get_rate_limit_config(session: AsyncSession, api_name: str) -> int | None:
@@ -65,7 +66,11 @@ async def check_and_acquire_rate_limit(
     # TOCTOU race (INTEGRATIONS-REVIEW H-01): N concurrent callers all
     # see the same count, pass the limit check, and insert.
     # The lock releases automatically at commit/rollback.
-    lock_key = hash(api_name) & 0x7FFFFFFF
+    # A4: the key MUST come from a stable hash. Python's builtin hash()
+    # is randomized per process, so two worker containers derived
+    # different keys for the same api_name and never contended --
+    # silently reintroducing the exact race this lock was added to fix.
+    lock_key = stable_lock_key(api_name)
     await session.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": lock_key})
 
     # HANDLERS LO-06: use NOW() (TIMESTAMPTZ) instead of LOCALTIMESTAMP

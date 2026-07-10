@@ -7,7 +7,10 @@ All functions catch exceptions gracefully to avoid crashing the scheduler.
 Spec reference: Section 8.2 (scheduled check track).
 """
 
+from datetime import UTC, datetime, timedelta
+
 import structlog
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.llm.client import LLMClient
@@ -34,6 +37,26 @@ logger = structlog.get_logger(__name__)
 _llm_client = LLMClient()
 
 
+async def _scheduled_review_exists_since(session: AsyncSession, review_type: str, since: datetime) -> bool:
+    """True if a scheduled review of this type already ran since ``since``.
+
+    A4 period-idempotency guard: the advisory lock in the worker loop
+    serializes replicas that tick simultaneously, but a replica whose tick
+    lands after the winner's commit would still duplicate the run. This
+    check makes each period run at most once regardless of replica count.
+    """
+    stmt = (
+        select(LLMReview.id)
+        .where(
+            LLMReview.review_type == review_type,
+            LLMReview.trigger == "scheduled",
+            LLMReview.created_at >= since,
+        )
+        .limit(1)
+    )
+    return (await session.execute(stmt)).scalar_one_or_none() is not None
+
+
 async def run_health_check(session: AsyncSession) -> LLMReview | None:
     """Run a system health check via LLM and log the result.
 
@@ -48,6 +71,12 @@ async def run_health_check(session: AsyncSession) -> LLMReview | None:
         The created LLMReview row, or None if the LLM call failed.
     """
     try:
+        # A4: at most one scheduled health check per window (nominal
+        # interval 6h; guard at 3h tolerates early ticks after restarts).
+        if await _scheduled_review_exists_since(session, "health_check", datetime.now(UTC) - timedelta(hours=3)):
+            logger.info("health_check_skipped_already_ran")
+            return None
+
         context = await build_health_check_context(session)
         system_prompt, user_prompt = build_health_check_prompt(context)
 
@@ -108,6 +137,12 @@ async def run_daily_digest(session: AsyncSession) -> LLMReview | None:
         The created LLMReview row, or None if the LLM call failed.
     """
     try:
+        # A4: at most one digest per UTC day.
+        day_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        if await _scheduled_review_exists_since(session, "daily_digest", day_start):
+            logger.info("daily_digest_skipped_already_ran")
+            return None
+
         context = await build_daily_digest_context(session)
         system_prompt, user_prompt = build_daily_digest_prompt(context)
 
@@ -159,6 +194,11 @@ async def run_weekly_audit(session: AsyncSession) -> LLMReview | None:
         The created LLMReview row, or None if the LLM call failed.
     """
     try:
+        # A4: at most one audit per week (6-day guard tolerates early ticks).
+        if await _scheduled_review_exists_since(session, "weekly_audit", datetime.now(UTC) - timedelta(days=6)):
+            logger.info("weekly_audit_skipped_already_ran")
+            return None
+
         context = await build_weekly_audit_context(session)
         system_prompt, user_prompt = build_weekly_audit_prompt(context)
 

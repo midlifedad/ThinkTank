@@ -40,8 +40,10 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["*"]
 
-    # LLM Supervisor
-    llm_model: str = "claude-sonnet-4-20250514"
+    # LLM Supervisor. A4: bumped off claude-sonnet-4-20250514, which is
+    # deprecated (retirement announced 2026-06-15) -- after retirement
+    # every governance call would 404 and corpus expansion would halt.
+    llm_model: str = "claude-sonnet-5"
 
     # LLM cost accounting, USD per million tokens (A2). Defaults are
     # Sonnet-class list prices; override via env when the model or its
