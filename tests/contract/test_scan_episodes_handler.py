@@ -26,6 +26,7 @@ from tests.factories import (
 from thinktank.handlers.rescan_cataloged_for_thinker import handle_rescan_cataloged_for_thinker
 from thinktank.handlers.scan_episodes_for_thinkers import handle_scan_episodes_for_thinkers
 from thinktank.models.content import ContentThinker
+from thinktank.models.job import Job
 
 pytestmark = pytest.mark.anyio
 
@@ -378,6 +379,93 @@ class TestScanEpisodesForThinkersContract:
         # No ContentThinker rows should be created for non-cataloged content
         result = await session.execute(select(ContentThinker).where(ContentThinker.thinker_id == thinker.id))
         assert len(result.scalars().all()) == 0
+
+
+class TestPromotionEnqueuesTranscription:
+    """Contract (ARCH-REVIEW A1): every promotion to 'pending' enqueues a
+    process_content job so the episode actually gets transcribed.
+
+    Given: episodes promoted by scan or rescan
+    Then: one process_content job exists per promoted episode, and none for
+    episodes left cataloged
+    """
+
+    async def _process_content_jobs(self, session: AsyncSession) -> list[Job]:
+        result = await session.execute(select(Job).where(Job.job_type == "process_content"))
+        return list(result.scalars().all())
+
+    async def test_scan_promotion_creates_process_content_jobs(self, session: AsyncSession):
+        """Host-source scan promotes 2 episodes -> 2 process_content jobs."""
+        thinker = await create_thinker(session, name="Host Thinker")
+        source = await create_source(session)
+        await create_source_thinker(session, source_id=source.id, thinker_id=thinker.id, relationship_type="host")
+        contents = [
+            await create_content(session, source_id=source.id, title=f"Episode {i}", status="cataloged")
+            for i in range(2)
+        ]
+
+        job = await create_job(
+            session,
+            job_type="scan_episodes_for_thinkers",
+            payload={
+                "content_ids": [str(c.id) for c in contents],
+                "source_id": str(source.id),
+                "descriptions": {},
+            },
+        )
+        await session.commit()
+
+        await handle_scan_episodes_for_thinkers(session, job)
+
+        jobs = await self._process_content_jobs(session)
+        assert {j.payload["content_id"] for j in jobs} == {str(c.id) for c in contents}
+        assert all(j.status == "pending" for j in jobs)
+        assert all(j.max_attempts == 2 for j in jobs)  # MAX_ATTEMPTS_BY_TYPE
+
+    async def test_scan_without_promotion_creates_no_jobs(self, session: AsyncSession):
+        """Guest source with no matches promotes nothing and enqueues nothing."""
+        await create_thinker(session, name="Unmatched Person")
+        source = await create_source(session)
+        content = await create_content(
+            session, source_id=source.id, title="Totally Unrelated Episode", status="cataloged"
+        )
+
+        job = await create_job(
+            session,
+            job_type="scan_episodes_for_thinkers",
+            payload={
+                "content_ids": [str(content.id)],
+                "source_id": str(source.id),
+                "descriptions": {str(content.id): "nothing relevant"},
+            },
+        )
+        await session.commit()
+
+        await handle_scan_episodes_for_thinkers(session, job)
+
+        assert await self._process_content_jobs(session) == []
+
+    async def test_rescan_promotion_creates_process_content_job(self, session: AsyncSession):
+        """Retroactive rescan promotion also enqueues transcription."""
+        thinker = await create_thinker(session, name="Jaron Lanier")
+        source = await create_source(session)
+        matching = await create_content(
+            session, source_id=source.id, title="Jaron Lanier on Virtual Reality", status="cataloged"
+        )
+        await create_content(session, source_id=source.id, title="Unrelated", status="cataloged")
+
+        job = await create_job(
+            session,
+            job_type="rescan_cataloged_for_thinker",
+            payload={"thinker_id": str(thinker.id), "thinker_name": "Jaron Lanier"},
+        )
+        await session.commit()
+
+        await handle_rescan_cataloged_for_thinker(session, job)
+
+        jobs = await self._process_content_jobs(session)
+        assert len(jobs) == 1
+        assert jobs[0].payload["content_id"] == str(matching.id)
 
 
 class TestRescanCatalogedForThinkerContract:

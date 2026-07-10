@@ -7,6 +7,7 @@ handlers here via get_handler().
 from thinktank.handlers.base import JobHandler
 from thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
 from thinktank.handlers.discover_thinker import handle_discover_thinker
+from thinktank.handlers.enqueue_pending_transcriptions import handle_enqueue_pending_transcriptions
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
 from thinktank.handlers.fetch_youtube_channel import handle_fetch_youtube_channel
 from thinktank.handlers.llm_approval_check import handle_llm_approval_check
@@ -80,3 +81,6 @@ register_handler("rollup_api_usage", handle_rollup_api_usage)
 register_handler("scan_episodes_for_thinkers", handle_scan_episodes_for_thinkers)
 register_handler("fetch_youtube_channel", handle_fetch_youtube_channel)
 register_handler("rescan_cataloged_for_thinker", handle_rescan_cataloged_for_thinker)
+
+# --- A1 (ARCH-REVIEW 2026-05-28) handler registrations ---
+register_handler("enqueue_pending_transcriptions", handle_enqueue_pending_transcriptions)

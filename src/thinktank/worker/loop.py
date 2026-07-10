@@ -36,6 +36,7 @@ from thinktank.queue.reclaim import reclaim_stale_jobs
 from thinktank.queue.retry import get_max_attempts
 from thinktank.scaling.railway import manage_gpu_scaling
 from thinktank.worker.config import WorkerSettings, get_worker_settings
+from thinktank.worker.recurring import recurring_task_scheduler
 
 logger = structlog.get_logger(__name__)
 
@@ -114,6 +115,12 @@ async def worker_loop(
     health_check_task = asyncio.create_task(_llm_health_check_scheduler(session_factory, 21600, shutdown_event))
     digest_task = asyncio.create_task(_llm_digest_scheduler(session_factory, shutdown_event))
     audit_task = asyncio.create_task(_llm_audit_scheduler(session_factory, shutdown_event))
+
+    # Start recurring-task executor (ARCH-REVIEW A1): enqueues the admin
+    # scheduler's job-typed tasks (refresh_due_sources, transcription sweep,
+    # ...) when due. Before this, the Phase 11 scheduler configs were
+    # write-only and recurring tasks only ran via the "Run Now" button.
+    recurring_task = asyncio.create_task(recurring_task_scheduler(session_factory, shutdown_event))
 
     try:
         while not shutdown_event.is_set():
@@ -224,6 +231,13 @@ async def worker_loop(
                 await llm_task
             except asyncio.CancelledError:
                 pass
+
+        # Cancel recurring-task executor
+        recurring_task.cancel()
+        try:
+            await recurring_task
+        except asyncio.CancelledError:
+            pass
 
         # Wait for in-flight tasks
         if active_tasks:
