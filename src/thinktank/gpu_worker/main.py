@@ -29,7 +29,10 @@ logger = structlog.get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Preload Parakeet model into VRAM on startup."""
-    logger.info("gpu_worker_starting", event="model_preload")
+    # ``event`` is structlog's positional first arg -- passing it as a kwarg
+    # raises TypeError. This crashed the service's first-ever startup (the
+    # bug shipped in Phase 4 but nothing launched this app until A3).
+    logger.info("gpu_worker_starting", stage="model_preload")
     load_model()
     logger.info("gpu_worker_ready")
     yield
