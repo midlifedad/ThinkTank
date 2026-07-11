@@ -23,15 +23,22 @@ ENV UV_PYTHON_DOWNLOADS=never
 # pyproject: reinstalling it via uv would pull a multi-GB untuned build.
 RUN uv venv --python python3 --system-site-packages
 
-# Install dependencies first (cache layer — no project install yet)
+# Install ONLY the gpu-worker dependency group (fastapi/uvicorn/structlog/
+# python-multipart -- all pure-Python or numpy-free). The full project
+# dependency set pulled its own numpy into the venv, which SHADOWED the
+# base image's numpy; NVIDIA's system scipy (compiled against system
+# numpy) then failed with "All ufuncs must have type numpy.ufunc" during
+# nemo's import chain. Rule: nothing numpy-adjacent may enter this venv --
+# every venv/system overlap in the compiled stack is an ABI landmine.
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --frozen --no-dev --no-install-project --only-group gpu-worker
 
-# Copy application code
+# Copy application code and install the package itself WITHOUT its
+# dependencies (which would drag the full app stack back into the venv).
+# gpu_worker only imports fastapi + structlog + stdlib at runtime; nemo is
+# lazy-imported from system site-packages at model load.
 COPY src/ src/
-
-# Now install the project itself (hatchling needs src/)
-RUN uv sync --frozen --no-dev
+RUN uv pip install --no-deps .
 
 # Parakeet model cache directory (Railway persistent volume)
 ENV NEMO_CACHE_DIR=/app/.nemo_cache
