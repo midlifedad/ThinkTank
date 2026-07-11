@@ -58,18 +58,24 @@ class TestFormatUtterances:
         assert out == "Speaker A: Welcome to the show.\nSpeaker B: Thanks for having me."
 
 
-def _mock_httpx(submit_json, poll_jsons):
-    """Patch httpx.AsyncClient: one POST response, sequential GET responses."""
+def _resp(payload, status=200, url="https://cdn.pod/ep.mp3"):
+    r = MagicMock()
+    r.status_code = status
+    r.json = MagicMock(return_value=payload)
+    r.text = str(payload)
+    r.headers = {}
+    r.url = url
+    return r
 
-    def _resp(payload):
-        r = MagicMock()
-        r.status_code = 200
-        r.json = MagicMock(return_value=payload)
-        r.headers = {}
-        return r
 
+def _mock_httpx(submit_json, poll_jsons, final_url="https://cdn.pod/ep.mp3", submit_responses=None):
+    """Patch httpx.AsyncClient: HEAD resolves redirects, POST submits, GET polls."""
     client = AsyncMock()
-    client.post = AsyncMock(return_value=_resp(submit_json))
+    client.head = AsyncMock(return_value=_resp({}, url=final_url))
+    if submit_responses is not None:
+        client.post = AsyncMock(side_effect=submit_responses)
+    else:
+        client.post = AsyncMock(return_value=_resp(submit_json))
     client.get = AsyncMock(side_effect=[_resp(p) for p in poll_jsons])
     client.__aenter__ = AsyncMock(return_value=client)
     client.__aexit__ = AsyncMock(return_value=False)
@@ -152,6 +158,67 @@ class TestTranscribeViaAssemblyai:
             patch("thinktank.transcription.assemblyai.get_secret", new_callable=AsyncMock, return_value="key123"),
         ):
             assert await transcribe_via_assemblyai(session, "https://cdn.pod/ep.mp3") is None
+
+    @pytest.mark.asyncio
+    async def test_redirect_chain_resolved_before_submit(self):
+        """Tracking-redirect enclosures (blubrry) are resolved to the
+        terminal CDN URL before AAI ever sees them."""
+        session = AsyncMock()
+        session.add = MagicMock()
+        cls, client = _mock_httpx({"id": "t1"}, [COMPLETED], final_url="https://cdn.real/ep.mp3")
+
+        with (
+            patch("thinktank.transcription.assemblyai.httpx.AsyncClient", cls),
+            patch("thinktank.transcription.assemblyai.get_secret", new_callable=AsyncMock, return_value="key123"),
+            patch("thinktank.transcription.assemblyai.asyncio.sleep", new_callable=AsyncMock),
+        ):
+            text = await transcribe_via_assemblyai(session, "https://media.blubrry.com/x/ep.mp3")
+
+        assert text is not None
+        assert client.post.call_args.kwargs["json"]["audio_url"] == "https://cdn.real/ep.mp3"
+
+    @pytest.mark.asyncio
+    async def test_400_falls_back_to_upload(self):
+        """AAI refusing the URL (400) triggers download-and-upload, then a
+        second submit with the upload_url."""
+        session = AsyncMock()
+        session.add = MagicMock()
+        cls, client = _mock_httpx(
+            None,
+            [COMPLETED],
+            submit_responses=[_resp({"error": "url rejected"}, status=400), _resp({"id": "t2"})],
+        )
+
+        with (
+            patch("thinktank.transcription.assemblyai.httpx.AsyncClient", cls),
+            patch("thinktank.transcription.assemblyai.get_secret", new_callable=AsyncMock, return_value="key123"),
+            patch("thinktank.transcription.assemblyai.asyncio.sleep", new_callable=AsyncMock),
+            patch(
+                "thinktank.transcription.assemblyai._upload_audio",
+                new_callable=AsyncMock,
+                return_value="https://cdn.assemblyai.com/upload/xyz",
+            ) as mock_upload,
+        ):
+            text = await transcribe_via_assemblyai(session, "https://media.blubrry.com/x/ep.mp3")
+
+        assert text is not None
+        mock_upload.assert_called_once()
+        second_submit = client.post.call_args_list[1]
+        assert second_submit.kwargs["json"]["audio_url"] == "https://cdn.assemblyai.com/upload/xyz"
+
+    @pytest.mark.asyncio
+    async def test_400_with_failed_upload_returns_none(self):
+        session = AsyncMock()
+        session.add = MagicMock()
+        cls, _ = _mock_httpx(None, [], submit_responses=[_resp({"error": "url rejected"}, status=400)])
+
+        with (
+            patch("thinktank.transcription.assemblyai.httpx.AsyncClient", cls),
+            patch("thinktank.transcription.assemblyai.get_secret", new_callable=AsyncMock, return_value="key123"),
+            patch("thinktank.transcription.assemblyai._upload_audio", new_callable=AsyncMock, return_value=None),
+        ):
+            assert await transcribe_via_assemblyai(session, "https://media.blubrry.com/x/ep.mp3") is None
+        session.add.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_plain_text_fallback_without_utterances(self):
