@@ -6,7 +6,13 @@ build-backend = "hatchling.build"
 name = "thinktank"
 version = "0.1.0"
 description = "Global intelligence ingestion platform for expert content"
-requires-python = ">=3.12"
+# >=3.10 is the floor for the GPU inference image ONLY: nvcr nemo:24.05 is
+# the one base tag with a coherent nemo/scipy stack (25.04 fails `import
+# scipy.signal` on its own system python) and it ships Python 3.10. The
+# gpu-worker dependency group and gpu_worker/ package are 3.10-clean. All
+# other services deploy on Python 3.12 -- code outside gpu_worker/ may use
+# 3.11+/3.12 features freely and does (e.g. datetime.UTC).
+requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.135.1",
     "uvicorn[standard]>=0.41.0",
