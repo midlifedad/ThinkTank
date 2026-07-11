@@ -49,15 +49,15 @@ class Settings(BaseSettings):
     # Sonnet-class list prices; override via env when the model or its
     # pricing changes. Pre-A2 llm_reviews rows lack the input/output
     # split and are priced at the blended midpoint of these two rates.
+    # (This block was accidentally duplicated by the #50->#53 rebase
+    # recovery; deduplicated in the AssemblyAI PR.)
     llm_input_cost_per_mtok: float = 3.0
     llm_output_cost_per_mtok: float = 15.0
 
-    # LLM cost accounting, USD per million tokens (A2). Defaults are
-    # Sonnet-class list prices; override via env when the model or its
-    # pricing changes. Pre-A2 llm_reviews rows lack the input/output
-    # split and are priced at the blended midpoint of these two rates.
-    llm_input_cost_per_mtok: float = 3.0
-    llm_output_cost_per_mtok: float = 15.0
+    # AssemblyAI batch transcription cost accounting, USD per audio-hour.
+    # Default = universal-3-5-pro ($0.21/hr) + speaker diarization add-on
+    # ($0.02/hr). The universal-2 fallback bills lower; this is a ceiling.
+    assemblyai_cost_per_hour: float = 0.23
 
 
 @lru_cache

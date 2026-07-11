@@ -18,11 +18,14 @@ import tempfile
 import uuid
 
 import structlog
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.models.content import Content
+from thinktank.models.content import Content, ContentThinker
 from thinktank.models.source import Source
+from thinktank.models.thinker import Thinker
 from thinktank.queue.claim import _now
+from thinktank.transcription.assemblyai import is_transcription_api_enabled, transcribe_via_assemblyai
 from thinktank.transcription.audio import transcribe_via_gpu
 from thinktank.transcription.captions import extract_youtube_captions
 from thinktank.transcription.existing import fetch_existing_transcript
@@ -81,6 +84,24 @@ async def handle_process_content(session: AsyncSession, job: Job) -> None:  # no
             transcript = await fetch_existing_transcript(content.url, pattern)
             if transcript:
                 method = "existing_transcript"
+
+    # Pass 2.5: AssemblyAI batch API with speaker diarization (optional,
+    # config-gated via transcription_api_enabled -- Amir-approved batch
+    # processor 2026-07-11). Podcast enclosure URLs are publicly fetchable
+    # so AssemblyAI pulls the audio itself; YouTube page URLs are not
+    # direct audio, so youtube_channel sources skip straight to the GPU
+    # pass (captions usually got them in pass 1 anyway). Any failure falls
+    # through -- this pass can only add capacity, never block.
+    if transcript is None and source.source_type != "youtube_channel" and await is_transcription_api_enabled(session):
+        thinker_names_result = await session.execute(
+            select(Thinker.name)
+            .join(ContentThinker, ContentThinker.thinker_id == Thinker.id)
+            .where(ContentThinker.content_id == content_id)
+        )
+        keyterms = [name for (name,) in thinker_names_result.all()]
+        transcript = await transcribe_via_assemblyai(session, content.url, keyterms=keyterms)
+        if transcript:
+            method = "assemblyai"
 
     # Pass 3: Parakeet GPU inference
     if transcript is None:
