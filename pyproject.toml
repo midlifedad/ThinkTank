@@ -42,6 +42,18 @@ lint = [
     "ruff>=0.15.3",
     "mypy>=1.19.1",
 ]
+# Minimal runtime for the GPU inference service (docker/Dockerfile.worker-gpu,
+# installed with `uv sync --only-group gpu-worker`). Deliberately excludes the
+# main dependency set: the service runs inside the nvcr NeMo image with
+# --system-site-packages, and anything numpy-adjacent in the venv shadows
+# NVIDIA's compiled stack and breaks its ABI (scipy ufunc clash, Phase B).
+# Keep this to pure-Python/self-contained packages only.
+gpu-worker = [
+    "fastapi>=0.135.1",
+    "uvicorn[standard]>=0.41.0",
+    "structlog>=25.5.0",
+    "python-multipart>=0.0.22",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
