@@ -1,7 +1,11 @@
-# 25.04 (PyTorch 25.03 base) ships Python 3.12 -- required because the
-# project pins requires-python >=3.12 and the venv below is built on the
-# SYSTEM interpreter. 24.05 shipped Python 3.10 and could not host it.
-FROM nvcr.io/nvidia/nemo:25.04
+# 24.05 is the one tag with a VERIFIED-coherent import stack: the original
+# A3-era boot crashed inside our own code, PAST all nemo/scipy imports.
+# 25.04 is broken out of the box -- bare system python3 fails
+# `import scipy.signal` with a numpy-ufunc ABI error, no venv involved
+# (deploy-ops instrumented boot, 2026-07-10). 24.05 ships Python 3.10,
+# which is why requires-python is >=3.10 (the gpu-worker group and
+# gpu_worker/ package are 3.10-clean; every other service runs 3.12).
+FROM nvcr.io/nvidia/nemo:24.05
 
 WORKDIR /app
 
