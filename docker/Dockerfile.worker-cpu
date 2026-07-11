@@ -2,8 +2,14 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies for PostgreSQL client
-RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev && rm -rf /var/lib/apt/lists/*
+# System dependencies: libpq for PostgreSQL, ffmpeg for the transcription
+# audio pipeline. transcription/audio.py execs the ffmpeg BINARY to convert
+# downloaded audio to 16kHz mono WAV (and yt-dlp postprocessing needs it
+# too) -- without it every process_content GPU pass failed instantly with
+# a swallowed FileNotFoundError ("All transcription passes failed" in
+# seconds, Phase B 2026-07-11). This worker runs the download/convert
+# side; the inference service only receives finished WAVs.
+RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev ffmpeg && rm -rf /var/lib/apt/lists/*
 
 # Install uv for fast dependency management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
