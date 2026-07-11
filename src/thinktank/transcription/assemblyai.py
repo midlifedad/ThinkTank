@@ -52,6 +52,9 @@ _POLL_INTERVAL_SECONDS = 10.0
 # pass takes over (the remote job simply completes unobserved).
 _MAX_POLL_SECONDS = 3600.0
 _HTTP_TIMEOUT = 30.0
+# Streaming a full episode (100-300 MB) through download/upload needs far
+# more than the API-call timeout; connect stays tight.
+_TRANSFER_TIMEOUT = httpx.Timeout(connect=30.0, read=300.0, write=300.0, pool=30.0)
 # Pre-recorded keyterms_prompt accepts up to 1,000 phrases of <=6 words.
 _MAX_KEYTERMS = 1000
 
@@ -93,6 +96,72 @@ def _format_utterances(utterances: list[dict]) -> str:
     return "\n".join(lines)
 
 
+async def _resolve_final_url(client: httpx.AsyncClient, url: str) -> str:
+    """Follow the enclosure's redirect chain and return the terminal URL.
+
+    Podcast hosts (blubrry et al.) front their CDNs with tracking-redirect
+    hops that AssemblyAI's server-side fetcher rejects with 400 at submit
+    (Phase B: every failure was a media.blubrry.com URL). Handing AAI the
+    terminal CDN URL sidesteps the chain. HEAD first; some CDNs reject
+    HEAD, so fall back to opening (and immediately closing) a GET stream.
+    On any error, return the original URL and let submit try its luck.
+    """
+    try:
+        resp = await client.head(url)
+        if resp.status_code < 400:
+            return str(resp.url)
+    except Exception:  # noqa: S110 -- resolution is best-effort by design
+        pass
+    try:
+        async with client.stream("GET", url) as resp:
+            return str(resp.url)
+    except Exception:
+        return url
+
+
+async def _upload_audio(headers: dict, url: str, log) -> str | None:
+    """Download the audio and re-upload it to AssemblyAI's /v2/upload.
+
+    Bulletproof fallback for hosts whose URLs AAI refuses to fetch: we
+    stream the file to a temp path (episodes run 100-300 MB -- never
+    buffered in memory) and stream it back out as a raw-binary POST
+    (AAI's upload endpoint takes raw bytes, NOT multipart). Returns the
+    upload_url to submit, or None on failure.
+    """
+    import os
+    import tempfile
+
+    tmp_path = None
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=_TRANSFER_TIMEOUT) as client:
+            fd, tmp_path = tempfile.mkstemp(suffix=".audio")
+            with os.fdopen(fd, "wb") as tmp:
+                async with client.stream("GET", url) as resp:
+                    resp.raise_for_status()
+                    async for chunk in resp.aiter_bytes():
+                        tmp.write(chunk)
+
+            size = os.path.getsize(tmp_path)
+            log.info("assemblyai_upload_fallback", bytes=size)
+            with open(tmp_path, "rb") as audio_file:
+                upload = await client.post(
+                    f"{_BASE_URL}/upload",
+                    headers=headers,
+                    content=audio_file,
+                )
+            raise_for_status_with_backoff(upload)
+            return upload.json().get("upload_url")
+    except Exception:
+        log.warning("assemblyai_upload_failed", exc_info=True)
+        return None
+    finally:
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
 async def transcribe_via_assemblyai(
     session: AsyncSession,
     audio_url: str,
@@ -128,7 +197,20 @@ async def transcribe_via_assemblyai(
 
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=_HTTP_TIMEOUT) as client:
+            # Hand AAI the terminal CDN URL, not the tracking-redirect front.
+            payload["audio_url"] = await _resolve_final_url(client, audio_url)
+
             submit = await client.post(f"{_BASE_URL}/transcript", headers=headers, json=payload)
+            if submit.status_code == 400:
+                # AAI's fetcher refused the URL (Phase B: blubrry redirect
+                # chains). Log its exact reason, then fall back to
+                # download-and-upload, which cannot be refused.
+                log.warning("assemblyai_submit_rejected", body=submit.text[:300])
+                upload_url = await _upload_audio(headers, payload["audio_url"], log)
+                if upload_url is None:
+                    return None
+                payload["audio_url"] = upload_url
+                submit = await client.post(f"{_BASE_URL}/transcript", headers=headers, json=payload)
             raise_for_status_with_backoff(submit)
             transcript_id = submit.json()["id"]
             log = log.bind(transcript_id=transcript_id)
