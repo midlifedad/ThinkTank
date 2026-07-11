@@ -1,19 +1,27 @@
-FROM nvcr.io/nvidia/nemo:24.05
+# 25.04 (PyTorch 25.03 base) ships Python 3.12 -- required because the
+# project pins requires-python >=3.12 and the venv below is built on the
+# SYSTEM interpreter. 24.05 shipped Python 3.10 and could not host it.
+FROM nvcr.io/nvidia/nemo:25.04
 
 WORKDIR /app
 
 # Install uv for fast dependency management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Create the project venv WITH access to the base image's system
+# Never let uv download its own interpreter. On the first attempt at this
+# fix, uv silently fetched a pristine CPython and built the venv on it, so
+# --system-site-packages pointed at uv's empty interpreter instead of the
+# base image's NVIDIA stack, and `import nemo` still failed.
+ENV UV_PYTHON_DOWNLOADS=never
+
+# Create the project venv on the SYSTEM interpreter WITH access to its
 # site-packages. The whole reason this image builds on nvcr NeMo is the
-# NVIDIA-tuned nemo/torch/cuda stack preinstalled at system level -- but
-# `uv sync` builds an ISOLATED venv, so `import nemo` crash-looped the
-# service with ModuleNotFoundError on startup. With system-site-packages,
-# uv-managed project deps still take precedence (venv shadows system),
-# while nemo/torch resolve from the base image. Do NOT add nemo to
+# NVIDIA-tuned nemo/torch/cuda stack preinstalled at system level -- an
+# isolated uv venv cannot see it. uv-managed project deps still take
+# precedence (venv shadows system), so the project's own pins are
+# unaffected; nemo/torch resolve from the base image. Do NOT add nemo to
 # pyproject: reinstalling it via uv would pull a multi-GB untuned build.
-RUN uv venv --system-site-packages
+RUN uv venv --python python3 --system-site-packages
 
 # Install dependencies first (cache layer — no project install yet)
 COPY pyproject.toml uv.lock ./
