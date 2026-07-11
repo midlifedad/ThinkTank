@@ -47,6 +47,16 @@ RUN uv pip install --no-deps .
 # Parakeet model cache directory (Railway persistent volume)
 ENV NEMO_CACHE_DIR=/app/.nemo_cache
 
+# CPU-mode on Railway (platform has NO GPU runtime, confirmed 2026-07-10):
+# transformer_engine dlopens libcuda.so.1 at import time and dies without
+# it. Link the CUDA *stub* the image already ships so the import succeeds.
+# The stub fails cuInit, so torch.cuda.is_available() correctly reports
+# False and model.py maps Parakeet to CPU. If this service ever moves to a
+# real GPU host, the driver's own libcuda.so.1 takes precedence via the
+# runtime's standard library path and this stub is inert.
+RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/cuda/lib64/stubs
+
 # A3 (ARCH-REVIEW 2026-05-28): this service is the GPU INFERENCE server,
 # not a queue poller. The CPU worker's process_content handler HTTP-POSTs
 # WAV chunks to http://worker-gpu.railway.internal:8000/transcribe
