@@ -53,6 +53,19 @@ def mock_session(content, source):
     return session
 
 
+@pytest.fixture(autouse=True)
+def mock_api_enabled():
+    """Pass 2.5 (AssemblyAI) is opt-in; keep it OFF for pre-existing tests.
+
+    A raw AsyncMock session would coerce to enabled=True and the handler
+    would attempt a real API call. Tests that exercise the pass set
+    ``mock_api_enabled.return_value = True`` and patch the client.
+    """
+    with patch("thinktank.handlers.process_content.is_transcription_api_enabled", new_callable=AsyncMock) as enabled:
+        enabled.return_value = False
+        yield enabled
+
+
 LONG_TRANSCRIPT = " ".join(f"word{i}" for i in range(200))
 
 
@@ -175,6 +188,97 @@ async def test_content_fields_updated(mock_captions, mock_session, job, content,
     assert content.transcription_method == "youtube_captions"
     assert content.status == "done"
     assert isinstance(content.processed_at, datetime)
+
+
+def _thinker_rows(mock_session, names):
+    """Make session.execute return thinker-name rows for the keyterms query."""
+    from unittest.mock import MagicMock
+
+    result = MagicMock()
+    result.all = MagicMock(return_value=[(n,) for n in names])
+    mock_session.execute = AsyncMock(return_value=result)
+
+
+@patch("thinktank.handlers.process_content.transcribe_via_assemblyai", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+async def test_pass25_assemblyai_success(
+    mock_existing, mock_gpu, mock_aai, mock_api_enabled, mock_session, job, content, source
+):
+    """Pass 2.5: API enabled, AssemblyAI succeeds -> method='assemblyai', GPU never called."""
+    source.source_type = "podcast_rss"
+    source.config = {}
+    mock_api_enabled.return_value = True
+    mock_aai.return_value = LONG_TRANSCRIPT
+    _thinker_rows(mock_session, ["Jane Doe", "John Smith"])
+
+    from thinktank.handlers.process_content import handle_process_content
+
+    await handle_process_content(mock_session, job)
+
+    assert content.transcription_method == "assemblyai"
+    assert content.status == "done"
+    mock_gpu.assert_not_called()
+    # Matched thinker names are passed as recognition keyterms.
+    assert mock_aai.call_args.kwargs["keyterms"] == ["Jane Doe", "John Smith"]
+
+
+@patch("thinktank.handlers.process_content.transcribe_via_assemblyai", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+async def test_pass25_disabled_goes_to_gpu(mock_existing, mock_gpu, mock_aai, mock_session, job, content, source):
+    """Config flag off (default) -> AssemblyAI never called, GPU pass runs."""
+    source.source_type = "podcast_rss"
+    source.config = {}
+    mock_gpu.return_value = LONG_TRANSCRIPT
+
+    from thinktank.handlers.process_content import handle_process_content
+
+    await handle_process_content(mock_session, job)
+
+    mock_aai.assert_not_called()
+    assert content.transcription_method == "parakeet"
+
+
+@patch("thinktank.handlers.process_content.transcribe_via_assemblyai", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.extract_youtube_captions", new_callable=AsyncMock)
+async def test_pass25_skipped_for_youtube(
+    mock_captions, mock_gpu, mock_aai, mock_api_enabled, mock_session, job, content, source
+):
+    """YouTube page URLs aren't direct audio -> AssemblyAI skipped even when enabled."""
+    mock_api_enabled.return_value = True
+    mock_captions.return_value = None
+    mock_gpu.return_value = LONG_TRANSCRIPT
+
+    from thinktank.handlers.process_content import handle_process_content
+
+    await handle_process_content(mock_session, job)
+
+    mock_aai.assert_not_called()
+    assert content.transcription_method == "parakeet"
+
+
+@patch("thinktank.handlers.process_content.transcribe_via_assemblyai", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.transcribe_via_gpu", new_callable=AsyncMock)
+@patch("thinktank.handlers.process_content.fetch_existing_transcript", new_callable=AsyncMock)
+async def test_pass25_failure_falls_through_to_gpu(
+    mock_existing, mock_gpu, mock_aai, mock_api_enabled, mock_session, job, content, source
+):
+    """AssemblyAI returns None -> GPU pass still runs (API can't block the chain)."""
+    source.source_type = "podcast_rss"
+    source.config = {}
+    mock_api_enabled.return_value = True
+    mock_aai.return_value = None
+    mock_gpu.return_value = LONG_TRANSCRIPT
+    _thinker_rows(mock_session, [])
+
+    from thinktank.handlers.process_content import handle_process_content
+
+    await handle_process_content(mock_session, job)
+
+    mock_aai.assert_called_once()
+    assert content.transcription_method == "parakeet"
 
 
 async def test_content_not_found_raises(mock_session, job):
