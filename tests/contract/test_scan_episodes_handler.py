@@ -445,6 +445,63 @@ class TestPromotionEnqueuesTranscription:
 
         assert await self._process_content_jobs(session) == []
 
+    async def test_old_episode_promoted_but_not_enqueued(self, session: AsyncSession):
+        """Age policy (default 5y): an old host episode is still promoted and
+        attributed (metadata is free) but gets NO transcription job."""
+        from datetime import UTC, datetime, timedelta
+
+        thinker = await create_thinker(session, name="Host Thinker")
+        source = await create_source(session)
+        await create_source_thinker(session, source_id=source.id, thinker_id=thinker.id, relationship_type="host")
+        old = await create_content(
+            session,
+            source_id=source.id,
+            title="Ancient Episode",
+            status="cataloged",
+            published_at=datetime.now(UTC) - timedelta(days=6 * 365),
+        )
+
+        job = await create_job(
+            session,
+            job_type="scan_episodes_for_thinkers",
+            payload={"content_ids": [str(old.id)], "source_id": str(source.id), "descriptions": {}},
+        )
+        await session.commit()
+
+        await handle_scan_episodes_for_thinkers(session, job)
+
+        await session.refresh(old)
+        assert old.status == "pending"  # promotion still happens
+        assert await session.get(ContentThinker, (old.id, thinker.id)) is not None
+        assert await self._process_content_jobs(session) == []  # no transcription job
+
+    async def test_rescan_old_episode_promoted_but_not_enqueued(self, session: AsyncSession):
+        """Rescan applies the same age gate."""
+        from datetime import UTC, datetime, timedelta
+
+        thinker = await create_thinker(session, name="Old Guest")
+        source = await create_source(session)
+        old = await create_content(
+            session,
+            source_id=source.id,
+            title="Old Guest on Everything",
+            status="cataloged",
+            published_at=datetime.now(UTC) - timedelta(days=6 * 365),
+        )
+
+        job = await create_job(
+            session,
+            job_type="rescan_cataloged_for_thinker",
+            payload={"thinker_id": str(thinker.id), "thinker_name": "Old Guest"},
+        )
+        await session.commit()
+
+        await handle_rescan_cataloged_for_thinker(session, job)
+
+        await session.refresh(old)
+        assert old.status == "pending"
+        assert await self._process_content_jobs(session) == []
+
     async def test_rescan_promotion_creates_process_content_job(self, session: AsyncSession):
         """Retroactive rescan promotion also enqueues transcription."""
         thinker = await create_thinker(session, name="Jaron Lanier")

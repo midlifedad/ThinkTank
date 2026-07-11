@@ -26,7 +26,7 @@ from __future__ import annotations
 import uuid
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import or_, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.models.content import Content
@@ -34,6 +34,7 @@ from thinktank.models.job import Job
 from thinktank.queue.backpressure import get_max_pending_transcriptions, get_queue_depth
 from thinktank.queue.claim import _now
 from thinktank.queue.retry import get_max_attempts
+from thinktank.transcription.policy import get_transcription_age_cutoff
 
 logger = structlog.get_logger(__name__)
 
@@ -71,9 +72,15 @@ async def handle_enqueue_pending_transcriptions(session: AsyncSession, job: Job)
     )
     covered_ids = {row for (row,) in covered_result.all() if row}
 
+    # Age policy (Amir 2026-07-11): episodes older than the configured
+    # cutoff are not transcribed. NULL published_at passes (fail-open --
+    # a missing date is a parse artifact, not evidence of age).
+    cutoff = await get_transcription_age_cutoff(session)
+    age_filter = true() if cutoff is None else or_(Content.published_at.is_(None), Content.published_at >= cutoff)
+
     # Oldest-discovered pending content first, so the backlog drains in order.
     pending_result = await session.execute(
-        select(Content.id).where(Content.status == "pending").order_by(Content.discovered_at)
+        select(Content.id).where(Content.status == "pending", age_filter).order_by(Content.discovered_at)
     )
     pending_ids = [cid for (cid,) in pending_result.all() if str(cid) not in covered_ids]
 
@@ -101,4 +108,5 @@ async def handle_enqueue_pending_transcriptions(session: AsyncSession, job: Job)
         pending_uncovered=len(pending_ids),
         queue_depth=depth,
         threshold=threshold,
+        age_cutoff=cutoff.isoformat() if cutoff else None,
     )
