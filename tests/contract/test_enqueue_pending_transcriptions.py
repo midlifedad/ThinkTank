@@ -123,6 +123,48 @@ class TestSweepSkipsCoveredContent:
         assert new_jobs[0].payload["content_id"] == str(content.id)
 
 
+class TestSweepAgePolicy:
+    """Episodes older than the configured age cutoff are never enqueued."""
+
+    async def test_old_episode_skipped_by_default_policy(self, session: AsyncSession):
+        """Default policy (no config row) is 5 years: a 6-year-old episode
+        stays pending with no job; a recent one is enqueued."""
+        source = await create_source(session)
+        now = datetime.now(UTC)
+        await create_content(session, source_id=source.id, status="pending", published_at=now - timedelta(days=6 * 365))
+        recent = await create_content(
+            session, source_id=source.id, status="pending", published_at=now - timedelta(days=30)
+        )
+
+        await _sweep(session)
+
+        jobs = await _process_content_jobs(session)
+        assert [j.payload["content_id"] for j in jobs] == [str(recent.id)]
+
+    async def test_null_published_at_passes_gate(self, session: AsyncSession):
+        """Missing publish date is fail-open -- the episode is enqueued."""
+        source = await create_source(session)
+        content = await create_content(session, source_id=source.id, status="pending", published_at=None)
+
+        await _sweep(session)
+
+        jobs = await _process_content_jobs(session)
+        assert [j.payload["content_id"] for j in jobs] == [str(content.id)]
+
+    async def test_zero_config_disables_age_limit(self, session: AsyncSession):
+        """transcription_max_age_days=0 -> unlimited, old episodes enqueue."""
+        await create_system_config(session, key="transcription_max_age_days", value=0)
+        source = await create_source(session)
+        old = await create_content(
+            session, source_id=source.id, status="pending", published_at=datetime.now(UTC) - timedelta(days=6 * 365)
+        )
+
+        await _sweep(session)
+
+        jobs = await _process_content_jobs(session)
+        assert [j.payload["content_id"] for j in jobs] == [str(old.id)]
+
+
 class TestSweepRespectsThreshold:
     """The sweep never pushes queue depth past max_pending_transcriptions."""
 

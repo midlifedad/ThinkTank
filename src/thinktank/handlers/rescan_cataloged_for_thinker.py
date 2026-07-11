@@ -28,6 +28,7 @@ from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 from thinktank.models.thinker import Thinker
 from thinktank.queue.retry import get_max_attempts
+from thinktank.transcription.policy import get_transcription_age_cutoff, is_transcribable
 
 logger = structlog.get_logger(__name__)
 
@@ -109,6 +110,8 @@ async def handle_rescan_cataloged_for_thinker(session: AsyncSession, job: Job) -
     ]
 
     promoted_count = 0
+    skipped_by_age = 0
+    cutoff = await get_transcription_age_cutoff(session)
     now = _now()
 
     for content in matching_content:
@@ -134,7 +137,12 @@ async def handle_rescan_cataloged_for_thinker(session: AsyncSession, job: Job) -
 
         # Enqueue transcription for the promoted episode (ARCH-REVIEW A1).
         # Only content still in 'cataloged' reaches this loop, so each row
-        # is promoted -- and enqueued -- at most once.
+        # is promoted -- and enqueued -- at most once. Episodes older than
+        # the transcription age policy stay promoted (attribution is free)
+        # but get no job.
+        if not is_transcribable(content.published_at, cutoff):
+            skipped_by_age += 1
+            continue
         session.add(
             Job(
                 id=uuid.uuid4(),
@@ -156,4 +164,5 @@ async def handle_rescan_cataloged_for_thinker(session: AsyncSession, job: Job) -
         candidates_scanned=len(candidates),
         matched_after_word_boundary=len(matching_content),
         thinker_name=thinker_name,
+        transcription_skipped_by_age=skipped_by_age,
     )

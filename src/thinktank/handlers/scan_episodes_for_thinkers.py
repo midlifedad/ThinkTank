@@ -30,6 +30,7 @@ from thinktank.models.job import Job
 from thinktank.models.source import Source, SourceThinker
 from thinktank.models.thinker import Thinker
 from thinktank.queue.retry import get_max_attempts
+from thinktank.transcription.policy import get_transcription_age_cutoff, is_transcribable
 
 logger = structlog.get_logger(__name__)
 
@@ -125,7 +126,7 @@ async def handle_scan_episodes_for_thinkers(session: AsyncSession, job: Job) -> 
 
     # f. Process each content item
     promoted_count = 0
-    promoted_content_ids: list[uuid.UUID] = []
+    promoted_episodes: list[tuple[uuid.UUID, object]] = []  # (content_id, published_at)
     now = _now()
 
     for content_id_str in content_ids:
@@ -186,7 +187,7 @@ async def handle_scan_episodes_for_thinkers(session: AsyncSession, job: Job) -> 
         if is_host_source or matches:
             content.status = "pending"
             promoted_count += 1
-            promoted_content_ids.append(content.id)
+            promoted_episodes.append((content.id, content.published_at))
 
             if is_host_source:
                 for host_tid in host_thinker_ids:
@@ -217,13 +218,19 @@ async def handle_scan_episodes_for_thinkers(session: AsyncSession, job: Job) -> 
                     )
         # Guest source with no matches: content stays "cataloged" (no action)
 
-    # g. Enqueue transcription for every promoted episode (ARCH-REVIEW A1).
+    # g. Enqueue transcription for promoted episodes (ARCH-REVIEW A1).
     # Promotion to 'pending' previously dead-ended: nothing ever created the
     # process_content job that actually transcribes the episode. Each content
     # row is promoted from 'cataloged' exactly once (the status guard above),
     # so this cannot double-enqueue; the enqueue_pending_transcriptions sweep
-    # covers any historical backlog.
-    for promoted_id in promoted_content_ids:
+    # covers any historical backlog. Episodes older than the transcription
+    # age policy stay promoted (attribution is free) but get no job.
+    cutoff = await get_transcription_age_cutoff(session)
+    skipped_by_age = 0
+    for promoted_id, published_at in promoted_episodes:
+        if not is_transcribable(published_at, cutoff):
+            skipped_by_age += 1
+            continue
         session.add(
             Job(
                 id=uuid.uuid4(),
@@ -246,4 +253,5 @@ async def handle_scan_episodes_for_thinkers(session: AsyncSession, job: Job) -> 
         promoted_count=promoted_count,
         total_scanned=len(content_ids),
         is_host_source=is_host_source,
+        transcription_skipped_by_age=skipped_by_age,
     )
