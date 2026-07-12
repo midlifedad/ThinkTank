@@ -1,0 +1,41 @@
+# Dockerized pull-worker for the Mac Studio (Option C, 2026-07-12).
+#
+# The container does everything EXCEPT inference: polls the Railway
+# Postgres queue (outbound only -- no inbound networking to the house),
+# claims process_content jobs, downloads audio, converts with ffmpeg, and
+# POSTs WAVs to the NATIVE inference service on the host
+# (host.docker.internal:8765 -- Metal/MPS don't exist inside Docker's
+# Linux VM, so inference must live on bare metal).
+#
+# Usage (from repo root):
+#   docker compose -f docker/compose.mac-worker.yml --env-file scripts/mac-worker/mac-worker.env up -d --build
+#
+# See scripts/mac-worker/README.md for full setup.
+
+services:
+  mac-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker-cpu
+    restart: unless-stopped
+    environment:
+      # Railway Postgres connection string (deploy-ops issues this).
+      DATABASE_URL: ${DATABASE_URL}
+      # Claim ONLY transcription jobs; everything else stays on Railway.
+      WORKER_JOB_TYPES: '["process_content"]'
+      # Label worker_id rows so DB audits can tell this machine apart.
+      WORKER_SERVICE_TYPE: mac
+      # One episode transcribing while the next downloads; the native
+      # service serializes inference internally anyway.
+      WORKER_MAX_CONCURRENCY: "2"
+      # The native inference service on the host.
+      GPU_WORKER_URL: http://host.docker.internal:8765
+      # Whole episodes in ONE request: per-chunk diarization would reset
+      # speaker labels at every 45-min boundary. 10h threshold clears any
+      # real episode; generous timeout covers M4 Max inference time.
+      GPU_LONG_AUDIO_THRESHOLD_SECONDS: "36000"
+      GPU_TIMEOUT_SECONDS: "7200"
+    extra_hosts:
+      # No-op on Docker Desktop for Mac (built in), required if this file
+      # ever runs on a Linux docker host.
+      - "host.docker.internal:host-gateway"

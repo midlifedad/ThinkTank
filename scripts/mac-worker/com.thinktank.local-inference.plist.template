@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Rendered by scripts/mac-worker/install.sh: __REPO__ and __HF_TOKEN__
+     are substituted at install time. The installed copy contains a
+     credential -- install.sh chmods it 600. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.thinktank.local-inference</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__REPO__/.venv-inference/bin/uvicorn</string>
+        <string>thinktank.local_inference.main:app</string>
+        <string>--host</string>
+        <string>127.0.0.1</string>
+        <string>--port</string>
+        <string>8765</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HF_TOKEN</key>
+        <string>__HF_TOKEN__</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>__REPO__/var/local-inference.log</string>
+    <key>StandardErrorPath</key>
+    <string>__REPO__/var/local-inference.err.log</string>
+</dict>
+</plist>

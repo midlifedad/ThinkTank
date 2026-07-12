@@ -60,6 +60,19 @@ gpu-worker = [
     "structlog>=25.5.0",
     "python-multipart>=0.0.22",
 ]
+# Native Apple Silicon inference service (Option C, 2026-07-12): runs on
+# the Mac Studio HOST (never in Docker -- no Metal/MPS inside the Linux
+# VM). parakeet-mlx is Darwin/arm-only, hence the marker; pyannote pulls
+# torch (MPS for diarization). Installed with `uv sync --group
+# local-inference` by scripts/mac-worker/install.sh.
+local-inference = [
+    "parakeet-mlx>=0.3 ; sys_platform == 'darwin'",
+    "pyannote.audio>=3.3 ; sys_platform == 'darwin'",
+    "fastapi>=0.135.1",
+    "uvicorn[standard]>=0.41.0",
+    "structlog>=25.5.0",
+    "python-multipart>=0.0.22",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

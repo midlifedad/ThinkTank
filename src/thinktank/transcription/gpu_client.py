@@ -19,12 +19,29 @@ logger = structlog.get_logger(__name__)
 # Default GPU worker URL (Railway internal networking)
 _DEFAULT_GPU_URL = "http://worker-gpu.railway.internal:8000"
 
-# Timeout for GPU transcription (10 minutes for long audio)
-_GPU_TIMEOUT_SECONDS = 600
 
-# Chunking thresholds
-_LONG_AUDIO_THRESHOLD_SECONDS = 3600  # 60 minutes
-_CHUNK_DURATION_SECONDS = 2700  # 45 minutes
+def _env_int(name: str, default: int) -> int:
+    """Integer env override with a safe fallback on garbage values."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+# Timeout for GPU transcription (10 minutes for long audio). The Mac Studio
+# worker (Option C, 2026-07-12) overrides this upward: whole multi-hour
+# episodes go to the local inference service in ONE request so pyannote can
+# diarize globally with consistent speaker labels.
+_GPU_TIMEOUT_SECONDS = _env_int("GPU_TIMEOUT_SECONDS", 600)
+
+# Chunking thresholds. Per-chunk diarization would reset speaker identities
+# at every boundary, so deployments with a diarizing backend raise the
+# threshold above any real episode length via env.
+_LONG_AUDIO_THRESHOLD_SECONDS = _env_int("GPU_LONG_AUDIO_THRESHOLD_SECONDS", 3600)  # 60 minutes
+_CHUNK_DURATION_SECONDS = _env_int("GPU_CHUNK_DURATION_SECONDS", 2700)  # 45 minutes
 
 
 async def send_to_gpu(
