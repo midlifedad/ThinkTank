@@ -70,7 +70,9 @@ def load_models() -> None:
             raise RuntimeError("HF_TOKEN is required: pyannote's diarization pipeline is a gated model")
         start = time.monotonic()
         logger.info("loading_diarization_pipeline", pipeline=pipeline_id)
-        _diarization_pipeline = Pipeline.from_pretrained(pipeline_id, use_auth_token=token)
+        # pyannote.audio >=3.4/4.x renamed use_auth_token -> token (tracks
+        # huggingface_hub). The old kwarg raises TypeError at startup.
+        _diarization_pipeline = Pipeline.from_pretrained(pipeline_id, token=token)
         if torch.backends.mps.is_available():
             _diarization_pipeline.to(torch.device("mps"))
         logger.info(
@@ -158,11 +160,23 @@ def transcribe_diarized(wav_path: str) -> str:
     start = time.monotonic()
 
     with _inference_lock:
-        asr_result = _asr_model.transcribe(wav_path)
+        # chunk_duration keeps the Metal working set bounded: without it,
+        # parakeet-mlx attends over the WHOLE file and a 3-hour episode
+        # asks Metal for ~720 GB in one buffer. Internal chunking keeps
+        # timestamps global, so pyannote's single full-file diarization
+        # pass below still yields consistent speakers across the episode.
+        asr_result = _asr_model.transcribe(wav_path, chunk_duration=120.0, overlap_duration=15.0)
         segments = [(s.start, s.end, s.text) for s in asr_result.sentences]
 
         diarization = _diarization_pipeline(wav_path)
-        turns = [(turn.start, turn.end, speaker) for turn, _, speaker in diarization.itertracks(yield_label=True)]
+        # pyannote 4.x returns a DiarizeOutput wrapper; its
+        # exclusive_speaker_diarization is purpose-built for transcription
+        # alignment (no overlapping turns). pyannote 3.x returns the
+        # Annotation directly -- fall through to it unchanged.
+        annotation = getattr(diarization, "exclusive_speaker_diarization", None)
+        if annotation is None:
+            annotation = getattr(diarization, "speaker_diarization", diarization)
+        turns = [(turn.start, turn.end, speaker) for turn, _, speaker in annotation.itertracks(yield_label=True)]
 
     text = merge_diarization(segments, turns)
 
