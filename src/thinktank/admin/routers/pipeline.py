@@ -48,6 +48,7 @@ KNOWN_JOB_TYPES = [
     "fetch_youtube_channel",
     "rescan_cataloged_for_thinker",
     "enqueue_pending_transcriptions",
+    "vet_candidate",
 ]
 
 # Scheduled task definitions live in thinktank.queue.scheduled_tasks so the
