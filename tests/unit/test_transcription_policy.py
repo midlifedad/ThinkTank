@@ -32,7 +32,10 @@ class TestGetCutoff:
     async def test_absent_config_defaults_to_five_years(self):
         cutoff = await get_transcription_age_cutoff(_session_with_config_value(None))
         assert cutoff is not None
-        expected = NOW - timedelta(days=DEFAULT_MAX_AGE_DAYS)
+        # Compare against a CALL-TIME now: the module-level NOW is stamped
+        # at import, and slow CI collection put >60s between import and
+        # execution, flaking the original assertion (Troy, CI on #66).
+        expected = datetime.now(UTC) - timedelta(days=DEFAULT_MAX_AGE_DAYS)
         assert abs((cutoff - expected).total_seconds()) < 60
 
     @pytest.mark.asyncio
@@ -43,7 +46,7 @@ class TestGetCutoff:
     async def test_explicit_days(self):
         cutoff = await get_transcription_age_cutoff(_session_with_config_value(30))
         assert cutoff is not None
-        assert abs((cutoff - (NOW - timedelta(days=30))).total_seconds()) < 60
+        assert abs((cutoff - (datetime.now(UTC) - timedelta(days=30))).total_seconds()) < 60
 
     @pytest.mark.asyncio
     async def test_wrapped_dict_shape(self):
