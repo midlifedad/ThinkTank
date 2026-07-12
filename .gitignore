@@ -40,3 +40,8 @@ pgdata/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Mac Studio local worker (Option C) -- credentials and runtime artifacts
+scripts/mac-worker/mac-worker.env
+.venv-inference/
+var/
