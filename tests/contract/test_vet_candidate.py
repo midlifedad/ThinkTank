@@ -55,7 +55,11 @@ class TestGateRouting:
         assert candidate.evidence["openalex"]["h_index"] == 55
         jobs = await _llm_jobs(session)
         assert len(jobs) == 1
-        assert jobs[0].payload == {"review_type": "candidate_review", "candidate_ids": [str(candidate.id)]}
+        assert jobs[0].payload == {
+            "review_type": "candidate_review",
+            "target_id": str(candidate.id),
+            "candidate_ids": [str(candidate.id)],
+        }
 
     async def test_unqualified_candidate_auto_rejected_no_llm(self, session: AsyncSession):
         """Content-only celebrity: terminal rejection, zero LLM spend."""

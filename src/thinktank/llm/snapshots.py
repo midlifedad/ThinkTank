@@ -180,6 +180,32 @@ async def build_candidate_review_context(
         or 0
     )
 
+    def _vetting_block(c: CandidateThinker) -> dict:
+        """Compact vetting evidence for the judge (expert pipeline).
+
+        Only score, breakdown, seed claim, and per-source key facts --
+        NOT the raw dossier -- to keep the judge prompt small and the
+        call cost fixed.
+        """
+        if c.qualification_score is None:
+            return {}
+        evidence = c.evidence or {}
+        openalex = evidence.get("openalex", {})
+        wikidata = evidence.get("wikidata", {})
+        return {
+            "search_area": c.search_area,
+            "seed_source": c.seed_source,
+            "qualification_score": c.qualification_score,
+            "score_breakdown": c.score_breakdown,
+            "seed_claim": evidence.get("seed_claim"),
+            "identity_anchors": {
+                "openalex_id": openalex.get("openalex_id"),
+                "wikidata_qid": wikidata.get("qid"),
+                "wikidata_description": wikidata.get("description"),
+                "institutions": openalex.get("institutions"),
+            },
+        }
+
     candidate_list = [
         {
             "id": str(c.id),
@@ -189,6 +215,7 @@ async def build_candidate_review_context(
             "status": c.status,
             "sample_urls": c.sample_urls or [],
             "inferred_categories": c.inferred_categories or [],
+            **({"vetting": _vetting_block(c)} if c.qualification_score is not None else {}),
         }
         for c in candidates
     ]
