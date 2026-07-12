@@ -11,12 +11,13 @@ Usage:
 
 from __future__ import annotations
 
+import asyncio
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from uuid import uuid4
 
-import anyio
 import structlog
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
@@ -25,12 +26,19 @@ from thinktank.local_inference import engine
 
 logger = structlog.get_logger(__name__)
 
+# MLX streams/devices are THREAD-LOCAL: models loaded on one thread cannot
+# be invoked from another ("There is no Stream(cpu, 1) in current thread").
+# So ALL engine work -- the startup load and every inference call -- runs on
+# this single dedicated thread. Requests queue behind it (the engine lock
+# is now redundant but harmless); the event loop stays free for /health.
+_inference_thread = ThreadPoolExecutor(max_workers=1, thread_name_prefix="inference")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Preload both models so /health only goes green when serving-ready."""
     logger.info("local_inference_starting", stage="model_preload")
-    engine.load_models()
+    await asyncio.get_running_loop().run_in_executor(_inference_thread, engine.load_models)
     logger.info("local_inference_ready")
     yield
     logger.info("local_inference_shutting_down")
@@ -53,9 +61,10 @@ async def transcribe(file: UploadFile = File(...)) -> JSONResponse:
             while chunk := await file.read(1024 * 1024):
                 tmp.write(chunk)
 
-        # Inference is synchronous (MLX/torch); run it off the event loop so
-        # /health stays responsive during multi-minute episodes.
-        text = await anyio.to_thread.run_sync(engine.transcribe_diarized, tmp_path)
+        # Inference is synchronous (MLX/torch); run it on the dedicated
+        # inference thread (MLX thread-locality) so /health stays responsive
+        # during multi-minute episodes.
+        text = await asyncio.get_running_loop().run_in_executor(_inference_thread, engine.transcribe_diarized, tmp_path)
         return JSONResponse({"text": text})
     except Exception as exc:
         logger.exception("local_transcription_failed")

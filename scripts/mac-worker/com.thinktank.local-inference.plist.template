@@ -22,6 +22,10 @@
     <dict>
         <key>HF_TOKEN</key>
         <string>__HF_TOKEN__</string>
+        <!-- launchd services get a bare PATH; parakeet's audio loader
+             shells out to ffmpeg, which lives in homebrew's prefix. -->
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>
