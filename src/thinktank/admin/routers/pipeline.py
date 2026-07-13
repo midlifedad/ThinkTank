@@ -32,6 +32,7 @@ ALLOWED_TRIGGER_TYPES = {
     "discover_guests_podcastindex",
     "discover_thinker",
     "enqueue_pending_transcriptions",
+    "expert_search",
 }
 
 # All known job types for the filter dropdown
@@ -48,6 +49,8 @@ KNOWN_JOB_TYPES = [
     "fetch_youtube_channel",
     "rescan_cataloged_for_thinker",
     "enqueue_pending_transcriptions",
+    "vet_candidate",
+    "expert_search",
 ]
 
 # Scheduled task definitions live in thinktank.queue.scheduled_tasks so the
@@ -228,6 +231,7 @@ async def trigger_job(
     job_type: str,
     session: AsyncSession = Depends(get_session),
     thinker_id: str | None = Form(None),
+    area: str | None = Form(None),
     principal: str = Depends(require_admin),
 ):
     """Manually trigger a pipeline job."""
@@ -240,6 +244,11 @@ async def trigger_job(
     payload: dict = {"triggered_by": principal}
     if thinker_id and thinker_id.strip():
         payload["thinker_id"] = thinker_id.strip()
+    # expert_search requires its target area ("find experts in X").
+    if job_type == "expert_search":
+        if not area or not area.strip():
+            raise HTTPException(status_code=422, detail="expert_search requires an 'area'")
+        payload["area"] = area.strip()
 
     new_job = Job(
         id=uuid.uuid4(),

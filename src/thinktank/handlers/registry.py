@@ -8,6 +8,7 @@ from thinktank.handlers.base import JobHandler
 from thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
 from thinktank.handlers.discover_thinker import handle_discover_thinker
 from thinktank.handlers.enqueue_pending_transcriptions import handle_enqueue_pending_transcriptions
+from thinktank.handlers.expert_search import handle_expert_search
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
 from thinktank.handlers.fetch_youtube_channel import handle_fetch_youtube_channel
 from thinktank.handlers.llm_approval_check import handle_llm_approval_check
@@ -17,6 +18,7 @@ from thinktank.handlers.rescan_cataloged_for_thinker import handle_rescan_catalo
 from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
 from thinktank.handlers.scan_episodes_for_thinkers import handle_scan_episodes_for_thinkers
 from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
+from thinktank.handlers.vet_candidate import handle_vet_candidate
 
 # Key: job_type string, Value: callable matching JobHandler protocol.
 JOB_HANDLERS: dict[str, JobHandler] = {}
@@ -84,3 +86,7 @@ register_handler("rescan_cataloged_for_thinker", handle_rescan_cataloged_for_thi
 
 # --- A1 (ARCH-REVIEW 2026-05-28) handler registrations ---
 register_handler("enqueue_pending_transcriptions", handle_enqueue_pending_transcriptions)
+
+# --- Expert vetting (2026-07-12) handler registrations ---
+register_handler("vet_candidate", handle_vet_candidate)
+register_handler("expert_search", handle_expert_search)
