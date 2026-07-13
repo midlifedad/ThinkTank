@@ -85,6 +85,25 @@ class TestExtractObservations:
         assert [c.claim_text for c in kept] == ["Rapamycin extends lifespan in mice"]
         assert dropped == 1
 
+    async def test_empty_tool_input_is_no_claims_not_a_crash(self):
+        """When the evidence is irrelevant the model calls the tool with
+        empty input ({}). That must validate to zero claims, not raise --
+        otherwise one off-topic web article fails the whole inquiry."""
+        assert ExtractionResponse.model_validate({}).claims == []
+
+        response = ExtractionResponse()  # no claims provided
+        with (
+            patch(
+                "thinktank.llm.claims_extraction._client.review",
+                new=AsyncMock(return_value=(response, _usage(), 10)),
+            ),
+            patch("thinktank.llm.claims_extraction._record_cost", new=AsyncMock()),
+        ):
+            kept, dropped = await extract_observations(None, "Q?", "Dr. Test", "off-topic text", "web article")
+
+        assert kept == []
+        assert dropped == 0
+
 
 def _usage():
     from thinktank.llm.client import LLMUsage
