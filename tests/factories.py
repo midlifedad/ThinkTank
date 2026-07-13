@@ -17,8 +17,14 @@ from thinktank.models import (
     ApiUsage,
     CandidateThinker,
     Category,
+    Claim,
+    ClaimObservation,
     Content,
+    ContentChunk,
     ContentThinker,
+    Document,
+    Inquiry,
+    InquiryPosition,
     Job,
     LLMReview,
     RateLimitUsage,
@@ -437,3 +443,116 @@ async def create_api_usage(session: AsyncSession, **overrides: Any) -> ApiUsage:
     session.add(au)
     await session.flush()
     return au
+
+
+# ---------- Claims layer (v2, 2026-07-13) ----------
+
+
+def make_inquiry(**overrides: Any) -> Inquiry:
+    """Create an Inquiry with sensible defaults."""
+    defaults: dict[str, Any] = {
+        "id": uuid.uuid4(),
+        "question": f"Test inquiry question {_hex8()}?",
+        "area": "test area",
+        "status": "pending",
+    }
+    defaults.update(overrides)
+    return Inquiry(**defaults)
+
+
+async def create_inquiry(session: AsyncSession, **overrides: Any) -> Inquiry:
+    inquiry = make_inquiry(**overrides)
+    session.add(inquiry)
+    await session.flush()
+    return inquiry
+
+
+def make_claim(**overrides: Any) -> Claim:
+    """Create a canonical Claim with sensible defaults."""
+    defaults: dict[str, Any] = {
+        "id": uuid.uuid4(),
+        "proposition": f"Test proposition {_hex8()}",
+        "claim_type": "factual",
+    }
+    defaults.update(overrides)
+    return Claim(**defaults)
+
+
+async def create_claim(session: AsyncSession, **overrides: Any) -> Claim:
+    claim = make_claim(**overrides)
+    session.add(claim)
+    await session.flush()
+    return claim
+
+
+def make_document(**overrides: Any) -> Document:
+    """Create a web-provenance Document."""
+    defaults: dict[str, Any] = {
+        "id": uuid.uuid4(),
+        "url": f"https://example.com/article-{_hex8()}",
+        "domain": "example.com",
+        "title": "Test Article",
+        "text_content": "The expert said the thing about the topic.",
+        "fetch_status": "fetched",
+    }
+    defaults.update(overrides)
+    return Document(**defaults)
+
+
+async def create_document(session: AsyncSession, **overrides: Any) -> Document:
+    doc = make_document(**overrides)
+    session.add(doc)
+    await session.flush()
+    return doc
+
+
+def make_claim_observation(**overrides: Any) -> ClaimObservation:
+    """Create a ClaimObservation. Requires content_id OR document_id."""
+    defaults: dict[str, Any] = {
+        "id": uuid.uuid4(),
+        "origin": "inquiry",
+        "claim_type": "factual",
+        "stance": "asserts",
+        "claim_text": f"Test claim text {_hex8()}",
+        "quote": "the exact words spoken",
+        "grounded": False,
+    }
+    defaults.update(overrides)
+    return ClaimObservation(**defaults)
+
+
+async def create_claim_observation(session: AsyncSession, **overrides: Any) -> ClaimObservation:
+    obs = make_claim_observation(**overrides)
+    session.add(obs)
+    await session.flush()
+    return obs
+
+
+def make_content_chunk(**overrides: Any) -> ContentChunk:
+    """Create a ContentChunk. Requires content_id."""
+    defaults: dict[str, Any] = {
+        "id": uuid.uuid4(),
+        "chunk_index": 0,
+        "speaker_label": "Speaker A",
+        "text": "Chunk of transcript text.",
+        "char_start": 0,
+        "char_end": 25,
+    }
+    defaults.update(overrides)
+    return ContentChunk(**defaults)
+
+
+async def create_content_chunk(session: AsyncSession, **overrides: Any) -> ContentChunk:
+    chunk = make_content_chunk(**overrides)
+    session.add(chunk)
+    await session.flush()
+    return chunk
+
+
+async def create_inquiry_position(session: AsyncSession, **overrides: Any) -> InquiryPosition:
+    defaults: dict[str, Any] = {"stance": "asserts", "observation_count": 1}
+    defaults.update(overrides)
+    pos = InquiryPosition(**defaults)
+    session.add(pos)
+    await session.flush()
+    return pos

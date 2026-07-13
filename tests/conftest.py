@@ -55,6 +55,7 @@ async def engine():
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
         # Create GiST index for trigram similarity on candidate_thinkers.normalized_name
         # (SQLAlchemy create_all does not run Alembic migrations, so we add it explicitly)

@@ -80,8 +80,9 @@ async def clean_migration_db(engine):
     # Restore tables for subsequent tests that depend on create_all
     await drop_all_tables(TEST_DATABASE_URL)
     async with engine.begin() as conn:
-        # Re-create pg_trgm extension (dropped by DROP SCHEMA CASCADE)
+        # Re-create extensions (dropped by DROP SCHEMA CASCADE)
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
         # Re-create GiST index for trigram similarity tests
         await conn.execute(
@@ -94,7 +95,7 @@ async def clean_migration_db(engine):
 
 @pytest.mark.asyncio
 async def test_upgrade_head_creates_all_tables():
-    """Running 'alembic upgrade head' creates all 14 model tables."""
+    """Running 'alembic upgrade head' creates all model tables (16 core + 7 claims-layer)."""
     run_alembic("upgrade")
 
     tables = await get_table_names(TEST_DATABASE_URL)
@@ -103,8 +104,15 @@ async def test_upgrade_head_creates_all_tables():
             "api_usage",
             "candidate_thinkers",
             "categories",
+            "claim_categories",
+            "claim_observations",
+            "claims",
             "content",
+            "content_chunks",
             "content_thinkers",
+            "documents",
+            "inquiries",
+            "inquiry_positions",
             "jobs",
             "llm_reviews",
             "rate_limit_usage",
@@ -127,7 +135,7 @@ async def test_downgrade_base_drops_tables():
     run_alembic("upgrade")
 
     tables = await get_table_names(TEST_DATABASE_URL)
-    assert len(tables) == 16
+    assert len(tables) == 23
 
     run_alembic("downgrade")
 
@@ -146,7 +154,7 @@ async def test_advisory_lock_in_migration():
     run_alembic("upgrade")
 
     tables = await get_table_names(TEST_DATABASE_URL)
-    assert len(tables) == 16
+    assert len(tables) == 23
 
     run_alembic("downgrade")
 
