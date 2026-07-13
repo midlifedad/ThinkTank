@@ -17,12 +17,13 @@ cost-tracked (api_usage endpoint='claims_extraction'):
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime
 from typing import Literal
 
 import structlog
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.llm.client import LLMClient
@@ -60,6 +61,30 @@ class ExtractionResponse(BaseModel):
     # inquiry job. The empty default also drops `claims` from the tool's
     # required-schema, so the model is explicitly permitted to return none.
     claims: list[ExtractedClaim] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_stringified(cls, data):
+        """Recover the model's occasional stringified structured output.
+
+        Sonnet sometimes calls the tool with the whole object -- or just
+        the ``claims`` value -- as a JSON *string* instead of native
+        JSON: ``claims='{"claims": []}'`` or ``data='{"claims": [...]}'``.
+        Parse those back so a real (possibly non-empty) list isn't lost.
+        Anything still unparseable falls through to normal validation.
+        """
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except (ValueError, TypeError):
+                return data
+        if isinstance(data, dict) and isinstance(data.get("claims"), str):
+            try:
+                inner = json.loads(data["claims"])
+            except (ValueError, TypeError):
+                return data
+            data = {**data, "claims": inner.get("claims", inner) if isinstance(inner, dict) else inner}
+        return data
 
 
 class PositionResponse(BaseModel):
@@ -160,7 +185,16 @@ async def extract_observations(
         f"Evidence ({evidence_kind}):\n---\n{evidence_text}\n---\n"
         "Extract the expert's claims relevant to the question."
     )
-    result, usage, _ = await _client.review(system, prompt, ExtractionResponse, max_tokens=2048, session=session)
+    # Resilience backstop: a single malformed extraction must not kill a
+    # whole multi-expert inquiry. The before-validator recovers the known
+    # stringified-JSON shapes; anything still unparseable degrades this
+    # ONE bundle to zero claims (same posture as the grounding drop) and
+    # the inquiry continues over its remaining evidence and experts.
+    try:
+        result, usage, _ = await _client.review(system, prompt, ExtractionResponse, max_tokens=2048, session=session)
+    except (ValidationError, ValueError):
+        logger.warning("extraction_unparseable_bundle_skipped", expert=expert_name, kind=evidence_kind, exc_info=True)
+        return [], 0
     await _record_cost(session, usage)
 
     grounded: list[ExtractedClaim] = []

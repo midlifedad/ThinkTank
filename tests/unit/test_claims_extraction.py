@@ -5,6 +5,7 @@ can't be located in its provenance text never gets stored -- so it is
 tested exhaustively here without any LLM.
 """
 
+import json
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -101,6 +102,45 @@ class TestExtractObservations:
         ):
             kept, dropped = await extract_observations(None, "Q?", "Dr. Test", "off-topic text", "web article")
 
+        assert kept == []
+        assert dropped == 0
+
+    def test_stringified_empty_claims_recovered(self):
+        """Sonnet sometimes returns claims as a JSON *string*, not a list."""
+        assert ExtractionResponse.model_validate({"claims": '{"claims": []}'}).claims == []
+        assert ExtractionResponse.model_validate('{"claims": []}').claims == []
+
+    def test_stringified_nonempty_claims_recovered(self):
+        """A stringified NON-empty list must be recovered, not lost."""
+        payload = {
+            "claims": json.dumps(
+                {
+                    "claims": [
+                        {
+                            "claim_text": "Rapamycin extends lifespan in mice",
+                            "claim_type": "factual",
+                            "stance_on_question": "asserts",
+                            "confidence": "asserted",
+                            "quote": "rapamycin extends lifespan in mice",
+                        }
+                    ]
+                }
+            )
+        }
+        parsed = ExtractionResponse.model_validate(payload)
+        assert len(parsed.claims) == 1
+        assert parsed.claims[0].claim_text == "Rapamycin extends lifespan in mice"
+
+    async def test_unparseable_bundle_degrades_not_crashes(self):
+        """A residual parse failure skips the ONE bundle, never raising."""
+        with (
+            patch(
+                "thinktank.llm.claims_extraction._client.review",
+                new=AsyncMock(side_effect=ValueError("Claude response did not include a tool_use block")),
+            ),
+            patch("thinktank.llm.claims_extraction._record_cost", new=AsyncMock()),
+        ):
+            kept, dropped = await extract_observations(None, "Q?", "Dr. Test", "text", "web article")
         assert kept == []
         assert dropped == 0
 
