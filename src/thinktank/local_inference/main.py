@@ -76,6 +76,30 @@ async def transcribe(file: UploadFile = File(...)) -> JSONResponse:
             pass
 
 
+@app.post("/embed")
+async def embed(payload: dict) -> JSONResponse:
+    """Embed a batch of texts (claims layer, PR 2).
+
+    Request: {"texts": ["...", ...]} (max 256 per call). Response:
+    {"embeddings": [[...768 floats...], ...]} in input order.
+    """
+    texts = payload.get("texts")
+    if not isinstance(texts, list) or not texts or not all(isinstance(t, str) and t.strip() for t in texts):
+        return JSONResponse({"error": "texts must be a non-empty list of non-empty strings"}, status_code=422)
+    if len(texts) > 256:
+        return JSONResponse({"error": "max 256 texts per call"}, status_code=422)
+    try:
+        vectors = await asyncio.get_running_loop().run_in_executor(_inference_thread, engine.embed_texts, texts)
+        return JSONResponse({"embeddings": vectors})
+    except Exception as exc:
+        logger.exception("embedding_failed")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
 @app.get("/health")
 async def health() -> dict:
-    return {"status": "ok", "models_loaded": engine.models_loaded(), "backend": "parakeet-mlx+pyannote"}
+    return {
+        "status": "ok",
+        "models_loaded": engine.models_loaded(),
+        "backend": "parakeet-mlx+pyannote+bge",
+    }

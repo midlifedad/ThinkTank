@@ -22,9 +22,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.models.content import Content, ContentThinker
+from thinktank.models.job import Job
 from thinktank.models.source import Source
 from thinktank.models.thinker import Thinker
 from thinktank.queue.claim import _now
+from thinktank.queue.retry import get_max_attempts
 from thinktank.transcription.assemblyai import is_transcription_api_enabled, transcribe_via_assemblyai
 from thinktank.transcription.audio import transcribe_via_gpu
 from thinktank.transcription.captions import extract_youtube_captions
@@ -132,6 +134,21 @@ async def handle_process_content(session: AsyncSession, job: Job) -> None:  # no
     content.transcription_method = method
     content.status = "done"
     content.processed_at = _now()
+
+    # Claims v2: chunk+embed the fresh transcript (Mac-routed job). The
+    # embed_pending_content sweep covers backlog/desyncs.
+    session.add(
+        Job(
+            id=uuid.uuid4(),
+            job_type="embed_content",
+            payload={"content_id": str(content_id)},
+            priority=6,
+            status="pending",
+            attempts=0,
+            max_attempts=get_max_attempts("embed_content"),
+            created_at=_now(),
+        )
+    )
     await session.commit()
 
     logger.info(

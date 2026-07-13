@@ -90,7 +90,7 @@ class TestLocalInferenceApp:
         assert resp.status_code == 200
         body = resp.json()
         assert body["models_loaded"] is True
-        assert body["backend"] == "parakeet-mlx+pyannote"
+        assert body["backend"] == "parakeet-mlx+pyannote+bge"
 
     def test_transcribe_uses_file_field(self, client):
         """The multipart field must be named 'file' -- gpu_client's request
@@ -125,3 +125,36 @@ class TestGpuClientEnvOverrides:
 
         with patch.dict("os.environ", {"X_TEST_INT": "36000"}):
             assert _env_int("X_TEST_INT", 42) == 36000
+
+
+class TestEmbedEndpoint:
+    @pytest.fixture
+    def client(self):
+        with patch("thinktank.local_inference.engine.load_models"):
+            from thinktank.local_inference.main import app
+
+            with TestClient(app) as tc:
+                yield tc
+
+    def test_embed_returns_vectors_in_order(self, client):
+        with patch(
+            "thinktank.local_inference.main.engine.embed_texts",
+            return_value=[[0.1] * 768, [0.2] * 768],
+        ):
+            resp = client.post("/embed", json={"texts": ["one", "two"]})
+        assert resp.status_code == 200
+        vectors = resp.json()["embeddings"]
+        assert len(vectors) == 2 and len(vectors[0]) == 768
+
+    def test_embed_rejects_bad_payloads(self, client):
+        for payload in ({}, {"texts": []}, {"texts": [""]}, {"texts": "not a list"}, {"texts": ["x"] * 257}):
+            assert client.post("/embed", json=payload).status_code == 422
+
+    def test_embed_error_returns_500(self, client):
+        with patch(
+            "thinktank.local_inference.main.engine.embed_texts",
+            side_effect=RuntimeError("mps oom"),
+        ):
+            resp = client.post("/embed", json={"texts": ["x"]})
+        assert resp.status_code == 500
+        assert "mps oom" in resp.json()["error"]
