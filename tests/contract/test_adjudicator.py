@@ -119,7 +119,6 @@ class TestVetCandidateRejectionOverturn:
             "youtube": {"ok": True, "checked": False},
             "substack": {"ok": True, "checked": False},
         }
-        verdict = RejectionVerdict(legitimate=False, reasoning="lookup failure")
         with patch(
             "thinktank.handlers.vet_candidate.review_rejection",
             new_callable=AsyncMock,
