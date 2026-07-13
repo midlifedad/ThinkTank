@@ -118,3 +118,33 @@ class TestScoringMechanics:
         _, breakdown = score_dossier(d)
         _, base = score_dossier(_dossier(h_index=50, podcast_feeds=5))
         assert breakdown["content"] == base["content"]
+
+
+class TestPractitionerPath:
+    """Non-academic experts: no scholarship, real notability + strong
+    content -> route to the LLM judge, not auto-reject (Amir 2026-07-12)."""
+
+    def test_practitioner_with_notability_and_content_goes_to_judge(self):
+        """Scott Brinker archetype: Wikipedia + big podcast presence, no
+        citations -> practitioner_review (judge decides)."""
+        total, breakdown = score_dossier(_dossier(enwiki=True, podcast_feeds=10))
+        assert breakdown["scholarship"] == 0
+        assert gate_decision(total, breakdown, T) == "practitioner_review"
+
+    def test_practitioner_without_any_notability_still_rejected(self):
+        """Christopher Penn archetype: strong content but ZERO notability
+        and zero scholarship -> still auto-rejected (content alone never
+        qualifies)."""
+        total, breakdown = score_dossier(_dossier(podcast_feeds=20, youtube=True))
+        assert breakdown["notability"] == 0
+        assert gate_decision(total, breakdown, T) == "auto_rejected"
+
+    def test_practitioner_needs_content(self):
+        """Notability but no content -> auto_rejected (nothing to ingest)."""
+        total, breakdown = score_dossier(_dossier(enwiki=True))
+        assert gate_decision(total, breakdown, T) == "auto_rejected"
+
+    def test_academic_unaffected_by_practitioner_path(self):
+        """Scholarship>0 candidates never hit the practitioner branch."""
+        total, breakdown = score_dossier(_dossier(h_index=55, enwiki=True, podcast_feeds=10))
+        assert gate_decision(total, breakdown, T) == "shortlisted"
