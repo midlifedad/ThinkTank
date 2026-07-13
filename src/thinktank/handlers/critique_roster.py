@@ -59,6 +59,21 @@ class MissingEntry(BaseModel):
 
 
 class RosterVerdict(BaseModel):
+    # analysis comes FIRST deliberately: with tool_choice forced there is
+    # no thinking room outside the tool input, and with defaulted lists an
+    # empty {} is a frictionless punt -- both live critiques of the
+    # AI-coding slate came back empty while the same worker's judge calls
+    # were correctly strict (2026-07-13). Requiring a written walk-through
+    # of the slate BEFORE the lists makes the verdict follow from stated
+    # reasoning, and gives us the reasoning for audit either way.
+    analysis: str = Field(
+        description=(
+            "Walk the promoted/shortlisted entries one by one: what is each "
+            "person actually known for, and is that THIS domain? Then name "
+            "the figures you would expect on a roster for this domain and "
+            "check each against the slate."
+        )
+    )
     misranked: list[MisrankedEntry] = Field(default_factory=list)
     missing: list[MissingEntry] = Field(default_factory=list)
 
@@ -146,8 +161,11 @@ async def handle_critique_roster(session: AsyncSession, job: Job) -> None:
         "writing, its prominent educators and practitioners. Recall them "
         "from your knowledge of the field; the slate cannot tell you who is "
         "absent.\n\n"
-        "Empty lists are only for a slate that genuinely survives this "
-        "scrutiny -- never a default out of caution."
+        "First write your analysis -- every promoted/shortlisted entry "
+        "assessed for centrality, then the expected-but-absent check -- and "
+        "let the misranked/missing lists follow from it. Empty lists are "
+        "only for a slate that genuinely survives that written scrutiny -- "
+        "never a default out of caution."
     )
     prompt = (
         f"Domain: {area}\n\nVetted slate (name: verdict, rubric score, band breakdown, LLM fit):\n"

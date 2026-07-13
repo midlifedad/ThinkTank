@@ -46,6 +46,7 @@ class TestCritiqueRoster:
             qualification_score=75,
         )
         verdict = RosterVerdict(
+            analysis="Walked the slate.",
             misranked=[MisrankedEntry(name="Eminent Elsewhere", issue="Peripheral to this domain")],
             missing=[MissingEntry(name="Andrej Karpathy", why="Defined modern AI-assisted coding practice")],
         )
@@ -83,10 +84,11 @@ class TestCritiqueRoster:
             session, name="Open Candidate", normalized_name="open candidate", status="pending_human"
         )
         verdict = RosterVerdict(
+            analysis="Walked the slate.",
             missing=[
                 MissingEntry(name="Existing Thinker", why="already tracked"),
                 MissingEntry(name="Open Candidate", why="already a candidate"),
-            ]
+            ],
         )
         with _mock_llm(verdict):
             await _run(session)
@@ -105,10 +107,12 @@ class TestCritiqueRoster:
             search_area=AREA,
             qualification_score=70,
         )
-        with _mock_llm(RosterVerdict()):
+        with _mock_llm(RosterVerdict(analysis="Slate genuinely holds up.")):
             await _run(session)
         critique = (await session.execute(select(RosterCritique))).scalars().one()
-        assert critique.critique == {"misranked": [], "missing": []}
+        assert critique.critique["misranked"] == []
+        assert critique.critique["missing"] == []
+        assert critique.critique["analysis"]  # the reasoning persists for audit
         assert critique.nominated == 0
 
     async def test_unknown_area_skips_without_llm(self, session: AsyncSession):
