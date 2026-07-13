@@ -1,0 +1,48 @@
+<div style="background: #f7f7f9; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.25rem 0 0.75rem;">
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+        <div style="min-width: 220px;">
+            <h4 style="margin: 0 0 0.5rem;">Score Breakdown{% if c.qualification_score is not none %} — {{ c.qualification_score }}/100{% endif %}</h4>
+            {% for leg, max_pts in [("scholarship", 30), ("notability", 20), ("authorship", 15), ("content", 25), ("peer_signal", 10)] %}
+            {% set pts = breakdown.get(leg, 0) %}
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; margin-bottom: 2px;">
+                <span style="width: 90px; color: #666;">{{ leg | replace("_", " ") }}</span>
+                <div style="flex: 1; background: #ddd; border-radius: 3px; height: 10px; max-width: 160px;">
+                    <div style="width: {{ (pts / max_pts * 100) | round }}%; background: #4a7; height: 10px; border-radius: 3px;"></div>
+                </div>
+                <span style="color: #444;">{{ pts }}/{{ max_pts }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div style="min-width: 260px; font-size: 0.9rem;">
+            <h4 style="margin: 0 0 0.5rem;">Evidence</h4>
+            <div><strong>Scholarship:</strong>
+                {% if openalex.get("found") %}
+                    h-index {{ openalex.get("h_index") }}, {{ "{:,}".format(openalex.get("cited_by_count", 0)) }} citations, {{ openalex.get("works_count") }} works
+                    {% if openalex.get("institutions") %}({{ openalex.institutions | join(", ") }}){% endif %}
+                {% else %}not found{% endif %}
+            </div>
+            <div><strong>Notability:</strong>
+                {% if wikidata.get("found") %}
+                    {{ wikidata.get("description") or "Wikidata entity" }}
+                    {% if wikidata.get("has_enwiki") %}· Wikipedia{% endif %}
+                    · {{ wikidata.get("sitelink_count") }} sitelinks
+                    {% if wikidata.get("qid") %}· <a href="https://www.wikidata.org/wiki/{{ wikidata.qid }}" target="_blank">{{ wikidata.qid }}</a>{% endif %}
+                {% else %}not found{% endif %}
+            </div>
+            <div><strong>Books:</strong>
+                {% if books.get("found") %}{{ books.get("work_count") }} works{% if books.get("top_work") %} (best known: {{ books.top_work }}){% endif %}
+                {% else %}none found{% endif %}
+            </div>
+            <div><strong>Content:</strong>
+                {% if podcasts.get("found") %}{{ podcasts.get("appearance_feed_count") }} podcast feeds{% if podcasts.get("sample_feeds") %} ({{ podcasts.sample_feeds[:3] | join(", ") }}){% endif %}{% endif %}
+                {% if youtube.get("reachable") %} · <a href="{{ youtube.url }}" target="_blank">YouTube ✓</a>{% endif %}
+                {% if substack.get("reachable") %} · <a href="{{ substack.url }}" target="_blank">Substack ✓</a>{% endif %}
+            </div>
+            {% if seed_claim %}
+            <div style="margin-top: 0.5rem; color: #666;"><strong>Seed basis:</strong> {{ seed_claim.get("basis") }}
+                {% if seed_claim.get("notable_podcasts") %}· Podcasts: {{ seed_claim.notable_podcasts | join(", ") }}{% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

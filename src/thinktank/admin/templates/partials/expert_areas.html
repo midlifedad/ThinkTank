@@ -1,0 +1,95 @@
+{% if not areas %}
+<div class="card"><p style="color: #888;">No expert searches yet. Launch one above.</p></div>
+{% endif %}
+
+{% for area in areas %}
+<div class="card" style="margin-bottom: 1rem;">
+    <div style="display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;">
+        <h3 style="margin: 0;">{{ area.name }}</h3>
+        <span style="color: #888; font-size: 0.9rem;">
+            {{ area.surfaced }} surfaced ·
+            <span style="color: #0a0;">{{ area.promoted }} promoted</span> ·
+            {{ area.in_review }} in review ·
+            {% if area.vetting %}{{ area.vetting }} vetting ·{% endif %}
+            <span style="color: #c00;">{{ area.rejected }} rejected</span>
+        </span>
+    </div>
+    <table style="width: 100%; margin-top: 0.75rem;">
+        <thead>
+            <tr>
+                <th style="text-align: left;">Expert</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Evidence</th>
+                <th>Seed</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in area.candidates %}
+            <tr>
+                <td>
+                    <strong>{{ c.name }}</strong>
+                    {% if c.evidence and c.evidence.seed_claim and c.evidence.seed_claim.affiliation %}
+                    <div style="color: #888; font-size: 0.85rem;">{{ c.evidence.seed_claim.affiliation }}</div>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% if c.qualification_score is not none %}
+                    <strong style="color: {% if c.qualification_score >= 50 %}#0a0{% elif c.qualification_score >= 35 %}#c90{% else %}#c00{% endif %};">
+                        {{ c.qualification_score }}
+                    </strong>
+                    {% else %}<span style="color: #888;">—</span>{% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% set colors = {
+                        "promoted": "#0a0", "awaiting_llm": "#09c", "pending_human": "#c90",
+                        "vetting": "#888", "auto_rejected": "#c00", "rejected": "#c00",
+                        "rejected_duplicate": "#c00", "needs_more_data": "#c90"} %}
+                    <span style="color: {{ colors.get(c.status, '#888') }}; font-weight: 600;">
+                        {{ c.status | replace("_", " ") }}
+                    </span>
+                </td>
+                <td style="font-size: 0.85rem; color: #666;">
+                    {% if c.evidence %}
+                        {% set oa = c.evidence.get("openalex", {}) %}
+                        {% set wd = c.evidence.get("wikidata", {}) %}
+                        {% set bk = c.evidence.get("openlibrary", {}) %}
+                        {% set pi = c.evidence.get("podcastindex", {}) %}
+                        {% if oa.get("found") %}h-index {{ oa.get("h_index", 0) }} · {% endif %}
+                        {% if wd.get("has_enwiki") %}Wikipedia · {% endif %}
+                        {% if bk.get("found") %}{{ bk.get("work_count") }} books · {% endif %}
+                        {% if pi.get("found") %}{{ pi.get("appearance_feed_count") }} podcasts{% endif %}
+                    {% endif %}
+                </td>
+                <td style="text-align: center; color: #888; font-size: 0.85rem;">{{ c.seed_source or "—" }}</td>
+                <td style="text-align: right;">
+                    {% if c.status == "promoted" and c.thinker_id %}
+                    <a href="/admin/thinkers/{{ c.thinker_id }}" class="btn btn-sm">Thinker →</a>
+                    {% endif %}
+                    <button class="btn btn-sm"
+                            hx-get="/admin/experts/candidates/{{ c.id }}/dossier"
+                            hx-target="#dossier-{{ c.id }}"
+                            hx-swap="innerHTML">
+                        Dossier
+                    </button>
+                    {% if c.status == "pending_human" %}
+                    <button class="btn btn-sm btn-primary"
+                            hx-post="/admin/thinkers/candidates/{{ c.id }}/promote"
+                            hx-target="#dossier-{{ c.id }}">
+                        Promote
+                    </button>
+                    <button class="btn btn-sm" style="background: #a33; color: #fff;"
+                            hx-post="/admin/thinkers/candidates/{{ c.id }}/reject"
+                            hx-target="#dossier-{{ c.id }}">
+                        Reject
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><td colspan="6"><div id="dossier-{{ c.id }}"></div></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}

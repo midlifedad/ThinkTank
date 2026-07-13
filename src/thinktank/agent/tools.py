@@ -55,6 +55,7 @@ AGENT_TOOLS: list[dict] = [
                         "approve_source",
                         "reject_source",
                         "trigger_discovery",
+                        "expert_search",
                         "toggle_kill_switch",
                         "update_config",
                         "retry_job",
@@ -164,6 +165,8 @@ async def execute_confirmed_action(action_type: str, details: dict, session: Asy
             return await _action_approve_source(details, session)
         elif action_type == "reject_source":
             return await _action_reject_source(details, session)
+        elif action_type == "expert_search":
+            return await _execute_expert_search(details, session)
         elif action_type == "trigger_discovery":
             return await _action_trigger_discovery(details, session)
         elif action_type == "toggle_kill_switch":
@@ -260,6 +263,23 @@ async def _action_reject_source(details: dict, session: AsyncSession) -> dict:
     await session.commit()
 
     return {"success": True, "message": f"Source {source_id} rejected (admin override logged)."}
+
+
+async def _execute_expert_search(details: dict, session: AsyncSession) -> dict:
+    """Launch an expert_search job for an area (expert pipeline, 2026-07-12)."""
+    area = (details.get("area") or "").strip()
+    if not area:
+        return {"error": "area is required"}
+
+    job = Job(
+        job_type="expert_search",
+        payload={"area": area, "triggered_by": "chat_agent"},
+        status="pending",
+        priority=5,
+    )
+    session.add(job)
+    await session.commit()
+    return {"success": True, "message": f"Expert search launched for '{area}'", "job_id": str(job.id)}
 
 
 async def _action_trigger_discovery(details: dict, session: AsyncSession) -> dict:

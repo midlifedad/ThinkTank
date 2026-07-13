@@ -81,6 +81,19 @@
                 Discover Guests
             </button>
         </div>
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Find Experts in Area</label>
+                <input type="text" name="area" id="expert-search-area"
+                       placeholder="e.g. Age reversal/longevity" style="width: 280px;">
+            </div>
+            <button class="btn btn-primary"
+                    hx-post="/admin/pipeline/trigger/expert_search"
+                    hx-target="#trigger-result"
+                    hx-include="#expert-search-area">
+                Find Experts
+            </button>
+        </div>
     </div>
     <div id="trigger-result" style="margin-top: 0.75rem;"></div>
 </div>

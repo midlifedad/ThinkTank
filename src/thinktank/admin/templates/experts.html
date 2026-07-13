@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+    <h2 style="margin: 0;">Expert Discovery</h2>
+    <a href="/admin/thinkers/candidates" class="btn btn-sm" style="background: #555; color: #fff; text-decoration: none;">Candidate Queue</a>
+</div>
+
+<!-- Launcher -->
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Find Experts in an Area</h3>
+    <p style="color: #888; margin: 0.25rem 0 0.75rem;">
+        One deep-research pass surfaces recognized experts; each is vetted against
+        citations, notability, books, and findable content before any LLM review.
+    </p>
+    <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0; flex: 1; max-width: 420px;">
+            <label for="expert-area">Area</label>
+            <input type="text" id="expert-area" name="area"
+                   placeholder="e.g. Age reversal/longevity, AI safety, macroeconomics">
+        </div>
+        <button class="btn btn-primary"
+                hx-post="/admin/experts/search"
+                hx-target="#search-result"
+                hx-include="#expert-area">
+            Find Experts
+        </button>
+    </div>
+    <div id="search-result" style="margin-top: 0.75rem;"></div>
+</div>
+
+<!-- Area sections (auto-refresh while searches run) -->
+<div id="expert-areas"
+     hx-get="/admin/experts/partials/areas"
+     hx-trigger="load, every 30s">
+    Loading expert listings...
+</div>
+{% endblock %}
