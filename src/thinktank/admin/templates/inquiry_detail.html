@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a href="/admin/inquiries" style="color: #888; text-decoration: none;">&larr; All inquiries</a>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h2 style="margin: 0 0 0.5rem;">{{ inquiry.question }}</h2>
+    {% if headline %}
+    <p style="color: #666; margin: 0 0 0.5rem;">
+        Canonical proposition: <em>{{ headline.proposition }}</em>
+        <span style="color: #999;">({{ headline.claim_type }})</span>
+    </p>
+    {% endif %}
+    <p style="color: #888; margin: 0; font-size: 0.9rem;">
+        {% if inquiry.area %}Area: {{ inquiry.area }} &middot; {% endif %}
+        Status:
+        {% if inquiry.status == "complete" %}
+        <span style="color: #2e7d32; font-weight: 600;">complete</span>
+        {% elif inquiry.status == "running" %}
+        <span style="color: #b8860b; font-weight: 600;">running</span>
+        {% else %}
+        <span>{{ inquiry.status }}</span>
+        {% endif %}
+        &middot; Launched {{ inquiry.created_at.strftime("%Y-%m-%d %H:%M") }}
+        {% if inquiry.completed_at %} &middot; Completed {{ inquiry.completed_at.strftime("%Y-%m-%d %H:%M") }}{% endif %}
+    </p>
+</div>
+
+<div id="stance-matrix"
+     hx-get="/admin/inquiries/{{ inquiry.id }}/partials/matrix"
+     hx-trigger="load{% if inquiry.status in ('pending', 'running') %}, every 30s{% endif %}">
+    Loading stance matrix...
+</div>
+{% endblock %}
