@@ -260,6 +260,15 @@ async def apply_candidate_decision(
 
     await session.flush()
 
+    # Roster-critic liveness (Standing Phase 1b follow-up): the critic's
+    # auto-trigger fires from vet_candidate completions, but when the LAST
+    # vet finishes while judge reviews are still open, the area settles
+    # HERE -- so this terminal path must re-check the trigger too, or the
+    # critique never auto-fires for that area.
+    from thinktank.handlers.vet_candidate import _maybe_enqueue_roster_critique
+
+    await _maybe_enqueue_roster_critique(session, candidate.search_area)
+
 
 async def promote_candidate_to_thinker(
     session: AsyncSession,

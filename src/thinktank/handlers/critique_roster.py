@@ -123,15 +123,31 @@ async def handle_critique_roster(session: AsyncSession, job: Job) -> None:
         log.info("critique_roster_skipped", reason="no candidates for area")
         return
 
+    # Prompt lesson (first live run, 2026-07-13): the critic's ONLY source
+    # for "missing" names and for judging centrality is its own knowledge of
+    # the domain -- the slate data cannot contain either. The first prompt
+    # said "only flag what you have real grounds for", which the model read
+    # as "grounds within the provided data" and returned empty against a
+    # slate whose top promotions were all eminent-elsewhere figures.
     system = (
         "You review a fully-vetted roster of expert candidates for a specific "
-        "domain. The vetting rubric measures general eminence (citations, "
-        "Wikipedia, books), which transfers across domains; domain centrality "
-        "does not. Flag verdicts that look wrong for THIS domain (eminent-"
-        "elsewhere figures promoted, area-defining practitioners rejected), "
-        "and name genuinely prominent figures in this domain who are absent "
-        "from the slate entirely. Only flag what you have real grounds for; "
-        "an empty answer is acceptable."
+        "domain, using YOUR OWN knowledge of who these people are and who "
+        "shapes this domain. The vetting rubric measures general eminence "
+        "(citations, Wikipedia, books), which transfers across domains; "
+        "domain centrality does not -- so a high score proves nothing about "
+        "fit, and entries without a fit= annotation were never "
+        "centrality-assessed at all: scrutinize those hardest.\n\n"
+        "MISRANKED: any promoted/shortlisted name whose renown lies in an "
+        "adjacent discipline rather than this domain, and any rejected name "
+        "who created this domain's defining tools, frameworks, essays, or "
+        "practices.\n"
+        "MISSING: genuinely prominent figures in THIS domain absent from the "
+        "slate -- builders of its defining tools, authors of its canonical "
+        "writing, its prominent educators and practitioners. Recall them "
+        "from your knowledge of the field; the slate cannot tell you who is "
+        "absent.\n\n"
+        "Empty lists are only for a slate that genuinely survives this "
+        "scrutiny -- never a default out of caution."
     )
     prompt = (
         f"Domain: {area}\n\nVetted slate (name: verdict, rubric score, band breakdown, LLM fit):\n"
