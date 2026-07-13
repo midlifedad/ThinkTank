@@ -13,6 +13,7 @@ Env:
                              pipeline is a gated model).
     PARAKEET_MLX_MODEL       Override the ASR model id.
     PYANNOTE_PIPELINE        Override the diarization pipeline id.
+    EMBEDDING_MODEL          Override the sentence-transformers model id.
 """
 
 from __future__ import annotations
@@ -35,21 +36,24 @@ _inference_lock = threading.Lock()
 
 _DEFAULT_ASR_MODEL = "mlx-community/parakeet-tdt-0.6b-v2"
 _DEFAULT_DIARIZATION_PIPELINE = "pyannote/speaker-diarization-3.1"
+# Must produce vectors matching models/claim.py EMBEDDING_DIM (768).
+_DEFAULT_EMBEDDING_MODEL = "BAAI/bge-base-en-v1.5"
 
 # Module-level singletons -- loaded once at service startup.
 _asr_model = None
 _diarization_pipeline = None
+_embedding_model = None
 
 _SPEAKER_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
 def load_models() -> None:
-    """Load ASR + diarization models (singletons).
+    """Load ASR + diarization + embedding models (singletons).
 
     Called from the FastAPI lifespan so the service only reports healthy
     once both models are resident.
     """
-    global _asr_model, _diarization_pipeline
+    global _asr_model, _diarization_pipeline, _embedding_model
 
     if _asr_model is None:
         from parakeet_mlx import from_pretrained
@@ -81,9 +85,33 @@ def load_models() -> None:
             device="mps" if torch.backends.mps.is_available() else "cpu",
         )
 
+    if _embedding_model is None:
+        import torch
+        from sentence_transformers import SentenceTransformer
+
+        model_id = os.environ.get("EMBEDDING_MODEL", _DEFAULT_EMBEDDING_MODEL)
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+        start = time.monotonic()
+        logger.info("loading_embedding_model", model=model_id, device=device)
+        _embedding_model = SentenceTransformer(model_id, device=device)
+        logger.info("embedding_model_loaded", elapsed_seconds=round(time.monotonic() - start, 2))
+
+
+def embed_texts(texts: list[str]) -> list[list[float]]:
+    """Embed a batch of texts (768-dim, cosine-normalized).
+
+    Runs on the single inference thread (main.py executor) like all
+    engine work; the lock additionally guards against any other caller.
+    """
+    if not models_loaded():
+        load_models()
+    with _inference_lock:
+        vectors = _embedding_model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
+    return [v.tolist() for v in vectors]
+
 
 def models_loaded() -> bool:
-    return _asr_model is not None and _diarization_pipeline is not None
+    return _asr_model is not None and _diarization_pipeline is not None and _embedding_model is not None
 
 
 def merge_diarization(

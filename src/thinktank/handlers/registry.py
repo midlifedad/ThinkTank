@@ -7,6 +7,8 @@ handlers here via get_handler().
 from thinktank.handlers.base import JobHandler
 from thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
 from thinktank.handlers.discover_thinker import handle_discover_thinker
+from thinktank.handlers.embed_content import handle_embed_content
+from thinktank.handlers.embed_pending_content import handle_embed_pending_content
 from thinktank.handlers.enqueue_pending_transcriptions import handle_enqueue_pending_transcriptions
 from thinktank.handlers.expert_search import handle_expert_search
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
@@ -90,3 +92,7 @@ register_handler("enqueue_pending_transcriptions", handle_enqueue_pending_transc
 # --- Expert vetting (2026-07-12) handler registrations ---
 register_handler("vet_candidate", handle_vet_candidate)
 register_handler("expert_search", handle_expert_search)
+
+# --- Claims v2 (2026-07-13) handler registrations ---
+register_handler("embed_content", handle_embed_content)
+register_handler("embed_pending_content", handle_embed_pending_content)

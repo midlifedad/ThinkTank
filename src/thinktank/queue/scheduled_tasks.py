@@ -46,6 +46,12 @@ SCHEDULED_TASKS: list[dict] = [
         "job_type": "enqueue_pending_transcriptions",
     },
     {
+        "key": "embed_pending_content",
+        "label": "Embed Pending Transcripts",
+        "default_hours": 1,
+        "job_type": "embed_pending_content",
+    },
+    {
         "key": "rollup_api_usage",
         "label": "API Usage Rollup",
         "default_hours": 1,
