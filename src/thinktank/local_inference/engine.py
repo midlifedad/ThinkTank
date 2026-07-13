@@ -33,6 +33,10 @@ logger = structlog.get_logger(__name__)
 # here and the worker's own concurrency just overlaps download with
 # inference, which is the useful kind of parallelism.
 _inference_lock = threading.Lock()
+# Embeddings get their OWN lock: bge runs on CPU (see load_models), so it
+# never contends with MLX/pyannote for Metal, and serializing it behind a
+# ~6-minute transcription would just time out the /embed client.
+_embedding_lock = threading.Lock()
 
 _DEFAULT_ASR_MODEL = "mlx-community/parakeet-tdt-0.6b-v2"
 _DEFAULT_DIARIZATION_PIPELINE = "pyannote/speaker-diarization-3.1"
@@ -86,26 +90,35 @@ def load_models() -> None:
         )
 
     if _embedding_model is None:
-        import torch
         from sentence_transformers import SentenceTransformer
 
         model_id = os.environ.get("EMBEDDING_MODEL", _DEFAULT_EMBEDDING_MODEL)
-        device = "mps" if torch.backends.mps.is_available() else "cpu"
+        # CPU on purpose, not a fallback: bge-base encodes a transcript's
+        # chunks in seconds on an M-series CPU, and keeping it off Metal
+        # avoids contending with MLX ASR / pyannote MPS. The first live
+        # /embed on this host WEDGED inside encode() on MPS, permanently
+        # occupying the inference thread (2026-07-13).
+        device = os.environ.get("EMBEDDING_DEVICE", "cpu")
         start = time.monotonic()
         logger.info("loading_embedding_model", model=model_id, device=device)
         _embedding_model = SentenceTransformer(model_id, device=device)
+        # Warmup encode: a wedge or dtype/device fault must fail the BOOT
+        # (KeepAlive relaunches, health stays down, install.sh screams)
+        # rather than the first real request -- models_loaded alone proved
+        # a liar here.
+        _embedding_model.encode(["warmup"], normalize_embeddings=True, show_progress_bar=False)
         logger.info("embedding_model_loaded", elapsed_seconds=round(time.monotonic() - start, 2))
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
     """Embed a batch of texts (768-dim, cosine-normalized).
 
-    Runs on the single inference thread (main.py executor) like all
-    engine work; the lock additionally guards against any other caller.
+    Runs on its own executor thread (main.py) with its own lock:
+    CPU-only work that must not queue behind multi-minute Metal ASR.
     """
     if not models_loaded():
         load_models()
-    with _inference_lock:
+    with _embedding_lock:
         vectors = _embedding_model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
     return [v.tolist() for v in vectors]
 
