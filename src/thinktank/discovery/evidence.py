@@ -82,7 +82,9 @@ def _name_matches(query: str, candidate: str) -> bool:
 def _openalex_block(author: dict) -> dict:
     """Scored evidence block for one OpenAlex author record."""
     stats = author.get("summary_stats", {})
-    institutions = [i.get("display_name") for i in author.get("last_known_institutions", []) if i.get("display_name")]
+    institutions = [
+        i.get("display_name") for i in (author.get("last_known_institutions") or []) if i.get("display_name")
+    ]
     topics = [t.get("display_name") for t in (author.get("topics") or [])[:5] if t.get("display_name")]
     return {
         "ok": True,
@@ -99,7 +101,9 @@ def _openalex_block(author: dict) -> dict:
 
 def _openalex_option(author: dict) -> dict:
     """Compact one-line summary for the adjudicator (not the raw payload)."""
-    institutions = [i.get("display_name") for i in author.get("last_known_institutions", []) if i.get("display_name")]
+    institutions = [
+        i.get("display_name") for i in (author.get("last_known_institutions") or []) if i.get("display_name")
+    ]
     topics = [t.get("display_name") for t in (author.get("topics") or [])[:4] if t.get("display_name")]
     return {
         "openalex_id": author.get("id"),
