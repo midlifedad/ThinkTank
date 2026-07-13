@@ -189,3 +189,33 @@ class TestLLMClientReview:
 
         with pytest.raises(ValueError, match="tool_use"):
             await client.review("sys", "usr", SampleResponse)
+
+
+class TestTruncationGuard:
+    @pytest.fixture
+    def client(self):
+        llm = LLMClient()
+        llm._client = MagicMock()
+        return llm
+
+    @pytest.mark.asyncio
+    async def test_max_tokens_stop_reason_raises(self, client):
+        """Generation cut mid-tool-call must raise, not validate the
+        partial input. Both live roster critiques silently returned {}
+        this way (2026-07-13): the truncated input validated as a clean
+        empty verdict because the schema had defaults."""
+        mock_response = _make_mock_response({})
+        mock_response.stop_reason = "max_tokens"
+        client._client.messages.create = AsyncMock(return_value=mock_response)
+
+        with pytest.raises(ValueError, match="truncated at max_tokens"):
+            await client.review("system", "user", SampleResponse, max_tokens=100)
+
+    @pytest.mark.asyncio
+    async def test_normal_stop_reason_passes(self, client):
+        mock_response = _make_mock_response({"decision": "approved", "reasoning": "OK"})
+        mock_response.stop_reason = "tool_use"
+        client._client.messages.create = AsyncMock(return_value=mock_response)
+
+        result, _, _ = await client.review("system", "user", SampleResponse)
+        assert result.decision == "approved"

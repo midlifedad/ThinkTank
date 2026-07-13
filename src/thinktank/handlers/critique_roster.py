@@ -174,7 +174,7 @@ async def handle_critique_roster(session: AsyncSession, job: Job) -> None:
         f"auto_rejected/rejected = out.\n"
         f"Return misranked entries and up to {MAX_NOMINATIONS} missing names."
     )
-    verdict, usage, _ = await _client.review(system, prompt, RosterVerdict, max_tokens=1500, session=session)
+    verdict, usage, _ = await _client.review(system, prompt, RosterVerdict, max_tokens=4000, session=session)
     await _record_cost(session, usage)
 
     # Nominate missing names as normal candidates (dedup like discovery).
