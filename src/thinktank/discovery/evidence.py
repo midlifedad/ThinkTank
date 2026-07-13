@@ -42,10 +42,41 @@ logger = structlog.get_logger(__name__)
 _TIMEOUT = 20.0
 # OpenAlex polite pool: identify the caller via mailto for higher limits.
 _OPENALEX_MAILTO = "thinktank@midlifedad.dev"
+# Wikimedia APIs REQUIRE a descriptive User-Agent -- without one every
+# request 403s (the bug that zeroed notability for all longevity experts).
+_USER_AGENT = "ThinkTank/1.0 (expert-vetting; thinktank@midlifedad.dev)"
 
 
 def _norm(s: str) -> str:
     return " ".join(s.lower().split())
+
+
+def _significant_tokens(name: str) -> set[str]:
+    """Name tokens for matching, dropping single-letter initials and dots.
+
+    "David A. Sinclair" -> {david, sinclair}. Lets exact-ish name compares
+    survive middle-initial variance between the seed name and each API's
+    canonical form (OpenAlex/OpenLibrary list many authors without the
+    initial, which made strict substring matching miss them entirely).
+    """
+    tokens = set()
+    for raw in _norm(name).replace(".", " ").split():
+        if len(raw) > 1:
+            tokens.add(raw)
+    return tokens
+
+
+def _name_matches(query: str, candidate: str) -> bool:
+    """True when two names plausibly refer to the same person.
+
+    Symmetric token-subset: one name's significant tokens contain the
+    other's (handles "David Sinclair" vs "David A. Sinclair" both ways).
+    Requires at least a first+last token to avoid single-surname noise.
+    """
+    q, c = _significant_tokens(query), _significant_tokens(candidate)
+    if len(q) < 2 or not c:
+        return False
+    return q <= c or c <= q
 
 
 async def _openalex(client: httpx.AsyncClient, name: str) -> dict:
@@ -56,11 +87,9 @@ async def _openalex(client: httpx.AsyncClient, name: str) -> dict:
     )
     raise_for_status_with_backoff(resp)
     results = resp.json().get("results", [])
-    # Best match: exact normalized display-name hit, else the most-cited
-    # candidate whose name contains the query (guards John Smith noise a
-    # little; true disambiguation happens at the LLM judge with the QID).
-    exact = [r for r in results if _norm(r.get("display_name", "")) == _norm(name)]
-    pool = exact or [r for r in results if _norm(name) in _norm(r.get("display_name", ""))]
+    # Token-subset match tolerates middle-initial variance; most-cited
+    # wins ties. True disambiguation happens at the LLM judge with the QID.
+    pool = [r for r in results if _name_matches(name, r.get("display_name", ""))]
     if not pool:
         return {"ok": True, "found": False}
     author = max(pool, key=lambda r: r.get("cited_by_count", 0))
@@ -82,6 +111,7 @@ async def _openalex(client: httpx.AsyncClient, name: str) -> dict:
 
 async def _wikidata(client: httpx.AsyncClient, name: str) -> dict:
     """Notability + identity anchor from Wikidata (free, keyless)."""
+    headers = {"User-Agent": _USER_AGENT}
     resp = await client.get(
         "https://www.wikidata.org/w/api.php",
         params={
@@ -90,17 +120,18 @@ async def _wikidata(client: httpx.AsyncClient, name: str) -> dict:
             "language": "en",
             "type": "item",
             "format": "json",
-            "limit": 3,
+            "limit": 5,
         },
+        headers=headers,
     )
     raise_for_status_with_backoff(resp)
     hits = resp.json().get("search", [])
-    match = next((h for h in hits if _norm(h.get("label", "")) == _norm(name)), None)
+    match = next((h for h in hits if _name_matches(name, h.get("label", ""))), None)
     if match is None:
         return {"ok": True, "found": False}
 
     qid = match["id"]
-    entity_resp = await client.get(f"https://www.wikidata.org/wiki/Special:EntityData/{qid}.json")
+    entity_resp = await client.get(f"https://www.wikidata.org/wiki/Special:EntityData/{qid}.json", headers=headers)
     raise_for_status_with_backoff(entity_resp)
     entity = entity_resp.json().get("entities", {}).get(qid, {})
     sitelinks = entity.get("sitelinks", {})
@@ -119,7 +150,7 @@ async def _openlibrary(client: httpx.AsyncClient, name: str) -> dict:
     resp = await client.get("https://openlibrary.org/search/authors.json", params={"q": name})
     raise_for_status_with_backoff(resp)
     docs = resp.json().get("docs", [])
-    match = next((d for d in docs if _norm(d.get("name", "")) == _norm(name)), None)
+    match = next((d for d in docs if _name_matches(name, d.get("name", ""))), None)
     if match is None:
         return {"ok": True, "found": False}
     return {
@@ -140,12 +171,21 @@ async def _podcast_appearances(session: AsyncSession, name: str) -> dict:
         return {"ok": False, "error": "podcastindex credentials not configured"}
 
     client = PodcastIndexClient(api_key, api_secret)
-    feeds = await client.search_by_person(name)
+    # Correct signature: (session, worker_id, person_name); the response is
+    # a dict with an "items" list of episodes, not a feed list. Previously
+    # this was called search_by_person(name) and errored on every candidate,
+    # zeroing the content leg (the reason 100% of longevity experts were
+    # auto-rejected). worker_id is a synthetic label for rate-limit rows.
+    data = await client.search_by_person(session, worker_id="vetting", person_name=name)
+    items = (data or {}).get("items", [])
+    # Distinct feeds the person appears on = the availability signal.
+    feed_titles = {i.get("feedTitle") for i in items if i.get("feedTitle")}
     return {
         "ok": True,
-        "found": bool(feeds),
-        "appearance_feed_count": len(feeds),
-        "sample_feeds": [f.get("title") for f in feeds[:5]],
+        "found": bool(feed_titles),
+        "appearance_feed_count": len(feed_titles),
+        "episode_count": len(items),
+        "sample_feeds": list(feed_titles)[:5],
     }
 
 

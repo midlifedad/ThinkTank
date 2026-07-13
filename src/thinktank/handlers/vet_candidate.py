@@ -68,8 +68,13 @@ async def handle_vet_candidate(session: AsyncSession, job: Job) -> None:
 
     log = logger.bind(job_id=str(job.id), candidate=candidate.name)
 
-    if candidate.status not in ("pending_llm", "vetting", "seeded"):
-        log.info("vet_candidate_skipped", status=candidate.status)
+    # ``force`` re-vets a candidate the gate already decided -- used to
+    # reprocess auto_rejected/pending_human rows after an evidence-parsing
+    # fix. Never re-vet an already-promoted candidate (it's a live thinker).
+    force = bool(job.payload.get("force"))
+    allowed = ("pending_llm", "vetting", "seeded")
+    if candidate.status == "promoted" or (candidate.status not in allowed and not force):
+        log.info("vet_candidate_skipped", status=candidate.status, force=force)
         return
 
     # Hints: seed stage may have stored platform URLs in evidence.hints;
