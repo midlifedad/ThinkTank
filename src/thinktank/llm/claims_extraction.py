@@ -119,7 +119,7 @@ async def propositionize(session: AsyncSession, question: str) -> Proposition:
         "could assert, deny, or hedge on, and classify its claim type."
     )
     result, usage, _ = await _client.review(
-        system, f"Question: {question}", Proposition, max_tokens=300, session=session
+        system, f"Question: {question}", Proposition, max_tokens=500, session=session
     )
     await _record_cost(session, usage)
     return result
@@ -226,6 +226,6 @@ async def resolve_position(
     lines = [f"Question: {question}", f"Expert: {expert_name}", "Statements:"]
     for obs in observations[:30]:
         lines.append(f"- [{obs['stance']}/{obs.get('confidence')}] {obs['claim_text']}")
-    result, usage, _ = await _client.review(system, "\n".join(lines), PositionResponse, max_tokens=500, session=session)
+    result, usage, _ = await _client.review(system, "\n".join(lines), PositionResponse, max_tokens=768, session=session)
     await _record_cost(session, usage)
     return result
