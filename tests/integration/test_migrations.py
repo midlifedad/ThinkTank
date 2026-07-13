@@ -95,7 +95,7 @@ async def clean_migration_db(engine):
 
 @pytest.mark.asyncio
 async def test_upgrade_head_creates_all_tables():
-    """Running 'alembic upgrade head' creates all model tables (16 core + 7 claims-layer)."""
+    """Running 'alembic upgrade head' creates all model tables (16 core + 7 claims-layer + roster_critiques)."""
     run_alembic("upgrade")
 
     tables = await get_table_names(TEST_DATABASE_URL)
@@ -116,6 +116,7 @@ async def test_upgrade_head_creates_all_tables():
             "jobs",
             "llm_reviews",
             "rate_limit_usage",
+            "roster_critiques",
             "source_categories",
             "source_thinkers",
             "sources",
@@ -135,7 +136,7 @@ async def test_downgrade_base_drops_tables():
     run_alembic("upgrade")
 
     tables = await get_table_names(TEST_DATABASE_URL)
-    assert len(tables) == 23
+    assert len(tables) == 24
 
     run_alembic("downgrade")
 
@@ -154,7 +155,7 @@ async def test_advisory_lock_in_migration():
     run_alembic("upgrade")
 
     tables = await get_table_names(TEST_DATABASE_URL)
-    assert len(tables) == 23
+    assert len(tables) == 24
 
     run_alembic("downgrade")
 

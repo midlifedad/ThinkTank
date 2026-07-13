@@ -57,3 +57,29 @@ class CandidateThinker(Base):
 
     def __repr__(self) -> str:
         return f"<CandidateThinker(name={self.name!r}, status={self.status!r})>"
+
+
+class RosterCritique(Base):
+    """One LLM critique of a fully-vetted area roster.
+
+    Comparative judgment the per-candidate pipeline structurally cannot
+    make: who is misranked RELATIVE to the slate, and who is missing
+    from it entirely (design doc 2026-07-13-dynamic-expert-standing.md,
+    Phase 1b). Append-only; the newest row per area is what the admin
+    renders. The critic NOMINATES missing names as new candidates -- it
+    never promotes anyone itself; nominees go through the normal gate.
+    """
+
+    __tablename__ = "roster_critiques"
+
+    id: Mapped[uuid_pk]
+    search_area: Mapped[str] = mapped_column(sa.Text)
+    # {"misranked": [{"name", "issue"}], "missing": [{"name", "why"}]}
+    critique: Mapped[dict] = mapped_column(JSONB)
+    model: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    candidates_reviewed: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("0"))
+    nominated: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("0"))
+    created_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("NOW()"))
+
+    def __repr__(self) -> str:
+        return f"<RosterCritique(area={self.search_area!r})>"

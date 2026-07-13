@@ -121,6 +121,13 @@ def build_candidate_review_prompt(context: dict) -> tuple[str, str]:
 Review the batch of candidate thinkers surfaced by cascade discovery.
 For each candidate, evaluate whether they should be promoted to a full thinker.
 
+When a candidate carries a search_area, centrality to THAT AREA is a
+promotion criterion: general eminence in an adjacent field is not
+sufficient. Consult the domain_fit assessment (centrality/reasoning)
+where present. An evaluation_path of "fit_rescue" means the candidate
+reached you on area-defining work despite a modest general-eminence
+score -- judge the work's centrality, not the citation count.
+
 Respond with your decision and reasoning for each candidate. Valid decisions:
 - "approved": Candidate should become a thinker (specify tier, categories, initial_sources)
 - "rejected": Candidate does not meet criteria

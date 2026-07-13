@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.admin.auth import require_admin
 from thinktank.admin.dependencies import get_session, get_templates
-from thinktank.models.candidate import CandidateThinker
+from thinktank.models.candidate import CandidateThinker, RosterCritique
 from thinktank.models.job import Job
 
 router = APIRouter(prefix="/admin/experts", tags=["experts"])
@@ -122,10 +122,49 @@ async def area_sections_partial(
                 + statuses.get("rejected_duplicate", 0),
             }
         )
+    # Latest roster critique per area (Dynamic Expert Standing 1b).
+    critiques_result = await session.execute(
+        select(RosterCritique).order_by(RosterCritique.search_area, RosterCritique.created_at.desc())
+    )
+    latest_critique: dict[str, RosterCritique] = {}
+    for critique in critiques_result.scalars().all():
+        latest_critique.setdefault(critique.search_area, critique)
+    for entry in areas:
+        entry["critique"] = latest_critique.get(entry["name"])
+
     # Newest activity first: max first_seen among the area's candidates.
     areas.sort(key=lambda a: max(c.first_seen_at for c in a["candidates"]), reverse=True)
 
     return templates.TemplateResponse(request, "partials/expert_areas.html", {"areas": areas})
+
+
+@router.post("/critique")
+async def launch_critique(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    area: str = Form(...),
+    principal: str = Depends(require_admin),
+):
+    """Enqueue a roster critique for an area (admin re-run button)."""
+    area = area.strip()
+    if not area:
+        raise HTTPException(status_code=422, detail="area is required")
+    job = Job(
+        id=uuid.uuid4(),
+        job_type="critique_roster",
+        payload={"area": area, "triggered_by": principal},
+        priority=5,
+        status="pending",
+        attempts=0,
+        max_attempts=3,
+    )
+    session.add(job)
+    await session.commit()
+    return templates.TemplateResponse(
+        request,
+        "partials/trigger_result.html",
+        {"success": True, "message": f"Roster critique queued for '{area}'", "job_id": str(job.id)},
+    )
 
 
 @router.get("/candidates/{candidate_id}/dossier")

@@ -43,6 +43,16 @@
                 {% if seed_claim.get("notable_podcasts") %}· Podcasts: {{ seed_claim.notable_podcasts | join(", ") }}{% endif %}
             </div>
             {% endif %}
+            {% set fit = evidence.get("domain_fit") %}
+            {% if fit %}
+            <div style="margin-top: 0.5rem;">
+                <strong>Domain fit:</strong>
+                {% if fit.centrality == "core" %}<span style="color: #0a0; font-weight: 600;">core</span>
+                {% elif fit.centrality == "adjacent" %}<span style="color: #b8860b; font-weight: 600;">adjacent</span>
+                {% else %}<span style="color: #c00; font-weight: 600;">peripheral</span>{% endif %}
+                ({{ fit.fit_score }}/20) — <span style="color: #666;">{{ fit.reasoning }}</span>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -123,3 +123,117 @@ class TestPractitionerRouting:
         assert candidate.evidence["evaluation_path"] == "practitioner"
         jobs = await _llm_jobs(session)
         assert len(jobs) == 1
+
+
+def _fit(centrality, score=18):
+    return {"centrality": centrality, "fit_score": score, "reasoning": "test", "assessed_at": "2026-07-13T00:00:00Z"}
+
+
+async def _vet_with_fit(session: AsyncSession, candidate, dossier, fit) -> None:
+    job = await create_job(session, job_type="vet_candidate", payload={"candidate_id": str(candidate.id)})
+    with (
+        patch("thinktank.handlers.vet_candidate.gather_evidence", new_callable=AsyncMock, return_value=dossier),
+        patch("thinktank.handlers.vet_candidate.assess_domain_fit", new_callable=AsyncMock, return_value=fit),
+    ):
+        await handle_vet_candidate(session, job)
+
+
+class TestDomainFit:
+    async def test_core_fit_rescues_weak_scorer_to_judge(self, session: AsyncSession):
+        """The Weng/Nakajima fix: thin countable evidence + CORE fit -> judge."""
+        candidate = await create_candidate_thinker(
+            session, name="Area Creator", status="pending_llm", search_area="agentic engineering"
+        )
+        await _vet_with_fit(session, candidate, _dossier(podcast_feeds=10, sitelinks=4), _fit("core"))
+
+        await session.refresh(candidate)
+        assert candidate.status == "awaiting_llm"
+        assert candidate.evidence["domain_fit"]["centrality"] == "core"
+        assert candidate.evidence["evaluation_path"] == "fit_rescue"
+        assert len(await _llm_jobs(session)) == 1
+
+    async def test_peripheral_fit_stored_but_not_rescuing(self, session: AsyncSession):
+        candidate = await create_candidate_thinker(
+            session, name="Eminent Elsewhere", status="pending_llm", search_area="agentic engineering"
+        )
+        await _vet_with_fit(session, candidate, _dossier(podcast_feeds=4, sitelinks=2), _fit("peripheral", 3))
+
+        await session.refresh(candidate)
+        assert candidate.status == "auto_rejected"
+        assert candidate.evidence["domain_fit"]["centrality"] == "peripheral"
+        assert await _llm_jobs(session) == []
+
+    async def test_fit_failure_leaves_gate_unchanged(self, session: AsyncSession):
+        """assess_domain_fit returning None (fail-open) = pre-fit behavior."""
+        candidate = await create_candidate_thinker(
+            session, name="Fit Unavailable", status="pending_llm", search_area="agentic engineering"
+        )
+        await _vet_with_fit(session, candidate, _dossier(podcast_feeds=4, sitelinks=2), None)
+
+        await session.refresh(candidate)
+        assert candidate.status == "auto_rejected"
+        assert "domain_fit" not in candidate.evidence
+
+    async def test_no_area_skips_fit_call(self, session: AsyncSession):
+        candidate = await create_candidate_thinker(session, name="No Area", status="pending_llm")
+        job = await create_job(session, job_type="vet_candidate", payload={"candidate_id": str(candidate.id)})
+        fit_mock = AsyncMock()
+        with (
+            patch(
+                "thinktank.handlers.vet_candidate.gather_evidence",
+                new_callable=AsyncMock,
+                return_value=_dossier(h_index=55, enwiki=True, sitelinks=30, books=5, podcast_feeds=10),
+            ),
+            patch("thinktank.handlers.vet_candidate.assess_domain_fit", new=fit_mock),
+        ):
+            await handle_vet_candidate(session, job)
+        fit_mock.assert_not_awaited()
+
+
+class TestRosterCritiqueAutoEnqueue:
+    async def test_last_vet_in_area_enqueues_critique_once(self, session: AsyncSession):
+        area = "agentic engineering"
+        candidate = await create_candidate_thinker(
+            session, name="Only Candidate", status="pending_llm", search_area=area
+        )
+        await _vet_with_fit(session, candidate, _dossier(podcast_feeds=4, sitelinks=2), None)
+
+        from thinktank.models.job import Job as JobModel
+
+        critic_jobs = (
+            (await session.execute(select(JobModel).where(JobModel.job_type == "critique_roster"))).scalars().all()
+        )
+        assert len(critic_jobs) == 1
+        assert critic_jobs[0].payload["area"] == area
+
+        # Re-vetting (force) must NOT enqueue a second critique: the
+        # one-per-area guard sees the open critic job.
+        job = await create_job(
+            session, job_type="vet_candidate", payload={"candidate_id": str(candidate.id), "force": True}
+        )
+        with (
+            patch(
+                "thinktank.handlers.vet_candidate.gather_evidence",
+                new_callable=AsyncMock,
+                return_value=_dossier(podcast_feeds=4, sitelinks=2),
+            ),
+            patch("thinktank.handlers.vet_candidate.assess_domain_fit", new_callable=AsyncMock, return_value=None),
+        ):
+            await handle_vet_candidate(session, job)
+        critic_jobs = (
+            (await session.execute(select(JobModel).where(JobModel.job_type == "critique_roster"))).scalars().all()
+        )
+        assert len(critic_jobs) == 1
+
+    async def test_not_enqueued_while_area_still_vetting(self, session: AsyncSession):
+        area = "agentic engineering"
+        candidate = await create_candidate_thinker(session, name="First Done", status="pending_llm", search_area=area)
+        await create_candidate_thinker(session, name="Still Vetting", status="vetting", search_area=area)
+        await _vet_with_fit(session, candidate, _dossier(podcast_feeds=4, sitelinks=2), None)
+
+        from thinktank.models.job import Job as JobModel
+
+        critic_jobs = (
+            (await session.execute(select(JobModel).where(JobModel.job_type == "critique_roster"))).scalars().all()
+        )
+        assert critic_jobs == []
