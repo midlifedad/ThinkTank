@@ -20,14 +20,15 @@ from __future__ import annotations
 import uuid
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.discovery.adjudicator import review_rejection
+from thinktank.discovery.domain_fit import assess_domain_fit
 from thinktank.discovery.evidence import gather_evidence
 from thinktank.discovery.rubric import gate_decision, load_thresholds, score_dossier
 from thinktank.ingestion.name_matcher import match_thinkers_in_text
-from thinktank.models.candidate import CandidateThinker
+from thinktank.models.candidate import CandidateThinker, RosterCritique
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 from thinktank.queue.claim import _now
@@ -113,8 +114,18 @@ async def handle_vet_candidate(session: AsyncSession, job: Job) -> None:
     dossier["seed_claim"] = seed_claim  # preserve across re-vets
     peers = await _peer_coappearances(session, candidate.name)
     total, breakdown = score_dossier(dossier, peer_coappearances=peers)
+
+    # Domain fit (design doc 2026-07-13): the one question the countable
+    # evidence can't answer -- is this person central to THIS area? Routing
+    # signal + judge context; fail-open (None) leaves the gate unchanged.
+    fit = None
+    if candidate.search_area:
+        fit = await assess_domain_fit(session, candidate.name, candidate.search_area, dossier)
+        if fit is not None:
+            dossier["domain_fit"] = fit
+
     thresholds = await load_thresholds(session)
-    outcome = gate_decision(total, breakdown, thresholds)
+    outcome = gate_decision(total, breakdown, thresholds, centrality=(fit or {}).get("centrality"))
 
     candidate.evidence = dossier
     candidate.qualification_score = total
@@ -150,6 +161,11 @@ async def handle_vet_candidate(session: AsyncSession, job: Job) -> None:
         if outcome == "practitioner_review":
             dossier["evaluation_path"] = "practitioner"
             candidate.evidence = dossier
+        elif outcome == "fit_rescue":
+            # Reached the judge on domain centrality, not the academic or
+            # practitioner bars -- the judge weighs area-defining work.
+            dossier["evaluation_path"] = "fit_rescue"
+            candidate.evidence = dossier
         candidate.status = "awaiting_llm"
         session.add(
             Job(
@@ -179,3 +195,57 @@ async def handle_vet_candidate(session: AsyncSession, job: Job) -> None:
         breakdown=breakdown,
         peer_coappearances=peers,
     )
+
+    await _maybe_enqueue_roster_critique(session, candidate.search_area)
+
+
+async def _maybe_enqueue_roster_critique(session: AsyncSession, area: str | None) -> None:
+    """Auto-enqueue the roster critic once an area's vetting fan-out ends.
+
+    Guards (both required to avoid loops and duplicates):
+    - fires only when NO candidate for the area is still mid-pipeline
+      ('vetting' = awaiting evidence, 'awaiting_llm' = at the judge);
+    - fires at most once per area, ever (roster_critiques row or an open
+      critique job counts) -- otherwise the critic's own nominees would
+      re-trigger it when THEIR vetting completes. Re-runs are an explicit
+      admin action.
+    """
+    if not area:
+        return
+    in_flight = await session.scalar(
+        select(func.count())
+        .select_from(CandidateThinker)
+        .where(CandidateThinker.search_area == area, CandidateThinker.status.in_(["vetting", "awaiting_llm"]))
+    )
+    if in_flight:
+        return
+    already_critiqued = await session.scalar(
+        select(func.count()).select_from(RosterCritique).where(RosterCritique.search_area == area)
+    )
+    if already_critiqued:
+        return
+    open_job = await session.scalar(
+        select(func.count())
+        .select_from(Job)
+        .where(
+            Job.job_type == "critique_roster",
+            Job.status.in_(["pending", "running", "retrying"]),
+            Job.payload["area"].astext == area,
+        )
+    )
+    if open_job:
+        return
+    session.add(
+        Job(
+            id=uuid.uuid4(),
+            job_type="critique_roster",
+            payload={"area": area, "triggered_by": "vetting_fanout_complete"},
+            priority=5,
+            status="pending",
+            attempts=0,
+            max_attempts=get_max_attempts("critique_roster"),
+            created_at=_now(),
+        )
+    )
+    await session.commit()
+    logger.info("roster_critique_enqueued", area=area)

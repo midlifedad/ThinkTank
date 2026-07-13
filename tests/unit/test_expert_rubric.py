@@ -148,3 +148,45 @@ class TestPractitionerPath:
         """Scholarship>0 candidates never hit the practitioner branch."""
         total, breakdown = score_dossier(_dossier(h_index=55, enwiki=True, podcast_feeds=10))
         assert gate_decision(total, breakdown, T) == "shortlisted"
+
+
+class TestFitRescue:
+    """Domain-fit rescue path (Dynamic Expert Standing Phase 1a)."""
+
+    def _thresholds(self):
+        from thinktank.discovery.rubric import GateThresholds
+
+        return GateThresholds()
+
+    def test_core_rescues_auto_rejected(self):
+        # Weng-class: thin countable evidence, content present, CORE fit.
+        breakdown = {"scholarship": 0, "notability": 4, "authorship": 0, "content": 12, "qualification_legs": 4}
+        total = 16
+        assert gate_decision(total, breakdown, self._thresholds()) == "auto_rejected"
+        assert gate_decision(total, breakdown, self._thresholds(), centrality="core") == "fit_rescue"
+
+    def test_core_rescues_borderline(self):
+        breakdown = {"scholarship": 15, "notability": 8, "authorship": 0, "content": 15, "qualification_legs": 23}
+        total = 38  # qual floor met, between floor and shortlist -> borderline
+        assert gate_decision(total, breakdown, self._thresholds()) == "borderline"
+        assert gate_decision(total, breakdown, self._thresholds(), centrality="core") == "fit_rescue"
+
+    def test_no_rescue_without_content(self):
+        """Content is never waivable -- nothing to ingest."""
+        breakdown = {"scholarship": 0, "notability": 10, "authorship": 0, "content": 2, "qualification_legs": 10}
+        assert gate_decision(12, breakdown, self._thresholds(), centrality="core") == "auto_rejected"
+
+    def test_no_rescue_below_rescue_floor(self):
+        """CORE fit cannot rescue a candidate with essentially no evidence."""
+        breakdown = {"scholarship": 0, "notability": 0, "authorship": 0, "content": 10, "qualification_legs": 0}
+        assert gate_decision(10, breakdown, self._thresholds(), centrality="core") == "auto_rejected"
+
+    def test_adjacent_and_peripheral_do_not_rescue(self):
+        breakdown = {"scholarship": 0, "notability": 4, "authorship": 0, "content": 12, "qualification_legs": 4}
+        for centrality in ("adjacent", "peripheral", None):
+            assert gate_decision(16, breakdown, self._thresholds(), centrality=centrality) == "auto_rejected"
+
+    def test_shortlisted_unaffected_by_fit(self):
+        """Candidates already reaching the judge keep their outcome."""
+        breakdown = {"scholarship": 30, "notability": 15, "authorship": 10, "content": 20, "qualification_legs": 55}
+        assert gate_decision(75, breakdown, self._thresholds(), centrality="peripheral") == "shortlisted"

@@ -5,6 +5,7 @@ handlers here via get_handler().
 """
 
 from thinktank.handlers.base import JobHandler
+from thinktank.handlers.critique_roster import handle_critique_roster
 from thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
 from thinktank.handlers.discover_thinker import handle_discover_thinker
 from thinktank.handlers.embed_content import handle_embed_content
@@ -98,3 +99,6 @@ register_handler("expert_search", handle_expert_search)
 register_handler("embed_content", handle_embed_content)
 register_handler("embed_pending_content", handle_embed_pending_content)
 register_handler("run_inquiry", handle_run_inquiry)
+
+# --- Dynamic Expert Standing Phase 1 (2026-07-13) handler registrations ---
+register_handler("critique_roster", handle_critique_roster)

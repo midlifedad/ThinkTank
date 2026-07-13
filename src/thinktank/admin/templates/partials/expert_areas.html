@@ -13,7 +13,39 @@
             {% if area.vetting %}{{ area.vetting }} vetting ·{% endif %}
             <span style="color: #c00;">{{ area.rejected }} rejected</span>
         </span>
+        <button class="btn btn-sm" style="margin-left: auto;"
+                hx-post="/admin/experts/critique"
+                hx-target="#critique-result-{{ loop.index }}"
+                hx-vals='{"area": {{ area.name | tojson }}}'>
+            Critique roster
+        </button>
     </div>
+    <div id="critique-result-{{ loop.index }}"></div>
+    {% if area.critique %}
+    <div style="background: #fdf6e3; border: 1px solid #e8d9a0; border-radius: 4px; padding: 0.6rem 0.85rem; margin-top: 0.6rem; font-size: 0.9rem;">
+        <strong>Roster critic</strong>
+        <span style="color: #888;">({{ area.critique.created_at.strftime("%Y-%m-%d %H:%M") }} ·
+            {{ area.critique.candidates_reviewed }} reviewed · {{ area.critique.nominated }} nominated)</span>
+        {% set c = area.critique.critique %}
+        {% if c.misranked %}
+        <div style="margin-top: 0.4rem;"><em>Possibly misranked:</em>
+            <ul style="margin: 0.2rem 0 0 1.2rem;">
+                {% for m in c.misranked %}<li><strong>{{ m.name }}</strong> — {{ m.issue }}</li>{% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if c.missing %}
+        <div style="margin-top: 0.4rem;"><em>Nominated as missing (now being vetted):</em>
+            <ul style="margin: 0.2rem 0 0 1.2rem;">
+                {% for m in c.missing %}<li><strong>{{ m.name }}</strong> — {{ m.why }}</li>{% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if not c.misranked and not c.missing %}
+        <div style="margin-top: 0.4rem; color: #666;">No issues found — the slate looks right for this domain.</div>
+        {% endif %}
+    </div>
+    {% endif %}
     <table style="width: 100%; margin-top: 0.75rem;">
         <thead>
             <tr>

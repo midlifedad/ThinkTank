@@ -50,6 +50,15 @@ DEFAULT_MIN_CONTENT = 8
 # if they're a genuine practitioner authority. Default 12 = an actual
 # English Wikipedia article (a bare Wikidata stub, 4, is not enough).
 DEFAULT_PRACTITIONER_MIN_NOTABILITY = 12
+# Domain-fit rescue (design doc 2026-07-13-dynamic-expert-standing.md,
+# Phase 1): a candidate the LLM assesses as CORE to the search area is
+# routed to the judge even below the shortlist bar, provided content is
+# ingestable and the total clears this floor. Fixes the class of miss
+# where the rubric's general-eminence bands auto-reject the people who
+# created the area's defining artifacts (Weng/Nakajima/Bubeck on
+# "AI coding and agentic engineering", 2026-07-13). Kept above zero so
+# a core-fit assessment can't rescue a candidate with NO evidence at all.
+DEFAULT_FIT_RESCUE_FLOOR = 15
 
 
 @dataclass
@@ -59,6 +68,7 @@ class GateThresholds:
     min_qualification: int = DEFAULT_MIN_QUALIFICATION
     min_content: int = DEFAULT_MIN_CONTENT
     practitioner_min_notability: int = DEFAULT_PRACTITIONER_MIN_NOTABILITY
+    fit_rescue_floor: int = DEFAULT_FIT_RESCUE_FLOOR
 
 
 async def load_thresholds(session: AsyncSession) -> GateThresholds:
@@ -69,6 +79,7 @@ async def load_thresholds(session: AsyncSession) -> GateThresholds:
         "expert_gate_min_qualification": "min_qualification",
         "expert_gate_min_content": "min_content",
         "expert_gate_practitioner_min_notability": "practitioner_min_notability",
+        "expert_gate_fit_rescue_floor": "fit_rescue_floor",
     }
     thresholds = GateThresholds()
     result = await session.execute(select(SystemConfig.key, SystemConfig.value).where(SystemConfig.key.in_(keys)))
@@ -152,12 +163,28 @@ def score_dossier(dossier: dict, peer_coappearances: int = 0) -> tuple[int, dict
     return total, breakdown
 
 
-def gate_decision(total: int, breakdown: dict, thresholds: GateThresholds) -> str:
-    """Map a score to a gate outcome: auto_rejected | borderline | shortlisted.
+def gate_decision(
+    total: int,
+    breakdown: dict,
+    thresholds: GateThresholds,
+    centrality: str | None = None,
+) -> str:
+    """Map a score to a gate outcome.
+
+    Returns: auto_rejected | borderline | shortlisted |
+    practitioner_review | fit_rescue (the last two route to the judge).
 
     The two leg-minimums enforce the "both legs" rule regardless of
     total: content-only celebrities and content-less academics both fail
-    the gate even with high totals.
+    the gate even with high totals. Content is never waivable -- not by
+    the practitioner path, not by domain fit -- because without findable
+    content there is nothing to ingest.
+
+    Args:
+        centrality: the LLM domain-fit verdict ("core" / "adjacent" /
+            "peripheral"), or None when no fit assessment ran. Only
+            "core" changes routing; the judge sees the full assessment
+            either way via the vetting block.
     """
     content = breakdown.get("content", 0)
     # Content is always required -- nothing to ingest without it.
@@ -166,14 +193,22 @@ def gate_decision(total: int, breakdown: dict, thresholds: GateThresholds) -> st
 
     # Academic path: normal qualification-floor gating.
     if breakdown.get("qualification_legs", 0) >= thresholds.min_qualification and total >= thresholds.floor:
-        return "shortlisted" if total >= thresholds.shortlist else "borderline"
-
+        outcome = "shortlisted" if total >= thresholds.shortlist else "borderline"
     # Practitioner path: no scholarship, but real notability + strong content
     # -> let the LLM judge decide rather than auto-reject on the academic bar.
-    if (
+    elif (
         breakdown.get("scholarship", 0) == 0
         and breakdown.get("notability", 0) >= thresholds.practitioner_min_notability
     ):
-        return "practitioner_review"
+        outcome = "practitioner_review"
+    else:
+        outcome = "auto_rejected"
 
-    return "auto_rejected"
+    # Domain-fit rescue: CORE to the area beats a middling general-eminence
+    # score. Applies only where the deterministic gate stalled (borderline)
+    # or rejected; a shortlisted/practitioner candidate already reaches the
+    # judge on its own.
+    if centrality == "core" and outcome in ("auto_rejected", "borderline") and total >= thresholds.fit_rescue_floor:
+        return "fit_rescue"
+
+    return outcome

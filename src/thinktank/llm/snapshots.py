@@ -201,6 +201,8 @@ async def build_candidate_review_context(
             # audience, industry role), NOT academic citations, which this
             # candidate legitimately lacks.
             "evaluation_path": evidence.get("evaluation_path", "academic"),
+            # LLM centrality assessment for the search area (may be absent).
+            "domain_fit": evidence.get("domain_fit"),
             "seed_claim": evidence.get("seed_claim"),
             "identity_anchors": {
                 "openalex_id": openalex.get("openalex_id"),

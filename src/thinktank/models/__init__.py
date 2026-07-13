@@ -5,7 +5,7 @@ Import all models here so Alembic autogenerate can discover them via Base.metada
 
 from thinktank.models.api_usage import ApiUsage
 from thinktank.models.base import Base
-from thinktank.models.candidate import CandidateThinker
+from thinktank.models.candidate import CandidateThinker, RosterCritique
 from thinktank.models.category import Category, SourceCategory, ThinkerCategory
 from thinktank.models.claim import (
     Claim,
@@ -28,6 +28,7 @@ __all__ = [
     "ApiUsage",
     "Base",
     "CandidateThinker",
+    "RosterCritique",
     "Category",
     "Claim",
     "ClaimCategory",
