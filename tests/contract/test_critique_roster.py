@@ -117,3 +117,36 @@ class TestCritiqueRoster:
             await _run(session, area="never-searched-area")
         review.assert_not_awaited()
         assert (await session.execute(select(RosterCritique))).scalars().all() == []
+
+
+class TestJudgePathLiveness:
+    async def test_last_judge_decision_triggers_critic(self, session: AsyncSession):
+        """When the area settles on a JUDGE decision (not a vet completion),
+        the critic must still auto-fire -- the first live run only got its
+        critique by lucky job ordering."""
+        import uuid as _uuid
+
+        from tests.factories import create_llm_review
+        from thinktank.llm.decisions import apply_candidate_decision
+        from thinktank.llm.schemas import CandidateReviewResponse
+
+        candidate = await create_candidate_thinker(
+            session,
+            name="Last One Judged",
+            normalized_name="last one judged",
+            status="awaiting_llm",
+            search_area=AREA,
+            qualification_score=40,
+        )
+        review = await create_llm_review(session)
+        await apply_candidate_decision(
+            session,
+            candidate.id,
+            CandidateReviewResponse(decision="rejected", reasoning="peripheral to the area"),
+            review.id,
+        )
+
+        critic_jobs = (await session.execute(select(Job).where(Job.job_type == "critique_roster"))).scalars().all()
+        assert len(critic_jobs) == 1
+        assert critic_jobs[0].payload["area"] == AREA
+        assert _uuid.UUID(str(critic_jobs[0].id))  # sanity: real row

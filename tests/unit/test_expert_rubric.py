@@ -181,10 +181,25 @@ class TestFitRescue:
         breakdown = {"scholarship": 0, "notability": 0, "authorship": 0, "content": 10, "qualification_legs": 0}
         assert gate_decision(10, breakdown, self._thresholds(), centrality="core") == "auto_rejected"
 
-    def test_adjacent_and_peripheral_do_not_rescue(self):
+    def test_peripheral_and_none_do_not_rescue(self):
         breakdown = {"scholarship": 0, "notability": 4, "authorship": 0, "content": 12, "qualification_legs": 4}
-        for centrality in ("adjacent", "peripheral", None):
+        for centrality in ("peripheral", None):
             assert gate_decision(16, breakdown, self._thresholds(), centrality=centrality) == "auto_rejected"
+
+    def test_adjacent_softens_auto_reject_to_human(self):
+        """The Weng case: adjacent fit + real evidence -> a human decides,
+        not a silent auto-reject."""
+        breakdown = {"scholarship": 0, "notability": 4, "authorship": 0, "content": 12, "qualification_legs": 4}
+        assert gate_decision(16, breakdown, self._thresholds(), centrality="adjacent") == "borderline"
+
+    def test_adjacent_does_not_soften_below_rescue_floor(self):
+        breakdown = {"scholarship": 0, "notability": 0, "authorship": 0, "content": 10, "qualification_legs": 0}
+        assert gate_decision(10, breakdown, self._thresholds(), centrality="adjacent") == "auto_rejected"
+
+    def test_adjacent_does_not_change_borderline(self):
+        """Adjacent only softens rejection; borderline already reaches a human."""
+        breakdown = {"scholarship": 15, "notability": 8, "authorship": 0, "content": 15, "qualification_legs": 23}
+        assert gate_decision(38, breakdown, self._thresholds(), centrality="adjacent") == "borderline"
 
     def test_shortlisted_unaffected_by_fit(self):
         """Candidates already reaching the judge keep their outcome."""

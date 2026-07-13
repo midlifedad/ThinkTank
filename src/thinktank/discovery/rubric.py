@@ -211,4 +211,12 @@ def gate_decision(
     if centrality == "core" and outcome in ("auto_rejected", "borderline") and total >= thresholds.fit_rescue_floor:
         return "fit_rescue"
 
+    # Adjacent softening: a genuinely arguable case (ADJACENT fit, real
+    # evidence) must not die in a silent auto-reject -- route it to a human
+    # instead. First observed on Lilian Weng (2026-07-13): score 34 vs
+    # floor 35, fit "adjacent ... writing shaped the field's vocabulary".
+    # Core -> judge; adjacent -> human; peripheral -> the verdict stands.
+    if centrality == "adjacent" and outcome == "auto_rejected" and total >= thresholds.fit_rescue_floor:
+        return "borderline"
+
     return outcome
