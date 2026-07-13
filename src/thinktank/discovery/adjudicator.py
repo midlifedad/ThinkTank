@@ -29,7 +29,7 @@ import uuid
 from datetime import UTC, datetime
 
 import structlog
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.llm.client import LLMClient
@@ -45,14 +45,14 @@ class EntityChoice(BaseModel):
 
     choice_index: int | None  # 0-based index into options; None = no match
     confidence: float  # 0.0-1.0
-    reasoning: str
+    reasoning: str = Field(description="1-2 sentences")
 
 
 class RejectionVerdict(BaseModel):
     """Is an auto-rejection legitimate, or a suspected evidence failure?"""
 
     legitimate: bool  # True = genuinely unqualified; False = evidence looks wrong
-    reasoning: str
+    reasoning: str = Field(description="1-2 sentences")
 
 
 async def _record_cost(session: AsyncSession, usage, endpoint: str) -> None:
@@ -115,7 +115,7 @@ async def resolve_entity(
     lines.append("\nWhich index is this expert? Return null if none.")
 
     try:
-        result, usage, _ = await _client.review(system, "\n".join(lines), EntityChoice, max_tokens=512, session=session)
+        result, usage, _ = await _client.review(system, "\n".join(lines), EntityChoice, max_tokens=768, session=session)
         await _record_cost(session, usage, "adjudicator")
     except Exception:
         logger.warning("adjudicator_resolve_failed", candidate=candidate_name, source=source, exc_info=True)
@@ -167,7 +167,7 @@ async def review_rejection(
         "Is this rejection legitimate, or does the evidence look like a lookup failure?"
     )
     try:
-        result, usage, _ = await _client.review(system, prompt, RejectionVerdict, max_tokens=400, session=session)
+        result, usage, _ = await _client.review(system, prompt, RejectionVerdict, max_tokens=768, session=session)
         await _record_cost(session, usage, "adjudicator")
     except Exception:
         logger.warning("adjudicator_review_failed", candidate=candidate_name, exc_info=True)

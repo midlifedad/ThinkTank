@@ -114,7 +114,7 @@ async def assess_domain_fit(
     )
     prompt = f"Area: {area}\nPerson: {name}\nEvidence:\n{_dossier_facts(dossier)}"
     try:
-        verdict, usage, _ = await _client.review(system, prompt, DomainFitAssessment, max_tokens=400, session=session)
+        verdict, usage, _ = await _client.review(system, prompt, DomainFitAssessment, max_tokens=600, session=session)
         await _record_cost(session, usage)
     except Exception:
         logger.warning("domain_fit_failed", name=name, area=area, exc_info=True)

@@ -24,7 +24,7 @@ import uuid
 from datetime import UTC, datetime
 
 import structlog
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,7 +45,7 @@ _ANN_CANDIDATES = 3
 
 class SameClaimVerdict(BaseModel):
     same_proposition: bool
-    reasoning: str
+    reasoning: str = Field(description="1-2 sentences")
 
 
 async def _record_cost(session: AsyncSession, usage) -> None:
@@ -82,7 +82,7 @@ async def _same_proposition(session: AsyncSession, text_a: str, text_b: str) -> 
     )
     try:
         verdict, usage, _ = await _client.review(
-            system, f"A: {text_a}\nB: {text_b}", SameClaimVerdict, max_tokens=300, session=session
+            system, f"A: {text_a}\nB: {text_b}", SameClaimVerdict, max_tokens=768, session=session
         )
         await _record_cost(session, usage)
         return verdict.same_proposition
