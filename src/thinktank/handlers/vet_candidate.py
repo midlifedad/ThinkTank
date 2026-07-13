@@ -23,6 +23,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from thinktank.discovery.adjudicator import review_rejection
 from thinktank.discovery.evidence import gather_evidence
 from thinktank.discovery.rubric import gate_decision, load_thresholds, score_dossier
 from thinktank.ingestion.name_matcher import match_thinkers_in_text
@@ -33,6 +34,22 @@ from thinktank.queue.claim import _now
 from thinktank.queue.retry import get_max_attempts
 
 logger = structlog.get_logger(__name__)
+
+
+def _rejection_is_suspicious(seed_claim: dict, dossier: dict) -> bool:
+    """Trigger the rejection-review adjudicator only on the failure pattern.
+
+    Fires when the candidate was surfaced with a real eminence claim yet
+    BOTH scholarship and notability came back not-found -- implausible for
+    a claimed authority, and the signature of an evidence-lookup failure.
+    Keeps the LLM call off the common path (weak candidates with weak
+    evidence are rejected deterministically, no tokens).
+    """
+    if not (seed_claim or {}).get("basis"):
+        return False
+    oa = dossier.get("openalex", {})
+    wd = dossier.get("wikidata", {})
+    return not oa.get("found") and not wd.get("found")
 
 
 async def _peer_coappearances(session: AsyncSession, name: str) -> int:
@@ -77,13 +94,23 @@ async def handle_vet_candidate(session: AsyncSession, job: Job) -> None:
         log.info("vet_candidate_skipped", status=candidate.status, force=force)
         return
 
-    # Hints: seed stage may have stored platform URLs in evidence.hints;
-    # legacy candidates may carry suggested_youtube.
-    hints = dict((candidate.evidence or {}).get("hints") or {})
+    # Hints + adjudication context: seed stage stored platform URLs and a
+    # seed_claim (basis/affiliation) in evidence; both feed the LLM
+    # adjudicator when a structured source is ambiguous.
+    prior_evidence = candidate.evidence or {}
+    hints = dict(prior_evidence.get("hints") or {})
     if candidate.suggested_youtube and "youtube_url" not in hints:
         hints["youtube_url"] = candidate.suggested_youtube
+    seed_claim = prior_evidence.get("seed_claim") or {}
+    adjudicate_ctx = {
+        "name": candidate.name,
+        "search_area": candidate.search_area,
+        "seed_basis": seed_claim.get("basis"),
+        "affiliation": seed_claim.get("affiliation"),
+    }
 
-    dossier = await gather_evidence(session, candidate.name, hints=hints)
+    dossier = await gather_evidence(session, candidate.name, hints=hints, adjudicate_ctx=adjudicate_ctx)
+    dossier["seed_claim"] = seed_claim  # preserve across re-vets
     peers = await _peer_coappearances(session, candidate.name)
     total, breakdown = score_dossier(dossier, peer_coappearances=peers)
     thresholds = await load_thresholds(session)
@@ -94,6 +121,22 @@ async def handle_vet_candidate(session: AsyncSession, job: Job) -> None:
     candidate.score_breakdown = breakdown
 
     if outcome == "auto_rejected":
+        # On-ambiguity self-check: a candidate the seed surfaced as a
+        # recognized expert but whose structured evidence came back empty
+        # is more likely a lookup failure than a genuine non-expert
+        # (Juan Carlos Izpisúa Belmonte: sch=0/not=0). Ask the adjudicator
+        # before silently rejecting; not-legitimate routes to a human.
+        if _rejection_is_suspicious(seed_claim, dossier):
+            legitimate, meta = await review_rejection(
+                session, candidate.name, candidate.search_area or "", seed_claim.get("basis"), dossier, total
+            )
+            dossier["rejection_review"] = meta
+            candidate.evidence = dossier
+            if not legitimate:
+                candidate.status = "pending_human"
+                await session.commit()
+                log.info("vet_candidate_complete", outcome="rejection_overturned", score=total)
+                return
         candidate.status = "auto_rejected"
         candidate.reviewed_by = "vetting_gate"
         candidate.reviewed_at = _now()
