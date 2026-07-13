@@ -37,3 +37,25 @@ class TestNameMatches:
 
     def test_empty_candidate_rejected(self):
         assert not _name_matches("David Sinclair", "")
+
+
+class TestOpenAlexNullFields:
+    """OpenAlex returns last_known_institutions/topics as explicit null for
+    some authors; the block/option builders must not crash (the #70
+    regression that zeroed scholarship for 6 longevity experts)."""
+
+    def test_null_institutions_and_topics(self):
+        from thinktank.discovery.evidence import _openalex_block, _openalex_option
+
+        author = {
+            "id": "A1",
+            "display_name": "X",
+            "cited_by_count": 100,
+            "works_count": 5,
+            "summary_stats": {"h_index": 10},
+            "last_known_institutions": None,
+            "topics": None,
+        }
+        assert _openalex_block(author)["institutions"] == []
+        assert _openalex_block(author)["found"] is True
+        assert _openalex_option(author)["institution"] is None
