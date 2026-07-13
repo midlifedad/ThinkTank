@@ -115,6 +115,18 @@ class LLMClient:
         )
         if tool_use_block is None:
             raise ValueError("Claude response did not include a tool_use block (possibly a refusal or safety response)")
+        # Truncation guard (2026-07-13): when generation hits max_tokens
+        # MID-TOOL-CALL, the API returns the incomplete input as an empty
+        # or partial dict -- which then either fails validation with a
+        # misleading "field required" error or, worse, VALIDATES as a
+        # legitimate empty result when the schema has defaults (both live
+        # roster critiques silently returned {} this way). Surface it as
+        # what it is so callers raise their cap instead of chasing ghosts.
+        if response.stop_reason == "max_tokens":
+            raise ValueError(
+                f"LLM response truncated at max_tokens={max_tokens}: tool input incomplete -- "
+                f"raise the max_tokens for this call (schema: {response_schema.__name__})"
+            )
         parsed_result = response_schema.model_validate(tool_use_block.input)
 
         duration_ms = int((time.monotonic() - start) * 1000)

@@ -191,7 +191,7 @@ async def extract_observations(
     # ONE bundle to zero claims (same posture as the grounding drop) and
     # the inquiry continues over its remaining evidence and experts.
     try:
-        result, usage, _ = await _client.review(system, prompt, ExtractionResponse, max_tokens=2048, session=session)
+        result, usage, _ = await _client.review(system, prompt, ExtractionResponse, max_tokens=4096, session=session)
     except (ValidationError, ValueError):
         logger.warning("extraction_unparseable_bundle_skipped", expert=expert_name, kind=evidence_kind, exc_info=True)
         return [], 0
