@@ -86,3 +86,40 @@ class TestGateRouting:
         await session.refresh(candidate)
         assert candidate.status == "approved"
         assert candidate.qualification_score is None
+
+
+class TestPractitionerRouting:
+    """Practitioner path routes to the judge with the evaluation flag."""
+
+    async def _vet(self, session, candidate, dossier):
+        from unittest.mock import AsyncMock, patch
+
+        job = await create_job(session, job_type="vet_candidate", payload={"candidate_id": str(candidate.id)})
+        with patch("thinktank.handlers.vet_candidate.gather_evidence", new_callable=AsyncMock, return_value=dossier):
+            await handle_vet_candidate(session, job)
+
+    async def test_practitioner_goes_to_judge_flagged(self, session):
+        """Wikipedia + strong content, no scholarship -> awaiting_llm with
+        evaluation_path=practitioner + an llm_approval_check job."""
+        candidate = await create_candidate_thinker(
+            session,
+            name="Scott Marketer",
+            normalized_name="scott marketer",
+            status="pending_llm",
+            search_area="AI-driven Marketing",
+        )
+        dossier = {
+            "openalex": {"ok": True, "found": False},
+            "wikidata": {"ok": True, "found": True, "has_enwiki": True, "sitelink_count": 6},
+            "openlibrary": {"ok": True, "found": False},
+            "podcastindex": {"ok": True, "found": True, "appearance_feed_count": 10},
+            "youtube": {"ok": True, "checked": False},
+            "substack": {"ok": True, "checked": False},
+        }
+        await self._vet(session, candidate, dossier)
+
+        await session.refresh(candidate)
+        assert candidate.status == "awaiting_llm"
+        assert candidate.evidence["evaluation_path"] == "practitioner"
+        jobs = await _llm_jobs(session)
+        assert len(jobs) == 1

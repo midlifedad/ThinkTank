@@ -142,7 +142,14 @@ async def handle_vet_candidate(session: AsyncSession, job: Job) -> None:
         candidate.reviewed_at = _now()
     elif outcome == "borderline":
         candidate.status = "pending_human"
-    else:  # shortlisted
+    else:  # shortlisted OR practitioner_review -> the LLM judge decides.
+        # practitioner_review reached the judge WITHOUT clearing the
+        # academic qualification floor (no scholarship, but real notability
+        # + strong content). Flag it so the judge evaluates practitioner
+        # standing rather than expecting citations.
+        if outcome == "practitioner_review":
+            dossier["evaluation_path"] = "practitioner"
+            candidate.evidence = dossier
         candidate.status = "awaiting_llm"
         session.add(
             Job(
