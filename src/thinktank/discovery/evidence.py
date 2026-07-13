@@ -79,20 +79,8 @@ def _name_matches(query: str, candidate: str) -> bool:
     return q <= c or c <= q
 
 
-async def _openalex(client: httpx.AsyncClient, name: str) -> dict:
-    """Author scholarship stats from OpenAlex (free, keyless)."""
-    resp = await client.get(
-        "https://api.openalex.org/authors",
-        params={"search": name, "per-page": 5, "mailto": _OPENALEX_MAILTO},
-    )
-    raise_for_status_with_backoff(resp)
-    results = resp.json().get("results", [])
-    # Token-subset match tolerates middle-initial variance; most-cited
-    # wins ties. True disambiguation happens at the LLM judge with the QID.
-    pool = [r for r in results if _name_matches(name, r.get("display_name", ""))]
-    if not pool:
-        return {"ok": True, "found": False}
-    author = max(pool, key=lambda r: r.get("cited_by_count", 0))
+def _openalex_block(author: dict) -> dict:
+    """Scored evidence block for one OpenAlex author record."""
     stats = author.get("summary_stats", {})
     institutions = [i.get("display_name") for i in author.get("last_known_institutions", []) if i.get("display_name")]
     topics = [t.get("display_name") for t in (author.get("topics") or [])[:5] if t.get("display_name")]
@@ -107,6 +95,55 @@ async def _openalex(client: httpx.AsyncClient, name: str) -> dict:
         "institutions": institutions,
         "topics": topics,
     }
+
+
+def _openalex_option(author: dict) -> dict:
+    """Compact one-line summary for the adjudicator (not the raw payload)."""
+    institutions = [i.get("display_name") for i in author.get("last_known_institutions", []) if i.get("display_name")]
+    topics = [t.get("display_name") for t in (author.get("topics") or [])[:4] if t.get("display_name")]
+    return {
+        "openalex_id": author.get("id"),
+        "name": author.get("display_name"),
+        "institution": institutions[0] if institutions else None,
+        "citations": author.get("cited_by_count", 0),
+        "topics": topics,
+    }
+
+
+async def _openalex(client: httpx.AsyncClient, name: str) -> dict:
+    """Author scholarship stats from OpenAlex (free, keyless).
+
+    On ambiguity (no string match despite results, or several distinct
+    same-name authors) the block carries ``ambiguous`` + ``options`` for
+    the LLM adjudicator; gather_evidence resolves it when context is
+    available, otherwise the block stays as-is (found=False for the
+    no-match case -- fail safe).
+    """
+    resp = await client.get(
+        "https://api.openalex.org/authors",
+        params={"search": name, "per-page": 5, "mailto": _OPENALEX_MAILTO},
+    )
+    raise_for_status_with_backoff(resp)
+    results = resp.json().get("results", [])
+    pool = [r for r in results if _name_matches(name, r.get("display_name", ""))]
+    if not pool:
+        # No string match despite results (accented names, transliteration --
+        # Juan Carlos Izpisúa Belmonte failed here). Surface for adjudication.
+        if results:
+            return {
+                "ok": True,
+                "found": False,
+                "ambiguous": True,
+                "options": [_openalex_option(r) for r in results[:5]],
+            }
+        return {"ok": True, "found": False}
+    author = max(pool, key=lambda r: r.get("cited_by_count", 0))
+    block = _openalex_block(author)
+    # Multiple distinct same-name people -> let the adjudicator pick.
+    if len({r.get("id") for r in pool}) > 1:
+        block["ambiguous"] = True
+        block["options"] = [_openalex_option(r) for r in pool[:5]]
+    return block
 
 
 async def _wikidata(client: httpx.AsyncClient, name: str) -> dict:
@@ -201,18 +238,50 @@ async def _probe_feed_url(client: httpx.AsyncClient, url: str) -> bool:
         return False
 
 
+async def _adjudicate_openalex(session: AsyncSession, block: dict, ctx: dict) -> dict:
+    """Resolve an ambiguous OpenAlex block via the LLM adjudicator."""
+    from thinktank.discovery.adjudicator import resolve_entity
+
+    options = block.get("options") or []
+    idx, meta = await resolve_entity(
+        session,
+        candidate_name=ctx["name"],
+        search_area=ctx.get("search_area") or "",
+        seed_basis=ctx.get("seed_basis"),
+        affiliation=ctx.get("affiliation"),
+        source="OpenAlex author",
+        options=options,
+    )
+    if idx is None:
+        # Adjudicator found no match -> confirmed not-found.
+        return {"ok": True, "found": False, "adjudication": meta}
+    chosen_id = options[idx].get("openalex_id")
+    # Refetch the full record for the chosen id to build a real block.
+    async with httpx.AsyncClient(follow_redirects=True, timeout=_TIMEOUT) as client:
+        resp = await client.get(chosen_id, params={"mailto": _OPENALEX_MAILTO})
+        raise_for_status_with_backoff(resp)
+        chosen = _openalex_block(resp.json())
+    chosen["adjudication"] = meta
+    return chosen
+
+
 async def gather_evidence(
     session: AsyncSession,
     name: str,
     hints: dict | None = None,
+    adjudicate_ctx: dict | None = None,
 ) -> dict:
     """Assemble the full evidence dossier for one candidate.
 
     Args:
-        session: DB session (PodcastIndex credential lookup).
+        session: DB session (PodcastIndex credential lookup, adjudicator).
         name: Candidate's name as surfaced.
         hints: Optional seed-stage platform hints:
             {"youtube_url": ..., "substack_url": ..., "affiliation": ...}
+        adjudicate_ctx: When provided ({name, search_area, seed_basis,
+            affiliation}), ambiguous structured-source blocks are resolved
+            by the LLM adjudicator (Amir 2026-07-12). Absent -> deterministic
+            only (ambiguous blocks keep their fail-safe value).
 
     Returns:
         Dossier dict with one block per source. Blocks from failed
@@ -245,5 +314,12 @@ async def gather_evidence(
             else:
                 reachable = await _probe_feed_url(client, url)
                 dossier[key] = {"ok": True, "checked": True, "url": url, "reachable": reachable}
+
+    # On-ambiguity LLM adjudication (only when context provided).
+    if adjudicate_ctx and dossier.get("openalex", {}).get("ambiguous"):
+        try:
+            dossier["openalex"] = await _adjudicate_openalex(session, dossier["openalex"], adjudicate_ctx)
+        except Exception:
+            logger.warning("openalex_adjudication_failed", candidate=name, exc_info=True)
 
     return dossier
