@@ -7,6 +7,15 @@ from thinktank.models.api_usage import ApiUsage
 from thinktank.models.base import Base
 from thinktank.models.candidate import CandidateThinker
 from thinktank.models.category import Category, SourceCategory, ThinkerCategory
+from thinktank.models.claim import (
+    Claim,
+    ClaimCategory,
+    ClaimObservation,
+    ContentChunk,
+    Document,
+    Inquiry,
+    InquiryPosition,
+)
 from thinktank.models.config_table import SystemConfig
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
@@ -20,6 +29,13 @@ __all__ = [
     "Base",
     "CandidateThinker",
     "Category",
+    "Claim",
+    "ClaimCategory",
+    "ClaimObservation",
+    "ContentChunk",
+    "Document",
+    "Inquiry",
+    "InquiryPosition",
     "Content",
     "ContentThinker",
     "Job",

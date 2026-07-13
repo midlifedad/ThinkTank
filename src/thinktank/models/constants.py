@@ -64,3 +64,30 @@ ALLOWED_JOB_STATUSES: tuple[str, ...] = (
     "cancelled",
     "awaiting_llm",
 )
+
+# Claims layer (v2, 2026-07-13) -- see models/claim.py.
+ALLOWED_CLAIM_TYPES: tuple[str, ...] = (
+    "factual",
+    "prediction",
+    "opinion",
+    "practice",
+    "recommendation",
+)
+
+# An observation's relationship to its canonical proposition.
+ALLOWED_STANCES: tuple[str, ...] = (
+    "asserts",
+    "denies",
+    "hedges",
+    "questions",
+    "reports",
+)
+
+ALLOWED_OBSERVATION_ORIGINS: tuple[str, ...] = ("inquiry", "autonomous")
+
+ALLOWED_INQUIRY_STATUSES: tuple[str, ...] = (
+    "pending",
+    "running",
+    "complete",
+    "failed",
+)
