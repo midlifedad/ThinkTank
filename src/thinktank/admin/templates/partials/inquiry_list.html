@@ -1,0 +1,44 @@
+{% if not inquiries %}
+<div class="card" style="color: #888;">No inquiries yet. Pose a question above to get started.</div>
+{% else %}
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Question</th>
+                <th>Area</th>
+                <th>Status</th>
+                <th>Positions</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in inquiries %}
+            <tr>
+                <td>{{ row.inquiry.question }}</td>
+                <td>{{ row.inquiry.area or "—" }}</td>
+                <td>
+                    {% if row.inquiry.status == "complete" %}
+                    <span style="color: #2e7d32; font-weight: 600;">complete</span>
+                    {% elif row.inquiry.status == "running" %}
+                    <span style="color: #b8860b; font-weight: 600;">running</span>
+                    {% elif row.inquiry.status == "failed" %}
+                    <span style="color: #c62828; font-weight: 600;">failed</span>
+                    {% else %}
+                    <span style="color: #888;">{{ row.inquiry.status }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.positions %}
+                    {{ row.with_stance }}/{{ row.positions }} with a stance
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td style="white-space: nowrap;">{{ row.inquiry.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
