@@ -18,6 +18,7 @@ from tests.factories import create_candidate_thinker, create_job, create_source,
 from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 from thinktank.llm.client import LLMUsage
 from thinktank.llm.schemas import CandidateReviewResponse, SourceApprovalResponse, ThinkerApprovalResponse
+from thinktank.models.job import Job
 from thinktank.models.review import LLMReview
 from thinktank.models.thinker import Thinker
 
@@ -192,6 +193,89 @@ class TestCandidateReviewFlows:
         assert new_thinker.name == "Dr. Jane Expert"
         assert new_thinker.approval_status == "approved"
         assert new_thinker.tier == 2
+
+    async def test_promotion_registers_verified_youtube_source(self, session: AsyncSession):
+        """Expert-pipeline candidates with a VERIFIED YouTube hint get a
+        pending youtube_channel source + host junction + approval job."""
+        candidate = await create_candidate_thinker(
+            session,
+            name="Video Sage",
+            normalized_name="video sage",
+            status="awaiting_llm",
+            search_area="AI safety",
+            evidence={
+                "hints": {"youtube_url": "https://youtube.com/@videosage"},
+                "youtube": {"ok": True, "checked": True, "reachable": True, "url": "https://youtube.com/@videosage"},
+            },
+        )
+        job = await create_job(
+            session,
+            job_type="llm_approval_check",
+            payload={
+                "review_type": "candidate_review",
+                "target_id": str(candidate.id),
+                "candidate_ids": [str(candidate.id)],
+            },
+        )
+        mock_result = CandidateReviewResponse(
+            decision="approved", reasoning="Verified expert", tier=2, categories=["AI safety"], initial_sources=[]
+        )
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
+            mock_client.review = _mock_llm_review(mock_result)
+            mock_client.model = "claude-sonnet-5"
+            await handle_llm_approval_check(session, job)
+
+        from thinktank.models.source import Source, SourceThinker
+
+        source = (
+            await session.execute(select(Source).where(Source.url == "https://youtube.com/@videosage"))
+        ).scalar_one()
+        assert source.source_type == "youtube_channel"
+        assert source.approval_status == "pending_llm"
+        assert source.config["seeded_by"] == "expert_search"
+        await session.refresh(candidate)
+        junction = await session.get(SourceThinker, (source.id, candidate.thinker_id))
+        assert junction is not None and junction.relationship_type == "host"
+        approval_jobs = (
+            (await session.execute(select(Job).where(Job.job_type == "llm_approval_check", Job.status == "pending")))
+            .scalars()
+            .all()
+        )
+        assert any(
+            j.payload.get("review_type") == "source_approval" and j.payload.get("target_id") == str(source.id)
+            for j in approval_jobs
+        )
+
+    async def test_promotion_without_verified_youtube_registers_nothing(self, session: AsyncSession):
+        """Unverified/absent hints never create sources."""
+        candidate = await create_candidate_thinker(
+            session,
+            name="Plain Scholar",
+            normalized_name="plain scholar",
+            status="awaiting_llm",
+            evidence={"youtube": {"ok": True, "checked": True, "reachable": False, "url": "https://youtube.com/@dead"}},
+        )
+        job = await create_job(
+            session,
+            job_type="llm_approval_check",
+            payload={
+                "review_type": "candidate_review",
+                "target_id": str(candidate.id),
+                "candidate_ids": [str(candidate.id)],
+            },
+        )
+        mock_result = CandidateReviewResponse(
+            decision="approved", reasoning="ok", tier=3, categories=[], initial_sources=[]
+        )
+        with patch("thinktank.handlers.llm_approval_check._llm_client") as mock_client:
+            mock_client.review = _mock_llm_review(mock_result)
+            mock_client.model = "claude-sonnet-5"
+            await handle_llm_approval_check(session, job)
+
+        from thinktank.models.source import Source
+
+        sources = (await session.execute(select(Source))).scalars().all()
+        assert sources == []
 
 
 @pytest.mark.asyncio

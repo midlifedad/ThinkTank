@@ -8,6 +8,7 @@ from thinktank.handlers.base import JobHandler
 from thinktank.handlers.discover_guests_podcastindex import handle_discover_guests_podcastindex
 from thinktank.handlers.discover_thinker import handle_discover_thinker
 from thinktank.handlers.enqueue_pending_transcriptions import handle_enqueue_pending_transcriptions
+from thinktank.handlers.expert_search import handle_expert_search
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
 from thinktank.handlers.fetch_youtube_channel import handle_fetch_youtube_channel
 from thinktank.handlers.llm_approval_check import handle_llm_approval_check
@@ -88,3 +89,4 @@ register_handler("enqueue_pending_transcriptions", handle_enqueue_pending_transc
 
 # --- Expert vetting (2026-07-12) handler registrations ---
 register_handler("vet_candidate", handle_vet_candidate)
+register_handler("expert_search", handle_expert_search)

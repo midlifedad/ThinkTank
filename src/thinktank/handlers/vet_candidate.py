@@ -102,6 +102,9 @@ async def handle_vet_candidate(session: AsyncSession, job: Job) -> None:
                 job_type="llm_approval_check",
                 payload={
                     "review_type": "candidate_review",
+                    # target_id drives apply_candidate_decision;
+                    # candidate_ids scopes the context snapshot.
+                    "target_id": str(candidate.id),
                     "candidate_ids": [str(candidate.id)],
                 },
                 priority=5,

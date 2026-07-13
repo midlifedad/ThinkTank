@@ -326,4 +326,45 @@ async def promote_candidate_to_thinker(
     )
     session.add(rescan_job)
 
+    # Expert pipeline (2026-07-12): candidates seeded by expert_search
+    # carry VERIFIED platform hints in their evidence dossier. Register a
+    # reachable YouTube channel as a pending source so ingestion starts as
+    # soon as it clears source approval; a Substack hint is recorded on
+    # the junction-free config (text ingestion is a v2 milestone).
+    # ON CONFLICT-safe: sources.url is unique, so an existing row wins.
+    evidence = candidate.evidence or {}
+    youtube_block = evidence.get("youtube") or {}
+    if youtube_block.get("checked") and youtube_block.get("reachable"):
+        yt_url = youtube_block.get("url")
+        existing_source = await session.execute(select(Source.id).where(Source.url == yt_url))
+        if yt_url and existing_source.scalar_one_or_none() is None:
+            source = Source(
+                id=uuid.uuid4(),
+                source_type="youtube_channel",
+                name=f"{thinker.name} (YouTube)",
+                url=yt_url,
+                approval_status="pending_llm",
+                host_name=thinker.name,
+                config={"seeded_by": "expert_search", "search_area": candidate.search_area},
+            )
+            session.add(source)
+            await session.flush()
+            session.add(
+                SourceThinker(
+                    source_id=source.id,
+                    thinker_id=thinker.id,
+                    relationship_type="host",
+                    added_at=_now(),
+                )
+            )
+            session.add(
+                Job(
+                    id=uuid.uuid4(),
+                    job_type="llm_approval_check",
+                    payload={"review_type": "source_approval", "target_id": str(source.id)},
+                    priority=5,
+                    status="pending",
+                )
+            )
+
     return thinker
