@@ -53,7 +53,13 @@ class ExtractedClaim(BaseModel):
 
 
 class ExtractionResponse(BaseModel):
-    claims: list[ExtractedClaim]
+    # Defaulted, not required: "extract nothing if the evidence does not
+    # address the question" is a legitimate outcome, and the model signals
+    # it by calling the tool with empty input ({}). A required field would
+    # turn that valid no-op into a validation crash that fails the whole
+    # inquiry job. The empty default also drops `claims` from the tool's
+    # required-schema, so the model is explicitly permitted to return none.
+    claims: list[ExtractedClaim] = Field(default_factory=list)
 
 
 class PositionResponse(BaseModel):
