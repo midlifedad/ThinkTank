@@ -141,50 +141,7 @@ async def search_experts(
     return experts
 
 
-# Cheap search tier for per-expert claim lookups (inquiry web lane).
-_SONAR_MODEL = "sonar"
-_SONAR_COST_USD = 0.01
-
-
-async def search_web(session: AsyncSession, query: str) -> dict:
-    """One cheap cited web search (sonar tier -- NOT deep research).
-
-    Used by the inquiry engine's web lane: per-expert, per-question.
-    Returns {"answer": str, "citations": [urls]}; empty dict on failure
-    (the lane degrades, the inquiry continues on corpus evidence).
-    """
-    api_key = await get_secret(session, "perplexity_api_key")
-    if not api_key:
-        logger.warning("perplexity_key_missing", hint="seed secret_perplexity_api_key in system_config")
-        return {}
-
-    payload = {
-        "model": _SONAR_MODEL,
-        "messages": [{"role": "user", "content": query}],
-    }
-    try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(connect=30.0, read=120.0, write=30.0, pool=30.0)) as client:
-            resp = await client.post(_API_URL, headers={"Authorization": f"Bearer {api_key}"}, json=payload)
-            raise_for_status_with_backoff(resp)
-            body = resp.json()
-        answer = body["choices"][0]["message"]["content"]
-        citations = body.get("citations") or body.get("search_results") or []
-        urls = [c if isinstance(c, str) else c.get("url") for c in citations]
-        urls = [u for u in urls if u]
-    except Exception:
-        logger.warning("perplexity_sonar_failed", query=query[:80], exc_info=True)
-        return {}
-
-    usage = body.get("usage") or {}
-    session.add(
-        ApiUsage(
-            id=uuid.uuid4(),
-            api_name="perplexity",
-            endpoint="sonar_search",
-            period_start=datetime.now(UTC),
-            call_count=1,
-            units_consumed=(usage.get("prompt_tokens") or 0) + (usage.get("completion_tokens") or 0) or None,
-            estimated_cost_usd=_SONAR_COST_USD,
-        )
-    )
-    return {"answer": answer, "citations": urls}
+# NOTE: the inquiry web lane's per-expert search moved to Exa
+# (discovery/exa_client.py) in Web-Lane Hardening W1 -- Exa returns clean
+# text + publish dates inline, which the old sonar `search_web` did not.
+# This module now serves expert *seeding* only (search_experts, above).

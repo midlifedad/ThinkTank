@@ -8,6 +8,7 @@ the REQUIRED per-expert position, retry idempotency, and completion.
 """
 
 import uuid
+from contextlib import ExitStack
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
@@ -26,6 +27,7 @@ from tests.factories import (
     create_source,
     create_thinker,
 )
+from thinktank.discovery.exa_client import ExaResult
 from thinktank.handlers.run_inquiry import handle_run_inquiry
 from thinktank.llm.claims_extraction import ExtractedClaim, PositionResponse, Proposition
 from thinktank.models.claim import Claim, ClaimObservation, Inquiry, InquiryPosition
@@ -81,8 +83,8 @@ def _extractor():
     return AsyncMock(side_effect=_extract)
 
 
-def _mocks(session, *, web_result=None, document=None, extractor=None):
-    async def _fetch(session_, url, found_via, search_query=None):
+def _mocks(session, *, exa_results=None, document=None, extractor=None):
+    async def _store(session_, result, *, found_via, search_query=None):
         return document
 
     return (
@@ -98,8 +100,9 @@ def _mocks(session, *, web_result=None, document=None, extractor=None):
             "thinktank.handlers.run_inquiry.resolve_position",
             new=AsyncMock(return_value=PositionResponse(stance="asserts", summary="Supports rapamycin for longevity.")),
         ),
-        patch("thinktank.handlers.run_inquiry.search_web", new=AsyncMock(return_value=web_result or {})),
-        patch("thinktank.handlers.run_inquiry.fetch_document", new=AsyncMock(side_effect=_fetch)),
+        patch("thinktank.handlers.run_inquiry.exa_search", new=AsyncMock(return_value=exa_results or [])),
+        patch("thinktank.handlers.run_inquiry.store_exa_result", new=AsyncMock(side_effect=_store)),
+        patch("thinktank.handlers.run_inquiry.fetch_document", new=AsyncMock(return_value=None)),
     )
 
 
@@ -125,8 +128,9 @@ async def _setup_expert_with_corpus(session: AsyncSession, area="Age reversal/lo
 
 async def _run(session: AsyncSession, inquiry: Inquiry, **mock_kwargs) -> None:
     job = await create_job(session, job_type="run_inquiry", payload={"inquiry_id": str(inquiry.id)})
-    mocks = _mocks(session, **mock_kwargs)
-    with mocks[0], mocks[1], mocks[2], mocks[3], mocks[4], mocks[5]:
+    with ExitStack() as stack:
+        for m in _mocks(session, **mock_kwargs):
+            stack.enter_context(m)
         await handle_run_inquiry(session, job)
 
 
@@ -136,7 +140,8 @@ class TestRunInquiry:
         document = await create_document(session, url="https://example.com/interview", text_content=WEB_TEXT)
         inquiry = await create_inquiry(session, question=QUESTION, area="longevity")
 
-        await _run(session, inquiry, web_result={"answer": "...", "citations": [document.url]}, document=document)
+        exa_hit = ExaResult(url=document.url, title="Interview", text=WEB_TEXT, published_at=None, author=None)
+        await _run(session, inquiry, exa_results=[exa_hit], document=document)
 
         # Inquiry completed with a headline canonical claim.
         assert inquiry.status == "complete"
@@ -207,17 +212,16 @@ class TestRunInquiry:
         inquiry = await create_inquiry(session, question=QUESTION, area="longevity")
 
         job = await create_job(session, job_type="run_inquiry", payload={"inquiry_id": str(inquiry.id)})
-        mocks = _mocks(session)
         from thinktank.llm.claims_extraction import resolve_position as real_resolve
 
-        with (
-            mocks[0],
-            mocks[1],
-            mocks[2],
-            patch("thinktank.handlers.run_inquiry.resolve_position", new=real_resolve),
-            mocks[4],
-            mocks[5],
-        ):
+        with ExitStack() as stack:
+            # All mocks except resolve_position, which runs for real (no
+            # observations -> 'unknown' without an LLM call).
+            for i, m in enumerate(_mocks(session)):
+                if i == 3:  # the resolve_position patch
+                    stack.enter_context(patch("thinktank.handlers.run_inquiry.resolve_position", new=real_resolve))
+                else:
+                    stack.enter_context(m)
             await handle_run_inquiry(session, job)
 
         position = await session.get(InquiryPosition, (inquiry.id, thinker.id))
