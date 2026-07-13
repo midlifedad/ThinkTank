@@ -32,6 +32,9 @@ logger = structlog.get_logger(__name__)
 # this single dedicated thread. Requests queue behind it (the engine lock
 # is now redundant but harmless); the event loop stays free for /health.
 _inference_thread = ThreadPoolExecutor(max_workers=1, thread_name_prefix="inference")
+# /embed runs CPU-side (engine pins bge to CPU) on its own thread so it is
+# never queued behind a ~6-minute transcription on the inference thread.
+_embedding_thread = ThreadPoolExecutor(max_workers=1, thread_name_prefix="embedding")
 
 
 @asynccontextmanager
@@ -89,7 +92,7 @@ async def embed(payload: dict) -> JSONResponse:
     if len(texts) > 256:
         return JSONResponse({"error": "max 256 texts per call"}, status_code=422)
     try:
-        vectors = await asyncio.get_running_loop().run_in_executor(_inference_thread, engine.embed_texts, texts)
+        vectors = await asyncio.get_running_loop().run_in_executor(_embedding_thread, engine.embed_texts, texts)
         return JSONResponse({"embeddings": vectors})
     except Exception as exc:
         logger.exception("embedding_failed")
