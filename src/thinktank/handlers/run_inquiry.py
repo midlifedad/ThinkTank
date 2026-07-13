@@ -10,9 +10,9 @@ Claims v2 PR 3, Mode A (proactive). For one inquiry:
                 content_chunks, LLM-extract claims per content item,
                 HARD grounding (quote located in body_text, offsets
                 stored).
-      web    -- one Perplexity sonar search, fetch + store cited pages
-                as Documents, LLM-extract from page text, grounded when
-                the quote locates in the stored text.
+      web    -- one Exa search (clean text + publish dates inline),
+                store cited pages as Documents, LLM-extract from page
+                text, grounded when the quote locates in the stored text.
 4. Every observation is embedded and resolved onto a canonical claim
    (attach-or-create; fine-grained claims parent to the headline).
 5. Per expert, a REQUIRED inquiry_positions row -- the stance-matrix
@@ -39,9 +39,9 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.discovery.claim_resolution import resolve_claim
-from thinktank.discovery.perplexity_client import search_web
+from thinktank.discovery.exa_client import exa_search
 from thinktank.embeddings import embed_texts
-from thinktank.ingestion.web_fetch import fetch_document
+from thinktank.ingestion.web_fetch import fetch_document, store_exa_result
 from thinktank.llm.claims_extraction import (
     ExtractedClaim,
     extract_observations,
@@ -251,11 +251,15 @@ async def handle_run_inquiry(session: AsyncSession, job: Job) -> None:
                 extraction_model=extraction_model,
             )
 
-        # Web lane (per-expert sonar search; grounding against stored page text).
+        # Web lane (per-expert Exa search: clean text + publish dates
+        # inline, so no re-fetch; grounding against the stored page text).
         query = f"What has {thinker.name} said about: {inquiry.question}"
-        web = await search_web(session, query)
-        for url in (web.get("citations") or [])[:WEB_CITATIONS_PER_EXPERT]:
-            document = await fetch_document(session, url, found_via="inquiry_web_lane", search_query=query)
+        results = await exa_search(session, query, num_results=WEB_CITATIONS_PER_EXPERT)
+        for result in results:
+            document = await store_exa_result(session, result, found_via="inquiry_web_lane", search_query=query)
+            if document is None or not document.text_content:
+                # Exa returned a hit without usable text -- try the fetch fallback chain.
+                document = await fetch_document(session, result.url, found_via="inquiry_web_lane", search_query=query)
             if document is None or not document.text_content:
                 continue
             claims, dropped = await extract_observations(

@@ -1,6 +1,10 @@
-"""Unit tests for web document text extraction (inquiry web lane)."""
+"""Unit tests for web document text extraction + date parsing (W1)."""
 
-from thinktank.ingestion.web_fetch import extract_text
+import pytest
+
+from thinktank.ingestion.web_fetch import extract_text, parse_published_at
+
+pytestmark = pytest.mark.anyio
 
 HTML = """
 <html>
@@ -48,3 +52,20 @@ class TestExtractText:
         text, title = extract_text("<html><body></body></html>")
         assert text == ""
         assert title is None
+
+
+class TestParsePublishedAt:
+    def test_article_meta(self):
+        html = '<meta property="article:published_time" content="2023-05-01T00:00:00Z">'
+        assert parse_published_at(html).year == 2023
+
+    def test_json_ld(self):
+        html = '<script type="application/ld+json">{"datePublished": "2022-11-30"}</script>'
+        dt = parse_published_at(html)
+        assert dt.year == 2022 and dt.tzinfo is not None
+
+    def test_time_tag(self):
+        assert parse_published_at('<time datetime="2021-01-15">Jan 15</time>').year == 2021
+
+    def test_none_when_absent(self):
+        assert parse_published_at("<html><body>no date</body></html>") is None
