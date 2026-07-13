@@ -18,6 +18,7 @@ from thinktank.handlers.process_content import handle_process_content
 from thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
 from thinktank.handlers.rescan_cataloged_for_thinker import handle_rescan_cataloged_for_thinker
 from thinktank.handlers.rollup_api_usage import handle_rollup_api_usage
+from thinktank.handlers.run_inquiry import handle_run_inquiry
 from thinktank.handlers.scan_episodes_for_thinkers import handle_scan_episodes_for_thinkers
 from thinktank.handlers.scan_for_candidates import handle_scan_for_candidates
 from thinktank.handlers.vet_candidate import handle_vet_candidate
@@ -96,3 +97,4 @@ register_handler("expert_search", handle_expert_search)
 # --- Claims v2 (2026-07-13) handler registrations ---
 register_handler("embed_content", handle_embed_content)
 register_handler("embed_pending_content", handle_embed_pending_content)
+register_handler("run_inquiry", handle_run_inquiry)

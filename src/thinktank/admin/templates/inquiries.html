@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 style="margin: 0 0 1rem;">Inquiries</h2>
+
+<!-- Launcher -->
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Pose a Question to the Roster</h3>
+    <p style="color: #888; margin: 0.25rem 0 0.75rem;">
+        The question is asked of every vetted expert in the area: their transcripts are
+        searched, a targeted web search runs per expert, and each gets a resolved,
+        source-grounded position.
+    </p>
+    <div style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="form-group" style="margin-bottom: 0; flex: 2; min-width: 320px;">
+            <label for="inquiry-question">Question</label>
+            <input type="text" id="inquiry-question" name="question"
+                   placeholder="e.g. Does rapamycin extend healthy human lifespan?">
+        </div>
+        <div class="form-group" style="margin-bottom: 0; flex: 1; max-width: 260px;">
+            <label for="inquiry-area">Area (optional)</label>
+            <input type="text" id="inquiry-area" name="area"
+                   placeholder="e.g. Age reversal/longevity">
+        </div>
+        <button class="btn btn-primary"
+                hx-post="/admin/inquiries/launch"
+                hx-target="#inquiry-result"
+                hx-include="#inquiry-question, #inquiry-area">
+            Launch Inquiry
+        </button>
+    </div>
+    <div id="inquiry-result" style="margin-top: 0.75rem;"></div>
+</div>
+
+<!-- Inquiry list (auto-refresh while inquiries run) -->
+<div id="inquiry-list"
+     hx-get="/admin/inquiries/partials/list"
+     hx-trigger="load, every 30s">
+    Loading inquiries...
+</div>
+{% endblock %}

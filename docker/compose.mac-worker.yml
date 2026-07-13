@@ -22,7 +22,7 @@ services:
       # Railway Postgres connection string (deploy-ops issues this).
       DATABASE_URL: ${DATABASE_URL}
       # Claim ONLY transcription jobs; everything else stays on Railway.
-      WORKER_JOB_TYPES: '["process_content", "embed_content", "embed_pending_content"]'
+      WORKER_JOB_TYPES: '["process_content", "embed_content", "embed_pending_content", "run_inquiry"]'
       # Label worker_id rows so DB audits can tell this machine apart.
       WORKER_SERVICE_TYPE: mac
       # One episode transcribing while the next downloads; the native

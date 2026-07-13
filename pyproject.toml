@@ -32,6 +32,7 @@ dependencies = [
     "jinja2>=3.1.6",
     "python-multipart>=0.0.22",
     "pgvector>=0.3.6",
+    "beautifulsoup4>=4.12",
 ]
 
 [dependency-groups]
