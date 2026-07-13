@@ -15,6 +15,16 @@ TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL", "postgresql+asyncpg://thinktank_test:thinktank_test@localhost:5433/thinktank_test"
 )
 
+# Bind DATABASE_URL to the test DB BEFORE any test module is collected.
+# thinktank.database creates its engine at first import, and some test
+# modules (e.g. unit/test_admin_auth_principal.py) import it transitively
+# at module level -- during collection, before any fixture runs. Without
+# this, a full local run freezes that engine on the DEV database (5432)
+# and every require_admin call reads the wrong DB (api_config PUT tests
+# 500 with "admin token not configured"). CI already exports DATABASE_URL
+# job-wide, which is why this only ever bit local full runs.
+os.environ.setdefault("DATABASE_URL", TEST_DATABASE_URL)
+
 
 @pytest.fixture(scope="session")
 def anyio_backend() -> str:
