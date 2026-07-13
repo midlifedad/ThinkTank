@@ -111,6 +111,7 @@ Available action types:
 - approve_source: Approve a pending source (bypasses LLM, creates audit trail)
 - reject_source: Reject a pending source (creates audit trail)
 - trigger_discovery: Trigger podcast discovery for a specific thinker
+- expert_search: Find and vet top experts in a subject area (details: {{area}}). One deep-research pass surfaces candidates; each is scored against citations/notability/books/content before LLM review
 - toggle_kill_switch: Toggle the global worker kill switch on/off
 - update_config: Update a system configuration value
 - retry_job: Retry a failed job by creating a new pending copy

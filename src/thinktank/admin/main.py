@@ -18,6 +18,7 @@ from thinktank.admin.routers.categories import router as categories_router
 from thinktank.admin.routers.chat import router as chat_router
 from thinktank.admin.routers.config import router as config_router
 from thinktank.admin.routers.dashboard import router as dashboard_router
+from thinktank.admin.routers.experts import router as experts_router
 from thinktank.admin.routers.llm_panel import router as llm_panel_router
 from thinktank.admin.routers.pipeline import router as pipeline_router
 from thinktank.admin.routers.sources import router as sources_router
@@ -71,6 +72,7 @@ app.include_router(auth_router)
 
 _admin_auth = [Depends(require_admin)]
 app.include_router(dashboard_router, dependencies=_admin_auth)
+app.include_router(experts_router, dependencies=_admin_auth)
 app.include_router(llm_panel_router, dependencies=_admin_auth)
 app.include_router(categories_router, dependencies=_admin_auth)
 app.include_router(api_keys_router, dependencies=_admin_auth)
