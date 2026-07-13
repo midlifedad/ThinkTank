@@ -1,0 +1,38 @@
+{% if not observations %}
+<div style="padding: 0.5rem 0.75rem; color: #888;">No stored observations.</div>
+{% else %}
+<div style="padding: 0.5rem 0.75rem 1rem; background: #fafafa; border-radius: 4px; margin: 0.25rem 0 0.75rem;">
+    {% for row in observations %}
+    <div style="border-left: 3px solid #ccc; padding: 0.4rem 0.75rem; margin-bottom: 0.6rem;">
+        <div style="font-weight: 600;">{{ row.obs.claim_text }}</div>
+        <blockquote style="margin: 0.3rem 0; color: #555; font-style: italic;">
+            &ldquo;{{ row.obs.quote }}&rdquo;
+        </blockquote>
+        <div style="font-size: 0.82rem; color: #777; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <span style="font-weight: 600;">{{ row.obs.stance }}</span>
+            {% if row.obs.confidence %}<span>{{ row.obs.confidence }}</span>{% endif %}
+            {% if row.content %}
+            <span style="background: #e3f2fd; color: #1565c0; border-radius: 3px; padding: 0 0.4rem;">
+                corpus &middot; {{ row.content.title }}
+            </span>
+            {% elif row.document %}
+            <span style="background: #fff3e0; color: #b26a00; border-radius: 3px; padding: 0 0.4rem;">
+                web &middot; <a href="{{ row.document.url }}" target="_blank" rel="noopener"
+                               style="color: inherit;">{{ row.document.domain or row.document.url }}</a>
+            </span>
+            {% endif %}
+            {% if row.obs.asserted_at %}
+            <span>said {{ row.obs.asserted_at.strftime("%Y-%m-%d") }}</span>
+            {% else %}
+            <span style="color: #aaa;">date unknown</span>
+            {% endif %}
+            {% if row.obs.grounded %}
+            <span style="color: #2e7d32;">&#10003; grounded</span>
+            {% else %}
+            <span style="color: #c62828;">unverified quote</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

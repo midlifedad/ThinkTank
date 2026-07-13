@@ -15,7 +15,7 @@
         <tbody>
             {% for row in inquiries %}
             <tr>
-                <td>{{ row.inquiry.question }}</td>
+                <td><a href="/admin/inquiries/{{ row.inquiry.id }}">{{ row.inquiry.question }}</a></td>
                 <td>{{ row.inquiry.area or "—" }}</td>
                 <td>
                     {% if row.inquiry.status == "complete" %}

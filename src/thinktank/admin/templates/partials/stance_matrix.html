@@ -1,0 +1,73 @@
+{% set stance_colors = {
+    "asserts": "#2e7d32",
+    "denies": "#c62828",
+    "hedges": "#b8860b",
+    "questions": "#6a1b9a",
+    "reports": "#1565c0",
+    "unknown": "#9e9e9e",
+} %}
+
+{% if not positions %}
+<div class="card" style="color: #888;">
+    No expert positions yet{% if inquiry.status in ("pending", "running") %} &mdash; the inquiry is still running{% endif %}.
+</div>
+{% else %}
+<div class="card" style="margin-bottom: 1rem;">
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        {% for stance, count in distribution.items() %}
+        <span style="background: {{ stance_colors[stance] }}22; color: {{ stance_colors[stance] }};
+                     border: 1px solid {{ stance_colors[stance] }}; border-radius: 12px;
+                     padding: 0.15rem 0.7rem; font-size: 0.85rem; font-weight: 600;">
+            {{ stance }}: {{ count }}
+        </span>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 16rem;">Expert</th>
+                <th style="width: 7rem;">Stance</th>
+                <th>Position</th>
+                <th style="width: 8rem;">Evidence</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in positions %}
+            <tr>
+                <td>
+                    <strong>{{ row.thinker.name }}</strong>
+                    {% if row.thinker.primary_affiliation %}
+                    <div style="color: #888; font-size: 0.85rem;">{{ row.thinker.primary_affiliation }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <span style="color: {{ stance_colors.get(row.position.stance, '#9e9e9e') }}; font-weight: 700;">
+                        {{ row.position.stance }}
+                    </span>
+                </td>
+                <td>{{ row.position.position_summary or "—" }}</td>
+                <td>
+                    {% if row.position.observation_count %}
+                    <button class="btn btn-sm"
+                            hx-get="/admin/inquiries/{{ inquiry.id }}/experts/{{ row.thinker.id }}/observations"
+                            hx-target="#receipts-{{ row.thinker.id }}">
+                        {{ row.position.observation_count }} receipt{{ "s" if row.position.observation_count != 1 }}
+                    </button>
+                    {% else %}
+                    <span style="color: #999;">none</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4" style="padding: 0; border: none;">
+                    <div id="receipts-{{ row.thinker.id }}"></div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
