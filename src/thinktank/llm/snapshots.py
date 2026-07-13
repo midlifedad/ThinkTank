@@ -197,6 +197,10 @@ async def build_candidate_review_context(
             "seed_source": c.seed_source,
             "qualification_score": c.qualification_score,
             "score_breakdown": c.score_breakdown,
+            # "practitioner" -> evaluate domain standing (frameworks,
+            # audience, industry role), NOT academic citations, which this
+            # candidate legitimately lacks.
+            "evaluation_path": evidence.get("evaluation_path", "academic"),
             "seed_claim": evidence.get("seed_claim"),
             "identity_anchors": {
                 "openalex_id": openalex.get("openalex_id"),

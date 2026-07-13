@@ -42,6 +42,14 @@ DEFAULT_FLOOR = 35
 DEFAULT_SHORTLIST = 50
 DEFAULT_MIN_QUALIFICATION = 20
 DEFAULT_MIN_CONTENT = 8
+# Practitioner path (Amir 2026-07-12): in non-academic domains (marketing,
+# business, creative) real experts lack citations, so the academic
+# qualification floor rejects them despite strong content + notability.
+# When scholarship is absent but notability clears this bar and content is
+# strong, route to the LLM judge instead of auto-rejecting -- let it decide
+# if they're a genuine practitioner authority. Default 12 = an actual
+# English Wikipedia article (a bare Wikidata stub, 4, is not enough).
+DEFAULT_PRACTITIONER_MIN_NOTABILITY = 12
 
 
 @dataclass
@@ -50,6 +58,7 @@ class GateThresholds:
     shortlist: int = DEFAULT_SHORTLIST
     min_qualification: int = DEFAULT_MIN_QUALIFICATION
     min_content: int = DEFAULT_MIN_CONTENT
+    practitioner_min_notability: int = DEFAULT_PRACTITIONER_MIN_NOTABILITY
 
 
 async def load_thresholds(session: AsyncSession) -> GateThresholds:
@@ -59,6 +68,7 @@ async def load_thresholds(session: AsyncSession) -> GateThresholds:
         "expert_gate_shortlist": "shortlist",
         "expert_gate_min_qualification": "min_qualification",
         "expert_gate_min_content": "min_content",
+        "expert_gate_practitioner_min_notability": "practitioner_min_notability",
     }
     thresholds = GateThresholds()
     result = await session.execute(select(SystemConfig.key, SystemConfig.value).where(SystemConfig.key.in_(keys)))
@@ -149,12 +159,21 @@ def gate_decision(total: int, breakdown: dict, thresholds: GateThresholds) -> st
     total: content-only celebrities and content-less academics both fail
     the gate even with high totals.
     """
-    if breakdown.get("qualification_legs", 0) < thresholds.min_qualification:
+    content = breakdown.get("content", 0)
+    # Content is always required -- nothing to ingest without it.
+    if content < thresholds.min_content:
         return "auto_rejected"
-    if breakdown.get("content", 0) < thresholds.min_content:
-        return "auto_rejected"
-    if total < thresholds.floor:
-        return "auto_rejected"
-    if total >= thresholds.shortlist:
-        return "shortlisted"
-    return "borderline"
+
+    # Academic path: normal qualification-floor gating.
+    if breakdown.get("qualification_legs", 0) >= thresholds.min_qualification and total >= thresholds.floor:
+        return "shortlisted" if total >= thresholds.shortlist else "borderline"
+
+    # Practitioner path: no scholarship, but real notability + strong content
+    # -> let the LLM judge decide rather than auto-reject on the academic bar.
+    if (
+        breakdown.get("scholarship", 0) == 0
+        and breakdown.get("notability", 0) >= thresholds.practitioner_min_notability
+    ):
+        return "practitioner_review"
+
+    return "auto_rejected"
