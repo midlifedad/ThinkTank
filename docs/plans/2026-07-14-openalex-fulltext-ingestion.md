@@ -23,7 +23,7 @@ Ingest OA full text where available; keep the abstract otherwise. No paywalled s
 2. **Fetch + extract via Jina Reader (reuse W1).** Jina already handles **PDF URLs** (returns clean markdown) and HTML landing pages — so PDF extraction needs **no new Python dependency** (no pypdf/pdfplumber). The W1 `fetch_document` fallback chain (Exa → Jina → bs4) is the existing seam; add a "fetch this specific OA URL as text" path.
 3. **Strip boilerplate.** Trim reference lists, acknowledgments, author-affiliation blocks, and figure/table captions — they pollute extraction and grounding. Heuristic: cut everything from a "References"/"Bibliography" heading onward; drop lines that are mostly citations.
 4. **Document-aware chunking.** The transcript chunker is speaker-turn oriented; add `chunk_document(text)` — a section/paragraph-aware sliding window at the existing ~350-word target with overlap, so a claim and its context land in one chunk. Falls back cleanly on unstructured text.
-5. **Store as the paper's body_text** (replacing the abstract when full text succeeds), same `create_author_content` path → same embed rails. Abstract stays the fallback when OA fetch/extract fails.
+5. **Abstract is ALWAYS ingested; full text augments, never replaces it.** The abstract is the paper's densest, cleanest, most quotable statement of its headline claim — often the exact form we want to ground on, where full text is noisier. So `body_text = abstract + "\n\n" + full_text`, with the abstract first. Because an abstract (~200 words) is under the ~350-word chunk target, the document chunker naturally makes it **chunk 0** — a distinct, retrievable unit — followed by full-text chunks. Both are embedded via the existing `create_author_content` → embed rails. When OA fetch/extract fails, the row is abstract-only, exactly as today. Net: full text can only ADD grounding material, never cost us the crisp abstract.
 
 ## What changes vs. stays
 
@@ -39,13 +39,13 @@ Ingest OA full text where available; keep the abstract otherwise. No paywalled s
 ## Risks & mitigations
 
 - **PDF extraction noise** (columns, running heads, ligatures). Mitigation: Jina's markdown is generally clean; boilerplate stripping; and the grounding gate already drops any quote that isn't a verbatim substring — so garbage extraction fails safe (drops), it doesn't corrupt.
-- **Landing-page-only OA** (~1/3 of OA): may be an HTML abstract page, not full text. Mitigation: length check — if fetched text isn't materially longer than the abstract, keep the abstract.
-- **Re-ingestion churn:** full-text upgrade of already-abstract-ingested papers needs an idempotent "upgrade in place" (match by normalized title, replace body_text, re-chunk) rather than a new row. One-time backfill for the existing 314.
+- **Landing-page-only OA** (~1/3 of OA): may be an HTML abstract page, not full text. Mitigation: length check — if fetched text isn't materially longer than the abstract, treat it as no-full-text and keep the abstract-only row (harmless: the abstract is ingested either way).
+- **Re-ingestion churn:** full-text upgrade of already-abstract-ingested papers is an idempotent "augment in place" — match by normalized title, set `body_text = abstract + full_text`, re-chunk — not a new row. The abstract stays; full text is appended. One-time backfill for the existing 314.
 
 ## Phasing
 
-- **W3.3a — forward path:** new paper ingestion fetches OA full text (abstract fallback). Small PR.
-- **W3.3b — backfill:** an idempotent job that upgrades the existing 314 abstract-only papers to full text where OA. Reuses the extraction path; re-chunks in place.
+- **W3.3a — forward path:** new paper ingestion stores `abstract + OA full text` (abstract-only when no full text). Small PR.
+- **W3.3b — backfill:** an idempotent job that augments the existing 314 abstract-only papers with full text where OA — appends to the stored abstract and re-chunks in place. The abstract is never removed.
 
 ## Recommendation
 
