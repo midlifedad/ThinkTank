@@ -1,12 +1,17 @@
 """Persist author-written text as corpus content (Web-Lane Hardening W3.2).
 
-The shared landing point for the W3.2 ingestion paths (papers now;
-website/Substack next). Text authored BY an expert becomes a Content row
-with status='done' and body_text set -- no transcription needed, the text
-IS the body -- attributed via ContentThinker(role='author'). The existing
-embed sweep (embed_pending_content) then chunks + embeds any done content
-with body_text, so authored text flows into the searchable corpus on the
-same rails as transcripts.
+The shared landing point for the W3.2 ingestion paths (papers, website,
+Substack). Text authored BY an expert becomes a Content row with
+status='done' and body_text set -- no transcription needed, the text IS
+the body -- attributed via ContentThinker(role='author'), and an
+embed_content job is enqueued IN THE SAME TRANSACTION so it chunks +
+embeds within seconds, exactly like a fresh transcript (process_content).
+The embed_pending_content sweep remains the reconciling safety net.
+
+Enqueuing the embed in the content's own transaction is deliberately
+stronger than the transcript path (which enqueues in a separate commit,
+leaving a crash-window the sweep exists to cover): here content row and
+embed job commit together, so there is no window at all.
 
 Dedupe is by canonical_url (the Content unique key). role='author' is the
 load-bearing distinction from the enriched-receipt tier: only content the
@@ -22,9 +27,15 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.models.content import Content, ContentThinker
+from thinktank.models.job import Job
 from thinktank.models.thinker import Thinker
+from thinktank.queue.retry import get_max_attempts
 
 logger = structlog.get_logger(__name__)
+
+# Below transcription (5) so text embeds never starve the latency-
+# sensitive transcription path -- matches process_content's embed jobs.
+_EMBED_PRIORITY = 6
 
 
 async def create_author_content(
@@ -71,6 +82,21 @@ async def create_author_content(
             thinker_id=thinker.id,
             role="author",
             confidence=100,  # authorship is definitional here, not a fuzzy name-match
+        )
+    )
+    # Immediate embed enqueue (same transaction as the content row) so
+    # authored text is searchable within seconds, not on the next hourly
+    # sweep. Idempotent downstream: embed_content skips already-chunked
+    # content, and the sweep skips content with an in-flight embed job.
+    session.add(
+        Job(
+            id=uuid.uuid4(),
+            job_type="embed_content",
+            payload={"content_id": str(inserted_id)},
+            priority=_EMBED_PRIORITY,
+            status="pending",
+            attempts=0,
+            max_attempts=get_max_attempts("embed_content"),
         )
     )
     return True

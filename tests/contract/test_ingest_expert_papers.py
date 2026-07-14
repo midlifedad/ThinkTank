@@ -47,12 +47,22 @@ class TestIngestExpertPapers:
         for c in content:
             assert c.status == "done"
             assert c.content_type == "paper"
-            assert c.body_text  # abstract as body -> the embed sweep will chunk it
+            assert c.body_text  # abstract as body
             assert c.published_at is not None
 
         links = (await session.execute(select(ContentThinker))).scalars().all()
         assert len(links) == 2
         assert all(link.role == "author" for link in links)
+
+        # Immediate embed enqueue -- one embed_content job per paper, in the
+        # same transaction, so it chunks+embeds within seconds (not the
+        # hourly sweep).
+        from thinktank.models.job import Job as JobModel
+
+        embed_jobs = (
+            (await session.execute(select(JobModel).where(JobModel.job_type == "embed_content"))).scalars().all()
+        )
+        assert {j.payload["content_id"] for j in embed_jobs} == {str(c.id) for c in content}
 
         # A per-expert openalex source, auto-approved, owns-linked.
         source = (await session.execute(select(Source).where(Source.source_type == "openalex"))).scalars().one()
