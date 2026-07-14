@@ -167,6 +167,45 @@ async def launch_critique(
     )
 
 
+@router.post("/discover-sources")
+async def discover_area_sources(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    area: str = Form(...),
+    principal: str = Depends(require_admin),
+):
+    """Enqueue owned-source discovery (W3.1) for every promoted expert in an area."""
+    area = area.strip()
+    if not area:
+        raise HTTPException(status_code=422, detail="area is required")
+    rows = await session.execute(
+        select(CandidateThinker.thinker_id).where(
+            CandidateThinker.search_area == area,
+            CandidateThinker.status == "promoted",
+            CandidateThinker.thinker_id.is_not(None),
+        )
+    )
+    thinker_ids = [tid for (tid,) in rows.all()]
+    for tid in thinker_ids:
+        session.add(
+            Job(
+                id=uuid.uuid4(),
+                job_type="discover_expert_sources",
+                payload={"thinker_id": str(tid), "triggered_by": principal},
+                priority=5,
+                status="pending",
+                attempts=0,
+                max_attempts=3,
+            )
+        )
+    await session.commit()
+    return templates.TemplateResponse(
+        request,
+        "partials/trigger_result.html",
+        {"success": True, "message": f"Owned-source discovery queued for {len(thinker_ids)} experts in '{area}'"},
+    )
+
+
 @router.get("/candidates/{candidate_id}/dossier")
 async def candidate_dossier_partial(
     request: Request,

@@ -55,6 +55,7 @@ KNOWN_JOB_TYPES = [
     "embed_pending_content",
     "run_inquiry",
     "critique_roster",
+    "discover_expert_sources",
 ]
 
 # Scheduled task definitions live in thinktank.queue.scheduled_tasks so the

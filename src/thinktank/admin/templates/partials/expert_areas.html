@@ -19,6 +19,12 @@
                 hx-vals='{"area": {{ area.name | tojson }}}'>
             Critique roster
         </button>
+        <button class="btn btn-sm"
+                hx-post="/admin/experts/discover-sources"
+                hx-target="#critique-result-{{ loop.index }}"
+                hx-vals='{"area": {{ area.name | tojson }}}'>
+            Discover owned sources
+        </button>
     </div>
     <div id="critique-result-{{ loop.index }}"></div>
     {% if area.critique %}

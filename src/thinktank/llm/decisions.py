@@ -335,6 +335,19 @@ async def promote_candidate_to_thinker(
     )
     session.add(rescan_job)
 
+    # Web-Lane Hardening W3.1: proactively discover the expert's OWNED
+    # channels (their YouTube/podcast/Substack/site) so the corpus is
+    # built from what they actually publish, not just where they guest.
+    session.add(
+        Job(
+            id=uuid.uuid4(),
+            job_type="discover_expert_sources",
+            payload={"thinker_id": str(thinker.id)},
+            priority=5,
+            status="pending",
+        )
+    )
+
     # Expert pipeline (2026-07-12): candidates seeded by expert_search
     # carry VERIFIED platform hints in their evidence dossier. Register a
     # reachable YouTube channel as a pending source so ingestion starts as
