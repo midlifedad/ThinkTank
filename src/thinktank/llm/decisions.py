@@ -347,6 +347,15 @@ async def promote_candidate_to_thinker(
             status="pending",
         )
     )
+    session.add(
+        Job(
+            id=uuid.uuid4(),
+            job_type="ingest_expert_papers",
+            payload={"thinker_id": str(thinker.id)},
+            priority=5,
+            status="pending",
+        )
+    )
 
     # Expert pipeline (2026-07-12): candidates seeded by expert_search
     # carry VERIFIED platform hints in their evidence dossier. Register a
