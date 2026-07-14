@@ -15,6 +15,7 @@ from thinktank.handlers.enqueue_pending_transcriptions import handle_enqueue_pen
 from thinktank.handlers.expert_search import handle_expert_search
 from thinktank.handlers.fetch_podcast_feed import handle_fetch_podcast_feed
 from thinktank.handlers.fetch_youtube_channel import handle_fetch_youtube_channel
+from thinktank.handlers.ingest_expert_papers import handle_ingest_expert_papers
 from thinktank.handlers.llm_approval_check import handle_llm_approval_check
 from thinktank.handlers.process_content import handle_process_content
 from thinktank.handlers.refresh_due_sources import handle_refresh_due_sources
@@ -106,3 +107,4 @@ register_handler("critique_roster", handle_critique_roster)
 
 # --- Web-Lane Hardening W3.1 (2026-07-14) handler registrations ---
 register_handler("discover_expert_sources", handle_discover_expert_sources)
+register_handler("ingest_expert_papers", handle_ingest_expert_papers)
