@@ -80,6 +80,17 @@ class TestIngestExpertPapers:
         sources = (await session.execute(select(Source).where(Source.source_type == "openalex"))).scalars().all()
         assert len(sources) == 1  # one openalex source reused
 
+    async def test_cross_run_title_dedup_different_doi(self, session: AsyncSession):
+        """A later run must not re-add the same paper under a different
+        DOI/version (canonical_url dedup can't catch that -- title does)."""
+        thinker = await create_thinker(session, name="Dr. Scholar")
+        await _run(session, thinker, [_paper("preprint", "Rapamycin And Aging")])
+        # Same work, published version: different id/DOI, same title.
+        await _run(session, thinker, [_paper("published", "Author response: Rapamycin and aging")])
+
+        content = (await session.execute(select(Content))).scalars().all()
+        assert len(content) == 1  # the version-variant was recognized as a dup
+
     async def test_no_papers_creates_nothing(self, session: AsyncSession):
         thinker = await create_thinker(session, name="Dr. Silent")
         await _run(session, thinker, [])

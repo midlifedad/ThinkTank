@@ -21,8 +21,9 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from thinktank.discovery.openalex_papers import fetch_author_papers
+from thinktank.discovery.openalex_papers import fetch_author_papers, normalize_title
 from thinktank.ingestion.text_content import create_author_content
+from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 from thinktank.models.source import Source, SourceThinker
 from thinktank.models.thinker import Thinker
@@ -52,8 +53,16 @@ async def handle_ingest_expert_papers(session: AsyncSession, job: Job) -> None:
 
     source_id = await _get_or_create_papers_source(session, thinker)
 
+    # Cross-run dedup: a paper already ingested for this thinker (under any
+    # DOI/version) must not be re-added on a later run. canonical_url dedup
+    # can't catch it -- a preprint and its published version have different
+    # DOIs -- so match on normalized title.
+    existing_titles = await _existing_paper_titles(session, thinker.id)
+
     created = 0
     for paper in papers:
+        if normalize_title(paper.title) in existing_titles:
+            continue
         if await create_author_content(
             session,
             thinker=thinker,
@@ -64,10 +73,21 @@ async def handle_ingest_expert_papers(session: AsyncSession, job: Job) -> None:
             body_text=paper.abstract,
             published_at=paper.published_at,
         ):
+            existing_titles.add(normalize_title(paper.title))
             created += 1
 
     await session.commit()
     log.info("ingest_expert_papers_complete", fetched=len(papers), created=created)
+
+
+async def _existing_paper_titles(session: AsyncSession, thinker_id: uuid.UUID) -> set[str]:
+    """Normalized titles of papers already ingested for this thinker."""
+    rows = await session.execute(
+        select(Content.title)
+        .join(ContentThinker, ContentThinker.content_id == Content.id)
+        .where(ContentThinker.thinker_id == thinker_id, Content.content_type == "paper")
+    )
+    return {normalize_title(t) for (t,) in rows.all()}
 
 
 async def _get_or_create_papers_source(session: AsyncSession, thinker: Thinker) -> uuid.UUID:

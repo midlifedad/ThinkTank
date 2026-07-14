@@ -16,6 +16,7 @@ No API key required (OpenAlex is open; we send a mailto for the polite pool).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -30,6 +31,22 @@ _TIMEOUT = 25.0
 _MAILTO = "thinktank@midlifedad.dev"
 _AUTHORS_URL = "https://api.openalex.org/authors"
 _WORKS_URL = "https://api.openalex.org/works"
+# Abstracts shorter than this carry no groundable content (bare stubs).
+MIN_ABSTRACT_CHARS = 200
+
+# Version/editorial prefixes OpenAlex attaches to duplicate records of one work.
+_TITLE_PREFIX = re.compile(r"^(author response|decision letter|correction|erratum|editorial|reply)\s*[:\-]\s*", re.I)
+
+
+def normalize_title(title: str) -> str:
+    """Collapse a paper title to a stable dedup key.
+
+    Strips editorial/version prefixes ('Author response:', 'Correction:'),
+    lowercases, and squeezes non-alphanumerics -- so a preprint, its
+    published version, and versioned DOIs of the same work map together.
+    """
+    stripped = _TITLE_PREFIX.sub("", title.strip())
+    return re.sub(r"[^a-z0-9]+", " ", stripped.lower()).strip()
 
 
 @dataclass
@@ -99,22 +116,33 @@ async def fetch_author_papers(name: str, limit: int = 25, since_year: int = 2015
         logger.warning("openalex_papers_failed", name=name, exc_info=True)
         return []
 
-    papers: list[PaperRecord] = []
+    # Dedupe by normalized title, keeping the richest abstract. OpenAlex
+    # returns the SAME work as multiple records -- a bioRxiv preprint, the
+    # published version, AND versioned DOIs (elife.92092.1/.2/.3) -- each
+    # with a distinct DOI, so canonical_url dedup downstream misses them
+    # (observed: one Kenyon paper ingested 5x). Also drops near-empty
+    # abstracts that carry no groundable content.
+    best_by_title: dict[str, PaperRecord] = {}
     for w in works:
         abstract = _reconstruct_abstract(w.get("abstract_inverted_index"))
-        if not abstract.strip():
-            continue  # no abstract -> nothing to ground on
+        if len(abstract.strip()) < MIN_ABSTRACT_CHARS:
+            continue
         openalex_id = (w.get("id") or "").rsplit("/", 1)[-1]
         if not openalex_id:
             continue
-        papers.append(
-            PaperRecord(
-                openalex_id=openalex_id,
-                title=w.get("title") or w.get("display_name") or "Untitled",
-                abstract=abstract,
-                published_at=_parse_date(w.get("publication_date")),
-                landing_url=w.get("doi") or w.get("id"),
-            )
+        title = w.get("title") or w.get("display_name") or "Untitled"
+        record = PaperRecord(
+            openalex_id=openalex_id,
+            title=title,
+            abstract=abstract,
+            published_at=_parse_date(w.get("publication_date")),
+            landing_url=w.get("doi") or w.get("id"),
         )
-    logger.info("openalex_papers_fetched", name=name, author_id=author_id, papers=len(papers))
+        key = normalize_title(title)
+        existing = best_by_title.get(key)
+        if existing is None or len(record.abstract) > len(existing.abstract):
+            best_by_title[key] = record
+
+    papers = list(best_by_title.values())
+    logger.info("openalex_papers_fetched", name=name, author_id=author_id, papers=len(papers), raw_works=len(works))
     return papers
