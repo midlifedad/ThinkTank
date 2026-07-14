@@ -54,6 +54,7 @@ from thinktank.models.claim import Claim, ClaimObservation, ContentChunk, Inquir
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
 from thinktank.models.thinker import Thinker
+from thinktank.queue.leader import session_advisory_lock
 
 logger = structlog.get_logger(__name__)
 
@@ -175,7 +176,17 @@ async def _store_observations(
 
 
 async def handle_run_inquiry(session: AsyncSession, job: Job) -> None:
-    """Run one proactive inquiry end-to-end."""
+    """Run one proactive inquiry end-to-end.
+
+    Serialized per inquiry by a session-scoped advisory lock: a stale-job
+    reclaim (or an accidental duplicate enqueue) can produce two
+    run_inquiry jobs for the same inquiry running concurrently on two
+    worker slots. Without the lock they race -- both pass the per-expert
+    idempotency check, both delete each other's in-flight observations,
+    and one expert ends up with doubled observations and a coin-flip
+    stance (observed live on the rapamycin run, 2026-07-13). The lock
+    makes the second job skip cleanly.
+    """
     inquiry_id_str = job.payload.get("inquiry_id")
     if not inquiry_id_str:
         raise ValueError("inquiry_id missing from run_inquiry payload")
@@ -185,6 +196,14 @@ async def handle_run_inquiry(session: AsyncSession, job: Job) -> None:
 
     log = logger.bind(job_id=str(job.id), inquiry_id=inquiry_id_str, question=inquiry.question[:60])
 
+    async with session_advisory_lock(session.bind, f"run_inquiry:{inquiry_id_str}") as acquired:
+        if not acquired:
+            log.info("inquiry_skipped_concurrent", reason="another job holds the inquiry lock")
+            return
+        await _run_inquiry_locked(session, job, inquiry, log)
+
+
+async def _run_inquiry_locked(session: AsyncSession, job: Job, inquiry: Inquiry, log) -> None:
     from thinktank.config import get_settings
 
     extraction_model = get_settings().llm_model
@@ -219,102 +238,142 @@ async def handle_run_inquiry(session: AsyncSession, job: Job) -> None:
     [question_embedding] = await embed_texts([inquiry.question])
 
     # 3. Per expert: two lanes -> observations -> required position.
-    for thinker in roster:
+    # Iterate by PK and re-fetch each expert fresh: a per-expert rollback
+    # (below) expires EVERY ORM object, including not-yet-processed roster
+    # entries -- holding them across the loop would trip an implicit sync
+    # refresh (-> MissingGreenlet) on the next iteration.
+    inquiry_pk = inquiry.id
+    roster_ids = [t.id for t in roster]
+    failed_experts = 0
+    for thinker_id in roster_ids:
         # Retry idempotency: an expert with a position row is complete.
-        done = await session.get(InquiryPosition, (inquiry.id, thinker.id))
+        done = await session.get(InquiryPosition, (inquiry_pk, thinker_id))
         if done is not None:
             continue
-        # A crash mid-expert leaves orphan observations; rebuild cleanly.
-        await session.execute(
-            delete(ClaimObservation).where(
-                ClaimObservation.inquiry_id == inquiry.id, ClaimObservation.thinker_id == thinker.id
-            )
-        )
-
-        observations: list[ClaimObservation] = []
-        dropped_total = 0
-
-        # Corpus lane (hard grounding against body_text).
-        for content, evidence in await _corpus_evidence(session, thinker.id, question_embedding):
-            claims, dropped = await extract_observations(
-                session, inquiry.question, thinker.name, evidence, evidence_kind="podcast transcript"
-            )
-            dropped_total += dropped
-            observations += await _store_observations(
-                session,
-                claims,
-                inquiry=inquiry,
-                thinker=thinker,
-                grounding_text=content.body_text,
-                content=content,
-                asserted_at=content.published_at,
-                extraction_model=extraction_model,
-            )
-
-        # Web lane (per-expert Exa search: clean text + publish dates
-        # inline, so no re-fetch; grounding against the stored page text).
-        query = f"What has {thinker.name} said about: {inquiry.question}"
-        results = await exa_search(session, query, num_results=WEB_CITATIONS_PER_EXPERT)
-        for result in results:
-            document = await store_exa_result(session, result, found_via="inquiry_web_lane", search_query=query)
-            if document is None or not document.text_content:
-                # Exa returned a hit without usable text -- try the fetch fallback chain.
-                document = await fetch_document(session, result.url, found_via="inquiry_web_lane", search_query=query)
-            if document is None or not document.text_content:
-                continue
-            claims, dropped = await extract_observations(
-                session, inquiry.question, thinker.name, document.text_content, evidence_kind="web article"
-            )
-            dropped_total += dropped
-            observations += await _store_observations(
-                session,
-                claims,
-                inquiry=inquiry,
-                thinker=thinker,
-                grounding_text=document.text_content,
-                document=document,
-                asserted_at=document.published_at,
-                extraction_model=extraction_model,
-            )
-
-        # 4. REQUIRED stance-matrix cell.
-        position = await resolve_position(
-            session,
-            inquiry.question,
-            thinker.name,
-            [{"stance": o.stance, "confidence": o.confidence, "claim_text": o.claim_text} for o in observations],
-        )
-        await session.execute(
-            pg_insert(InquiryPosition)
-            .values(
-                inquiry_id=inquiry.id,
-                thinker_id=thinker.id,
-                stance=position.stance,
-                position_summary=position.summary,
-                observation_count=len(observations),
-                resolution_model=extraction_model,
-            )
-            .on_conflict_do_update(
-                index_elements=["inquiry_id", "thinker_id"],
-                set_={
-                    "stance": position.stance,
-                    "position_summary": position.summary,
-                    "observation_count": len(observations),
-                    "resolution_model": extraction_model,
-                    "resolved_at": datetime.now(UTC),
-                },
-            )
-        )
-        await session.commit()
-        log.info(
-            "inquiry_expert_resolved",
-            thinker=thinker.slug,
-            stance=position.stance,
-            observations=len(observations),
-            ungrounded_dropped=dropped_total,
-        )
+        thinker = await session.get(Thinker, thinker_id)
+        slug = thinker.slug
+        try:
+            await _resolve_expert(session, inquiry, thinker, question_embedding, extraction_model, log)
+        except Exception:
+            # Per-expert resilience: one expert's transient failure (a slow
+            # web fetch, an LLM blip) must not sink the whole inquiry or
+            # block every expert after it. Roll back this expert's partial
+            # work, log, and continue; a re-run retries them (no position
+            # row was written).
+            await session.rollback()
+            # rollback() expires all ORM objects (regardless of
+            # expire_on_commit); re-attach the inquiry so the next
+            # iteration and the final status update don't trigger an
+            # implicit sync refresh (-> MissingGreenlet under asyncio).
+            inquiry = await session.get(Inquiry, inquiry_pk)
+            failed_experts += 1
+            log.warning("inquiry_expert_failed", thinker=slug, exc_info=True)
 
     inquiry.status = "complete"
     inquiry.completed_at = datetime.now(UTC)
     await session.commit()
-    log.info("inquiry_complete", experts=len(roster))
+    log.info("inquiry_complete", experts=len(roster), failed_experts=failed_experts)
+
+
+async def _resolve_expert(
+    session: AsyncSession,
+    inquiry: Inquiry,
+    thinker: Thinker,
+    question_embedding: list[float],
+    extraction_model: str,
+    log,
+) -> None:
+    """Resolve one expert's stance-matrix cell (both lanes + position).
+
+    One transaction, ending in the per-expert commit -- so a failure
+    rolls back cleanly and leaves no position row (re-run retries).
+    """
+    # A crash mid-expert leaves orphan observations; rebuild cleanly.
+    await session.execute(
+        delete(ClaimObservation).where(
+            ClaimObservation.inquiry_id == inquiry.id, ClaimObservation.thinker_id == thinker.id
+        )
+    )
+
+    observations: list[ClaimObservation] = []
+    dropped_total = 0
+
+    # Corpus lane (hard grounding against body_text).
+    for content, evidence in await _corpus_evidence(session, thinker.id, question_embedding):
+        claims, dropped = await extract_observations(
+            session, inquiry.question, thinker.name, evidence, evidence_kind="podcast transcript"
+        )
+        dropped_total += dropped
+        observations += await _store_observations(
+            session,
+            claims,
+            inquiry=inquiry,
+            thinker=thinker,
+            grounding_text=content.body_text,
+            content=content,
+            asserted_at=content.published_at,
+            extraction_model=extraction_model,
+        )
+
+    # Web lane (per-expert Exa search: clean text + publish dates
+    # inline, so no re-fetch; grounding against the stored page text).
+    query = f"What has {thinker.name} said about: {inquiry.question}"
+    results = await exa_search(session, query, num_results=WEB_CITATIONS_PER_EXPERT)
+    for result in results:
+        document = await store_exa_result(session, result, found_via="inquiry_web_lane", search_query=query)
+        if document is None or not document.text_content:
+            # Exa returned a hit without usable text -- try the fetch fallback chain.
+            document = await fetch_document(session, result.url, found_via="inquiry_web_lane", search_query=query)
+        if document is None or not document.text_content:
+            continue
+        claims, dropped = await extract_observations(
+            session, inquiry.question, thinker.name, document.text_content, evidence_kind="web article"
+        )
+        dropped_total += dropped
+        observations += await _store_observations(
+            session,
+            claims,
+            inquiry=inquiry,
+            thinker=thinker,
+            grounding_text=document.text_content,
+            document=document,
+            asserted_at=document.published_at,
+            extraction_model=extraction_model,
+        )
+
+    # 4. REQUIRED stance-matrix cell.
+    position = await resolve_position(
+        session,
+        inquiry.question,
+        thinker.name,
+        [{"stance": o.stance, "confidence": o.confidence, "claim_text": o.claim_text} for o in observations],
+    )
+    await session.execute(
+        pg_insert(InquiryPosition)
+        .values(
+            inquiry_id=inquiry.id,
+            thinker_id=thinker.id,
+            stance=position.stance,
+            position_summary=position.summary,
+            observation_count=len(observations),
+            resolution_model=extraction_model,
+        )
+        .on_conflict_do_update(
+            index_elements=["inquiry_id", "thinker_id"],
+            set_={
+                "stance": position.stance,
+                "position_summary": position.summary,
+                "observation_count": len(observations),
+                "resolution_model": extraction_model,
+                "resolved_at": datetime.now(UTC),
+            },
+        )
+    )
+    await session.commit()
+    log.info(
+        "inquiry_expert_resolved",
+        thinker=thinker.slug,
+        stance=position.stance,
+        observations=len(observations),
+        ungrounded_dropped=dropped_total,
+    )
