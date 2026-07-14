@@ -22,6 +22,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.discovery.openalex_papers import fetch_author_papers, normalize_title
+from thinktank.ingestion.fulltext import fetch_paper_fulltext
 from thinktank.ingestion.text_content import create_author_content
 from thinktank.models.content import Content, ContentThinker
 from thinktank.models.job import Job
@@ -60,9 +61,20 @@ async def handle_ingest_expert_papers(session: AsyncSession, job: Job) -> None:
     existing_titles = await _existing_paper_titles(session, thinker.id)
 
     created = 0
+    with_fulltext = 0
     for paper in papers:
         if normalize_title(paper.title) in existing_titles:
             continue
+        # W3.3: the abstract is ALWAYS the base; OA full text (when
+        # available and materially richer) is appended after it, so a
+        # paper's headline abstract claim stays a distinct chunk and full
+        # text only adds grounding depth.
+        body_text = paper.abstract
+        if paper.oa_url:
+            fulltext = await fetch_paper_fulltext(session, paper.oa_url, paper.abstract)
+            if fulltext:
+                body_text = f"{paper.abstract}\n\n{fulltext}"
+                with_fulltext += 1
         if await create_author_content(
             session,
             thinker=thinker,
@@ -70,14 +82,14 @@ async def handle_ingest_expert_papers(session: AsyncSession, job: Job) -> None:
             content_type="paper",
             title=paper.title,
             url=paper.landing_url or f"https://openalex.org/{paper.openalex_id}",
-            body_text=paper.abstract,
+            body_text=body_text,
             published_at=paper.published_at,
         ):
             existing_titles.add(normalize_title(paper.title))
             created += 1
 
     await session.commit()
-    log.info("ingest_expert_papers_complete", fetched=len(papers), created=created)
+    log.info("ingest_expert_papers_complete", fetched=len(papers), created=created, with_fulltext=with_fulltext)
 
 
 async def _existing_paper_titles(session: AsyncSession, thinker_id: uuid.UUID) -> set[str]:

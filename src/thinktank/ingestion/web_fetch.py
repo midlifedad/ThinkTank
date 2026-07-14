@@ -82,8 +82,12 @@ def parse_published_at(html: str) -> datetime | None:
     return None
 
 
-async def _fetch_via_jina(session: AsyncSession, url: str) -> tuple[str, str | None] | None:
-    """Jina Reader: URL -> markdown. (text, title) or None. No reliable date."""
+async def fetch_via_jina(session: AsyncSession, url: str) -> tuple[str, str | None] | None:
+    """Jina Reader: URL -> markdown. (text, title) or None. No reliable date.
+
+    Handles PDFs and JS-rendered pages -- reused by W3.3 full-text paper
+    ingestion (Jina extracts OA PDFs to clean markdown, no PDF dep).
+    """
     api_key = await get_secret(session, "jina_api_key")
     headers = {"X-Return-Format": "markdown", "Accept": "text/plain"}
     if api_key:
@@ -191,7 +195,7 @@ async def fetch_document(
 
     # 2. Jina Reader (cheap markdown fallback).
     if not text:
-        jina = await _fetch_via_jina(session, url)
+        jina = await fetch_via_jina(session, url)
         if jina is not None:
             text, title = jina
 

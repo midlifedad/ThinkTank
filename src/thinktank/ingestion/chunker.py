@@ -11,6 +11,7 @@ Pure functions -- exhaustively unit-testable, no I/O.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 # Word budget per chunk. bge-base truncates ~512 tokens; ~350 words of
@@ -99,4 +100,70 @@ def chunk_transcript(body_text: str) -> list[Chunk]:
         cur_words += words
 
     _flush()
+    return chunks
+
+
+def _word_spans(text: str, start: int, end: int) -> list[tuple[int, int]]:
+    """(start, end) char offsets of each whitespace-delimited word in
+    text[start:end]. Offsets are absolute into `text`."""
+    return [(m.start(), m.end()) for m in re.finditer(r"\S+", text[start:end])]
+
+
+def chunk_document(body_text: str) -> list[Chunk]:
+    """Chunk prose (papers, articles) into ~TARGET_WORDS retrieval chunks.
+
+    Unlike chunk_transcript, this splits WITHIN a long paragraph -- an
+    academic paragraph can run 400-600 words, which would overflow the
+    embed model's window and be silently truncated. Paragraph boundaries
+    (blank lines) are preferred split points; a paragraph over budget is
+    split further on word boundaries. Char offsets are exact
+    (chunk.text == body_text[char_start:char_end]) -- load-bearing for
+    grounding.
+    """
+    if not body_text or not body_text.strip():
+        return []
+
+    chunks: list[Chunk] = []
+
+    def _emit(start: int, end: int) -> None:
+        text = body_text[start:end]
+        if text.strip():
+            chunks.append(Chunk(index=len(chunks), speaker_label=None, text=text, char_start=start, char_end=end))
+
+    # Paragraphs: spans between blank-line separators, with offsets.
+    para_spans: list[tuple[int, int]] = []
+    pos = 0
+    for para in re.split(r"\n\s*\n", body_text):
+        p_start = body_text.index(para, pos) if para else pos
+        para_spans.append((p_start, p_start + len(para)))
+        pos = p_start + len(para)
+
+    cur_start: int | None = None
+    cur_end = 0
+    cur_words = 0
+    for p_start, p_end in para_spans:
+        words = _word_spans(body_text, p_start, p_end)
+        if not words:
+            continue
+        n = len(words)
+        if n > TARGET_WORDS:
+            # Paragraph over budget on its own: flush the running chunk,
+            # then split this paragraph into TARGET_WORDS-word slices.
+            if cur_start is not None:
+                _emit(cur_start, cur_end)
+                cur_start, cur_words = None, 0
+            for i in range(0, n, TARGET_WORDS):
+                seg = words[i : i + TARGET_WORDS]
+                _emit(p_start + seg[0][0], p_start + seg[-1][1])
+            continue
+        if cur_start is not None and cur_words + n > TARGET_WORDS:
+            _emit(cur_start, cur_end)
+            cur_start, cur_words = None, 0
+        if cur_start is None:
+            cur_start = p_start
+        cur_end = p_end
+        cur_words += n
+
+    if cur_start is not None:
+        _emit(cur_start, cur_end)
     return chunks

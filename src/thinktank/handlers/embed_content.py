@@ -18,7 +18,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from thinktank.embeddings import embed_texts
-from thinktank.ingestion.chunker import chunk_transcript
+from thinktank.ingestion.chunker import chunk_document, chunk_transcript
 from thinktank.models.claim import ContentChunk
 from thinktank.models.content import Content
 from thinktank.models.job import Job
@@ -53,7 +53,13 @@ async def handle_embed_content(session: AsyncSession, job: Job) -> None:
     if existing and force:
         await session.execute(delete(ContentChunk).where(ContentChunk.content_id == content_id))
 
-    chunks = chunk_transcript(content.body_text)
+    # Prose (papers, articles) needs the document chunker -- it splits
+    # within long paragraphs that the transcript chunker would leave as
+    # over-budget, embed-truncated chunks.
+    if content.content_type in ("paper", "article"):
+        chunks = chunk_document(content.body_text)
+    else:
+        chunks = chunk_transcript(content.body_text)
     if not chunks:
         log.warning("embed_content_empty_chunks")
         return
