@@ -232,3 +232,94 @@ class TestRunInquiry:
         job = await create_job(session, job_type="run_inquiry", payload={"inquiry_id": str(uuid.uuid4())})
         with pytest.raises(ValueError, match="not found"):
             await handle_run_inquiry(session, job)
+
+
+class TestConcurrencyGuard:
+    async def test_second_job_skips_while_lock_held(self, session: AsyncSession):
+        """A duplicate run_inquiry job (stale-reclaim race) must skip
+        cleanly while another holds the per-inquiry advisory lock --
+        no extraction, no positions, no corrupted double observations."""
+        from sqlalchemy import text
+
+        from thinktank.queue.leader import stable_lock_key
+
+        await _setup_expert_with_corpus(session)
+        inquiry = await create_inquiry(session, question=QUESTION, area="longevity")
+        await session.commit()
+
+        key = stable_lock_key(f"run_inquiry:{inquiry.id}")
+        async with session.bind.connect() as holder:
+            got = bool((await holder.execute(text("SELECT pg_try_advisory_lock(:k)"), {"k": key})).scalar_one())
+            assert got  # we simulate the "other" running job holding the lock
+            try:
+                extractor = _extractor()
+                await _run(session, inquiry, extractor=extractor)
+                extractor.assert_not_awaited()  # handler skipped before any work
+            finally:
+                await holder.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": key})
+                await holder.commit()
+
+        positions = (
+            (await session.execute(select(InquiryPosition).where(InquiryPosition.inquiry_id == inquiry.id)))
+            .scalars()
+            .all()
+        )
+        assert positions == []
+
+    async def test_lock_released_allows_subsequent_run(self, session: AsyncSession):
+        """Once the lock is free, a run proceeds normally -- the guard
+        doesn't wedge the inquiry."""
+        thinker, _ = await _setup_expert_with_corpus(session)
+        inquiry = await create_inquiry(session, question=QUESTION, area="longevity")
+        await _run(session, inquiry)
+        position = await session.get(InquiryPosition, (inquiry.id, thinker.id))
+        assert position is not None
+
+
+class TestPerExpertResilience:
+    async def test_one_expert_failure_does_not_sink_the_rest(self, session: AsyncSession):
+        """A transient failure on one expert rolls back only that expert
+        and leaves no position for them; every other expert still resolves
+        and the inquiry completes."""
+        boom = await create_thinker(session, name="Dr. Boom")
+        fine = await create_thinker(session, name="Dr. Fine")
+        source = await create_source(session)
+        for t in (boom, fine):
+            await create_candidate_thinker(
+                session, name=t.name, status="promoted", thinker_id=t.id, search_area="longevity"
+            )
+            content = await create_content(session, source_id=source.id, status="done", body_text=BODY)
+            await create_content_thinker(session, content_id=content.id, thinker_id=t.id)
+            await create_content_chunk(
+                session,
+                content_id=content.id,
+                chunk_index=0,
+                text=BODY,
+                char_start=0,
+                char_end=len(BODY),
+                embedding=[1.0] + [0.0] * 767,
+            )
+        inquiry = await create_inquiry(session, question=QUESTION, area="longevity")
+        # Capture PKs: the handler shares this test's session and its internal
+        # per-expert rollback expires these ORM objects (in production the
+        # worker session is dedicated, so this is a test-only concern).
+        inquiry_id, boom_id, fine_id = inquiry.id, boom.id, fine.id
+
+        async def _extract(session_, question, expert_name, evidence_text, evidence_kind):
+            if expert_name == "Dr. Boom":
+                raise RuntimeError("transient blip")
+            return [CORPUS_CLAIM], 0
+
+        await _run(session, inquiry, extractor=AsyncMock(side_effect=_extract))
+
+        refreshed = await session.get(Inquiry, inquiry_id)
+        assert refreshed.status == "complete"
+        assert await session.get(InquiryPosition, (inquiry_id, fine_id)) is not None
+        assert await session.get(InquiryPosition, (inquiry_id, boom_id)) is None
+        # Boom's rollback left no orphan observations.
+        boom_obs = (
+            (await session.execute(select(ClaimObservation).where(ClaimObservation.thinker_id == boom_id)))
+            .scalars()
+            .all()
+        )
+        assert boom_obs == []

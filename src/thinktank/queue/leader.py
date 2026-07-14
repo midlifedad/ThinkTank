@@ -19,9 +19,11 @@ its keys from a hash of the api_name (see ``stable_lock_key``).
 from __future__ import annotations
 
 import hashlib
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 # Scheduler singleton lock keys (owned range: 100-199).
 LOCK_GPU_SCALING = 101
@@ -54,3 +56,29 @@ async def try_advisory_xact_lock(session: AsyncSession, key: int) -> bool:
     """
     result = await session.execute(text("SELECT pg_try_advisory_xact_lock(:k)"), {"k": key})
     return bool(result.scalar_one())
+
+
+@asynccontextmanager
+async def session_advisory_lock(engine: AsyncEngine, name: str) -> AsyncIterator[bool]:
+    """Hold a SESSION-scoped advisory lock for the whole ``with`` block.
+
+    Unlike ``try_advisory_xact_lock``, this survives ``commit()`` -- for
+    handlers that commit repeatedly mid-run (run_inquiry commits per
+    expert) and must stay serialized across all of it. The lock lives on
+    a DEDICATED connection held open for the block's duration, independent
+    of the working session's per-transaction connection churn.
+
+    Yields True if this holder acquired the lock, False if another holder
+    has it (caller should skip, not wait). Explicit ``pg_advisory_unlock``
+    on exit is mandatory: a session lock left on a pooled connection would
+    leak (the classic advisory-lock-with-pooling bug).
+    """
+    key = stable_lock_key(name)
+    async with engine.connect() as conn:
+        got = bool((await conn.execute(text("SELECT pg_try_advisory_lock(:k)"), {"k": key})).scalar_one())
+        try:
+            yield got
+        finally:
+            if got:
+                await conn.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": key})
+                await conn.commit()

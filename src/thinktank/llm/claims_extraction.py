@@ -175,9 +175,14 @@ async def extract_observations(
         "You extract what a SPECIFIC EXPERT has asserted, relevant to a question. "
         "Only extract claims made by the named expert (in transcripts, their own "
         "speaker turns; in articles, their quoted or authored statements) -- never "
-        "claims by hosts or third parties. Every claim needs a VERBATIM quote "
-        "copied exactly from the evidence. Extract nothing if the evidence does "
-        "not address the question."
+        "claims by hosts or third parties.\n"
+        "The `quote` field MUST be copied CHARACTER-FOR-CHARACTER from the evidence "
+        "text above -- a contiguous substring, exact wording, exact punctuation. "
+        "Do NOT paraphrase, summarize, translate, fix grammar, join separate "
+        "sentences, or add ellipses. Pick ONE real sentence or clause that appears "
+        "verbatim in the evidence; a quote that isn't an exact substring is "
+        "discarded. Put any rewording in `claim_text`, never in `quote`.\n"
+        "Extract nothing if the evidence does not address the question."
     )
     prompt = (
         f"Question: {question}\n"
@@ -220,8 +225,20 @@ async def resolve_position(
         return PositionResponse(stance="unknown", summary="No relevant statements found in corpus or web evidence.")
     system = (
         "Given an expert's extracted statements about a question, resolve their "
-        "overall position. 'unknown' only if the statements genuinely don't "
-        "address the question."
+        "overall position on the proposition in the question.\n"
+        "Stance definitions -- apply them strictly:\n"
+        "- asserts: affirms the proposition is true.\n"
+        "- denies: affirms the proposition is FALSE. Reserve this for an "
+        "ACTIVE negative claim -- NOT for merely declining to affirm. "
+        "'The evidence is only in mice' or 'no human data yet' is caution or "
+        "absence of a claim, NOT a denial.\n"
+        "- hedges: engages the proposition but conditionally / with caveats / "
+        "as promising-but-unproven.\n"
+        "- questions: raises it as an open question without taking a side.\n"
+        "- reports: relays others' findings without staking their own view.\n"
+        "- unknown: the statements genuinely don't address the proposition.\n"
+        "Distinguish 'has not asserted P' (hedges/unknown) from 'asserts not-P' "
+        "(denies). When in doubt between denies and hedges, choose hedges."
     )
     lines = [f"Question: {question}", f"Expert: {expert_name}", "Statements:"]
     for obs in observations[:30]:
