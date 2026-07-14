@@ -53,7 +53,7 @@ class TestFetchDocumentFallbackChain:
         with (
             patch("thinktank.ingestion.web_fetch.exa_contents", new=AsyncMock(return_value=None)),
             patch(
-                "thinktank.ingestion.web_fetch._fetch_via_jina",
+                "thinktank.ingestion.web_fetch.fetch_via_jina",
                 new=AsyncMock(return_value=("jina markdown body", "Jina Title")),
             ),
         ):
@@ -73,7 +73,7 @@ class TestFetchDocumentFallbackChain:
         resp.raise_for_status = MagicMock()
         with (
             patch("thinktank.ingestion.web_fetch.exa_contents", new=AsyncMock(return_value=None)),
-            patch("thinktank.ingestion.web_fetch._fetch_via_jina", new=AsyncMock(return_value=None)),
+            patch("thinktank.ingestion.web_fetch.fetch_via_jina", new=AsyncMock(return_value=None)),
             patch("thinktank.ingestion.web_fetch.httpx.AsyncClient") as mock_client,
         ):
             instance = mock_client.return_value.__aenter__.return_value
@@ -85,7 +85,7 @@ class TestFetchDocumentFallbackChain:
     async def test_all_fail_records_failed_row_returns_none(self, session: AsyncSession):
         with (
             patch("thinktank.ingestion.web_fetch.exa_contents", new=AsyncMock(return_value=None)),
-            patch("thinktank.ingestion.web_fetch._fetch_via_jina", new=AsyncMock(return_value=None)),
+            patch("thinktank.ingestion.web_fetch.fetch_via_jina", new=AsyncMock(return_value=None)),
             patch("thinktank.ingestion.web_fetch.httpx.AsyncClient") as mock_client,
         ):
             instance = mock_client.return_value.__aenter__.return_value

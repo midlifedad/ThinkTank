@@ -56,6 +56,18 @@ class PaperRecord:
     abstract: str
     published_at: datetime | None
     landing_url: str  # DOI or OpenAlex URL (canonical/provenance)
+    oa_url: str | None = None  # open-access full-text location (W3.3), if any
+
+
+def _resolve_oa_url(work: dict) -> str | None:
+    """The best open-access full-text URL for a work, if it is OA.
+
+    Prefer a direct PDF, then the OA landing page. None when the work is
+    not open access (we never fetch paywalled full text)."""
+    if not (work.get("open_access") or {}).get("is_oa"):
+        return None
+    loc = work.get("best_oa_location") or {}
+    return loc.get("pdf_url") or loc.get("landing_page_url") or (work.get("open_access") or {}).get("oa_url")
 
 
 def _reconstruct_abstract(inverted: dict | None) -> str:
@@ -137,6 +149,7 @@ async def fetch_author_papers(name: str, limit: int = 25, since_year: int = 2015
             abstract=abstract,
             published_at=_parse_date(w.get("publication_date")),
             landing_url=w.get("doi") or w.get("id"),
+            oa_url=_resolve_oa_url(w),
         )
         key = normalize_title(title)
         existing = best_by_title.get(key)

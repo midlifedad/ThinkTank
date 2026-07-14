@@ -31,9 +31,12 @@ def _paper(wid, title, abstract="Some grounded abstract about rapamycin.", date=
     )
 
 
-async def _run(session: AsyncSession, thinker, papers) -> None:
+async def _run(session: AsyncSession, thinker, papers, fulltext=None) -> None:
     job = await create_job(session, job_type="ingest_expert_papers", payload={"thinker_id": str(thinker.id)})
-    with patch("thinktank.handlers.ingest_expert_papers.fetch_author_papers", new=AsyncMock(return_value=papers)):
+    with (
+        patch("thinktank.handlers.ingest_expert_papers.fetch_author_papers", new=AsyncMock(return_value=papers)),
+        patch("thinktank.handlers.ingest_expert_papers.fetch_paper_fulltext", new=AsyncMock(return_value=fulltext)),
+    ):
         await handle_ingest_expert_papers(session, job)
 
 
@@ -90,6 +93,31 @@ class TestIngestExpertPapers:
 
         content = (await session.execute(select(Content))).scalars().all()
         assert len(content) == 1  # the version-variant was recognized as a dup
+
+    async def test_fulltext_appended_after_abstract(self, session: AsyncSession):
+        """When OA full text is available, body_text = abstract + full text
+        (abstract first, never replaced)."""
+        thinker = await create_thinker(session, name="Dr. Scholar")
+        paper = PaperRecord(
+            openalex_id="W9",
+            title="Rapamycin mechanisms",
+            abstract="Abstract: rapamycin inhibits mTOR.",
+            published_at=datetime(2023, 1, 1, tzinfo=UTC),
+            landing_url="https://doi.org/10.1/W9",
+            oa_url="https://oa.example/W9.pdf",
+        )
+        await _run(session, thinker, [paper], fulltext="Full methods and results section text.")
+
+        content = (await session.execute(select(Content))).scalars().one()
+        assert content.body_text.startswith("Abstract: rapamycin inhibits mTOR.")
+        assert "Full methods and results section text." in content.body_text
+
+    async def test_abstract_only_when_no_oa(self, session: AsyncSession):
+        """No oa_url -> full-text fetch is never attempted; abstract stands."""
+        thinker = await create_thinker(session, name="Dr. Scholar")
+        await _run(session, thinker, [_paper("W1", "Paper One")], fulltext="SHOULD NOT APPEAR")
+        content = (await session.execute(select(Content))).scalars().one()
+        assert content.body_text == "Some grounded abstract about rapamycin."
 
     async def test_no_papers_creates_nothing(self, session: AsyncSession):
         thinker = await create_thinker(session, name="Dr. Silent")
