@@ -199,29 +199,36 @@ async def apply_source_decision(
     elif result.decision == "escalate_to_human":
         source.approval_status = "pending_human"
 
-    # Trigger feed fetch for approved sources
+    # Trigger the type-appropriate ingestion for approved sources.
     if source.approval_status == "approved":
         fetch_payload = {"source_id": str(source_id)}
-        # Add guest filtering if a thinker has a guest_appearance relationship
-        guest_result = await session.execute(
-            select(SourceThinker.thinker_id)
-            .where(
-                SourceThinker.source_id == source.id,
-                SourceThinker.relationship_type == "guest_appearance",
+        # W3.2b: owned website/Substack sources ingest as authored text.
+        if source.source_type in ("website", "substack"):
+            job_type = "ingest_owned_text_source"
+        elif source.source_type == "youtube_channel":
+            job_type = "fetch_youtube_channel"
+        else:
+            job_type = "fetch_podcast_feed"
+            # Guest filtering only applies to the podcast feed path.
+            guest_thinker_id = await session.scalar(
+                select(SourceThinker.thinker_id)
+                .where(
+                    SourceThinker.source_id == source.id,
+                    SourceThinker.relationship_type == "guest_appearance",
+                )
+                .limit(1)
             )
-            .limit(1)
+            if guest_thinker_id is not None:
+                fetch_payload["guest_filter_thinker_id"] = str(guest_thinker_id)
+        session.add(
+            Job(
+                id=uuid.uuid4(),
+                job_type=job_type,
+                payload=fetch_payload,
+                priority=3,
+                status="pending",
+            )
         )
-        guest_thinker_id = guest_result.scalar_one_or_none()
-        if guest_thinker_id is not None:
-            fetch_payload["guest_filter_thinker_id"] = str(guest_thinker_id)
-        fetch_job = Job(
-            id=uuid.uuid4(),
-            job_type="fetch_podcast_feed",
-            payload=fetch_payload,
-            priority=3,
-            status="pending",
-        )
-        session.add(fetch_job)
 
     await session.flush()
 
